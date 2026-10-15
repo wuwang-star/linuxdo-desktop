@@ -29,6 +29,10 @@ const api = {
   getTranslateConfig: () => ipcRenderer.invoke('settings:getTranslate'),
   setTranslateConfig: (baseUrl: string, model: string, key?: string) =>
     ipcRenderer.invoke('settings:setTranslate', baseUrl, model, key),
+  getDohConfig: () => ipcRenderer.invoke('settings:getDoh'),
+  setDohConfig: (enabled: boolean, mode: string, template: string) =>
+    ipcRenderer.invoke('settings:setDoh', enabled, mode, template),
+  resolveDns: () => ipcRenderer.invoke('diag:resolveDns'),
   getConnectStatus: () => ipcRenderer.invoke('connect:getStatus'),
   saveConnectConfig: (clientId: string, callbackMode: 'protocol' | 'loopback', clientSecret?: string) =>
     ipcRenderer.invoke('connect:saveConfig', clientId, callbackMode, clientSecret),

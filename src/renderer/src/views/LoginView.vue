@@ -37,6 +37,53 @@ async function saveTranslate(): Promise<void> {
   }
 }
 
+// ---- DoH 加密 DNS ----
+const dohPresets = ['https://1.1.1.1/dns-query', 'https://dns.google/dns-query', 'https://dns.alidns.com/dns-query']
+const dohEnabled = ref(true)
+const dohMode = ref<'secure' | 'auto'>('secure')
+const dohTemplate = ref(dohPresets[0])
+const dohCustom = ref('')
+const dohSaving = ref(false)
+const dohMessage = ref('')
+const dohTesting = ref(false)
+const dnsResult = ref('')
+
+async function saveDoh(): Promise<void> {
+  if (dohSaving.value) return
+  dohSaving.value = true
+  dohMessage.value = ''
+  try {
+    const tpl = dohTemplate.value === 'custom' ? dohCustom.value : dohTemplate.value
+    const res = await window.api.setDohConfig(dohEnabled.value, dohMode.value, tpl)
+    // 主进程对模板做 https:// 校验，非法静默回退默认；比对返回值提示用户实际落盘结果
+    if (res.template !== tpl) {
+      dohMessage.value = `提交的模板非法，已回退默认：${res.template}`
+    } else {
+      dohMessage.value = '已保存'
+    }
+  } catch (e) {
+    dohMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    dohSaving.value = false
+  }
+}
+
+async function testDns(): Promise<void> {
+  if (dohTesting.value) return
+  dohTesting.value = true
+  dnsResult.value = ''
+  try {
+    const res = await window.api.resolveDns()
+    dnsResult.value = res.ok
+      ? `解析成功（当前运行态）：${res.addresses?.join(', ') || '（无地址）'}`
+      : `解析失败：${res.error ?? '未知错误'}`
+  } catch (e) {
+    dnsResult.value = `解析失败：${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    dohTesting.value = false
+  }
+}
+
 // ---- 登录方式 ----
 const tCookie = ref('')
 
@@ -104,6 +151,15 @@ onMounted(async () => {
   connClientId.value = conn.identity ? connClientId.value || '' : connClientId.value
   connMode.value = conn.callbackMode
   connIdentity.value = conn.identity
+  const doh = await window.api.getDohConfig()
+  dohEnabled.value = doh.enabled
+  dohMode.value = doh.mode
+  if (dohPresets.includes(doh.template)) {
+    dohTemplate.value = doh.template
+  } else {
+    dohTemplate.value = 'custom'
+    dohCustom.value = doh.template
+  }
 })
 </script>
 
@@ -215,6 +271,51 @@ onMounted(async () => {
         </button>
       </div>
       <p v-if="trMessage" class="message">{{ trMessage }}</p>
+    </section>
+
+    <section class="card">
+      <h2>加密 DNS（DoH）</h2>
+      <p class="tip"><strong>实验功能</strong>：当前 Electron 版本下暂未生效，保留设置以备后续方案。</p>
+      <p class="tip">
+        linux.do 位于 Cloudflare，部分网络存在 DNS 污染导致直连不稳；DoH 用加密解析绕过污染（Cloudflare 域名另附 ECH 加密收益）。
+        此设置面向后续启用方案保留；届时改动需重启应用生效（Chromium 启动期开关限制）。
+      </p>
+      <label class="doh-toggle">
+        <input type="checkbox" v-model="dohEnabled" />
+        启用 DoH（默认开启；关闭则与系统默认行为一致）
+      </label>
+      <div class="doh-radios">
+        <label>
+          <input type="radio" value="secure" v-model="dohMode" :disabled="!dohEnabled" />
+          secure：只用加密 DNS，解析失败即断（DoH 域本身被墙时不可用）
+        </label>
+        <label>
+          <input type="radio" value="auto" v-model="dohMode" :disabled="!dohEnabled" />
+          auto：加密优先，失败回退系统 DNS（DoH 域被墙的网络选这个）
+        </label>
+      </div>
+      <select v-model="dohTemplate" :disabled="!dohEnabled">
+        <option value="https://1.1.1.1/dns-query">Cloudflare：https://1.1.1.1/dns-query</option>
+        <option value="https://dns.google/dns-query">Google：https://dns.google/dns-query</option>
+        <option value="https://dns.alidns.com/dns-query">阿里：https://dns.alidns.com/dns-query</option>
+        <option value="custom">自定义…</option>
+      </select>
+      <input
+        v-if="dohTemplate === 'custom'"
+        v-model="dohCustom"
+        placeholder="自定义 DoH 模板（https:// 开头）"
+        :disabled="!dohEnabled"
+      />
+      <div class="row">
+        <button class="primary" :disabled="dohSaving" @click="saveDoh">
+          {{ dohSaving ? '保存中…' : '保存' }}
+        </button>
+        <button :disabled="dohTesting" @click="testDns">
+          {{ dohTesting ? '解析中…' : '测试解析 linux.do' }}
+        </button>
+      </div>
+      <p v-if="dohMessage" class="message">{{ dohMessage }}</p>
+      <p v-if="dnsResult" class="tip dns-result">{{ dnsResult }}</p>
     </section>
 
     <section class="card">

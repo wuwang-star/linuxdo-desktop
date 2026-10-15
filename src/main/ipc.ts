@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, session } from 'electron'
 import {
   fetchLatest,
   fetchCategories,
@@ -25,7 +25,7 @@ import {
   clearApiKey,
   setTCookieManually
 } from './api/auth'
-import { getTranslateConfig, setTranslateConfig } from './api/settings'
+import { getTranslateConfig, setTranslateConfig, getDohConfig, setDohConfig, type DohMode } from './api/settings'
 import { translatePostText } from './api/translate'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
@@ -93,6 +93,21 @@ export function registerIpc(): void {
   ipcMain.handle('settings:getTranslate', () => getTranslateConfig())
   ipcMain.handle('settings:setTranslate', (_e, baseUrl: string, model: string, key?: string) => {
     return setTranslateConfig(baseUrl, model, key)
+  })
+  // ---------- DoH 加密 DNS（改动重启后生效） ----------
+  ipcMain.handle('settings:getDoh', () => getDohConfig())
+  ipcMain.handle('settings:setDoh', (_e, enabled: boolean, mode: DohMode, template: string) =>
+    setDohConfig(enabled, mode, template)
+  )
+  // resolveHost 走 Chromium host resolver（secure 模式下即 DoH 客户端），结果仅作诊断展示。
+  // 注：设计稿写的 resolveDNS 在 Electron 44 已移除，此处用替代 API resolveHost。
+  ipcMain.handle('diag:resolveDns', async () => {
+    try {
+      const { endpoints } = await session.defaultSession.resolveHost('linux.do')
+      return { ok: true, addresses: endpoints.map((ep) => ep.address) }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
   })
   // ---------- Connect 身份登录（OAuth2，仅身份信息） ----------
   ipcMain.handle('connect:getStatus', () => getConnectConfig())

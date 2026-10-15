@@ -5,8 +5,21 @@ import { USER_AGENT, fetchLatest } from './api/client'
 import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
+import { loadDohEarly } from './api/settings'
 
 const AUTH_PROTOCOL = 'linuxdo-desktop'
+
+// DoH 命令行开关接线（保留）。注意：dns-over-https-mode/templates 是 Chrome 浏览器层开关，
+// Electron 44 的网络服务不消费（v44.0.0 源码核实：system_network_context_manager.cc 的
+// OnNetworkServiceCreated 硬编码 SecureDnsMode::kOff），当前实际不生效、DNS 走系统解析；
+// 保留接线以备上游支持，真实现（本地 DoH 代理 / host-resolver-rules）另立任务，见 SPEC。
+// loadDohEarly 只读 JSON 配置、不碰 safeStorage，可在模块顶层安全调用；enabled=false 时零开关。
+const doh = loadDohEarly()
+if (doh.enabled) {
+  app.commandLine.appendSwitch('enable-features', 'DnsOverHttps')
+  app.commandLine.appendSwitch('dns-over-https-mode', doh.mode)
+  app.commandLine.appendSwitch('dns-over-https-templates', doh.template)
+}
 
 function isAuthCallbackUrl(arg: string): boolean {
   return arg.startsWith(`${AUTH_PROTOCOL}://`)

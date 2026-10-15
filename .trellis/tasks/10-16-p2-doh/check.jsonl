@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "验收对照不变量（网络出口唯一性、降级行为一致性）"}
+{"file": ".trellis/tasks/10-16-p2-doh/prd.md", "reason": "AC1–AC4 逐条核对"}

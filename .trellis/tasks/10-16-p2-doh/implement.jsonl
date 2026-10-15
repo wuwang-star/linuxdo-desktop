@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "不变量：主进程统一网络出口（DoH 只影响该出口的 DNS 层）、私有端点实测前置"}
+{"file": ".thinkrail/context/TASK-linuxdo-desktop.md", "reason": "FluxDO DOH 代理行为参考（Rust 侧；本项目以 Chromium 原生开关自研替代，不复用代码）"}

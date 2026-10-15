@@ -7,7 +7,7 @@ import type {
   TopicListResponse,
   DiagEntry
 } from '../main/api/client'
-import type { TranslateConfig } from '../main/api/settings'
+import type { TranslateConfig, DohConfig, DohMode } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
@@ -44,6 +44,9 @@ export interface ApiBridge {
   translatePost(postId: number, text: string): Promise<string>
   getTranslateConfig(): Promise<TranslateConfig>
   setTranslateConfig(baseUrl: string, model: string, key?: string): Promise<TranslateConfig>
+  getDohConfig(): Promise<DohConfig>
+  setDohConfig(enabled: boolean, mode: DohMode, template: string): Promise<DohConfig>
+  resolveDns(): Promise<{ ok: boolean; addresses?: string[]; error?: string }>
   getConnectStatus(): Promise<ConnectStatus>
   saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>
   connectLogin(): Promise<{ ok: boolean; username?: string; error?: string }>
