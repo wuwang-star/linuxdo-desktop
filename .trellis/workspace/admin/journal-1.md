@@ -213,3 +213,36 @@ User API Key 官方流程完整实现（内嵌授权窗口拦截 linuxdo-desktop
 ### Next Steps
 
 - 用户填 ClientId/Secret 选回调模式实测 Connect 授权；继续 P1 人工验证与 P2
+
+
+## Session 8: P1 收尾（实时通知/多主题队列/帖子编辑）
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-15-p1-wrapup
+**Branch**: `master`
+
+### Summary
+
+brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+顺序读。trellis-implement 执行 8 步清单：MessageBus 长轮询（main/api/messagebus.ts，自适应流式/数组解析、65s 超时、指数退避 3 败熔断回退轮询；频道名 /notification/&lt;uid&gt; 与分块编码未经登录态实测，SPEC 已标注待验收）；多主题队列（stores/queue.ts，localStorage 键 ldd-queue）；帖子编辑（can_edit 门控 + GET raw 预填 + PUT post[raw] 合并更新）；清理 out-verify 残留、归档旧 p0/p1 任务。双子智能体并行质检（trellis-check 全量 + 独立安全评审）：无 P0；修复 P1 composer 编辑/回复互切残留脏文本、P2 poll controller 换代竞态、队列 setItem 未保护、编辑后整替丢 can_edit/actions_summary、SPEC 两处措辞失准。TAIL_MARKER_888（上一任务遗留死代码）单独清理。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bda50fd` | chore: 清理 src/renderer/out-verify 构建残留（.gitignore+删除）；归档旧 P0/P1 任务（typecheck/smoke 通过留证），新建 p1-wrapup 任务工件（prd/design/implement+jsonl） |
+| `4853ae1` | feat: P1 收尾 —— MessageBus 长轮询实时通知、多主题队列、帖子编辑 + 评审修复 + SPEC 补记 |
+| `ece2fad` | chore: 删除遗留死代码 TAIL_MARKER_888（全仓零引用） |
+
+### Testing
+
+- [OK] typecheck 0 错（实现每步 + 修复后复跑）；smoke SMOKE_OK ×2
+- [待人工] AC1 实时通知 30s 内达（需登录态）；AC2 队列顺序导航+重启保留；AC3 编辑流与非本人楼层无入口
+
+### Status
+
+[进行中] 代码全部交付，AC1–AC3 待用户登录态人工验收
+
+### Next Steps
+
+- 用户 `pnpm run dev` cookie 登录实测 AC1/AC2/AC3；通过后 `task.py archive 10-15-p1-wrapup`
+- MessageBus 若实测频道名/分块格式不符，只改 messagebus.ts 解析器（extractChunks）；长轮询整体不通则降级 15s 短轮询（AC1 仍满足），决定记入 SPEC
