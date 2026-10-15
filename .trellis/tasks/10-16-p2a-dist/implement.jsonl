@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "不变量与平台边界（Win+mac、主进程网络出口、协议注册、凭据 safeStorage 在打包态不落明文）"}
+{"file": ".thinkrail/context/TASK-linuxdo-desktop.md", "reason": "P2 定稿范围（托盘/原生通知/打包/自动更新）与分发决策（electron-builder+electron-updater/GitHub Releases）"}

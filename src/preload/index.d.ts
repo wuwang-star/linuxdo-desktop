@@ -54,6 +54,7 @@ export interface ApiBridge {
   messageBusStop(): Promise<boolean>
   messageBusStatus(): Promise<MessageBusStatus>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
+  onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
 }
 
 declare global {

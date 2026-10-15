@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from './stores/auth'
 import { useQueueStore } from './stores/queue'
+import { useRouter } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 
 const auth = useAuthStore()
 const queue = useQueueStore()
+const router = useRouter()
 const queueOpen = ref(false)
 const who = computed(() => auth.status?.user?.username ?? null)
 const unread = computed(() => {
@@ -32,6 +34,7 @@ function onFocus(): void {
 
 // ---- MessageBus 实时通知：cookie 登录态就绪后启动；未登录/回退时仅靠 60s 手动轮询 ----
 let offPush: (() => void) | null = null
+let offOpen: (() => void) | null = null
 
 onMounted(() => {
   void auth.refresh().then(() => {
@@ -42,6 +45,10 @@ onMounted(() => {
   // 实时推送到达 → 刷新登录态（未读徽标随之更新，增量时由上方 watcher 弹 toast）
   offPush = window.api.onNotificationPush((payload) => {
     if (payload.channel.startsWith('/notification/')) void auth.refresh()
+  })
+  // 原生通知点击 → 跳转对应主题楼层（TopicView 已支持 ?pn 直达；主进程已聚焦窗口）
+  offOpen = window.api.onNotificationOpen((p) => {
+    void router.push(`/t/${p.topicId}${p.postNumber ? `?pn=${p.postNumber}` : ''}`)
   })
   // 仅在登录态/用户变化时启停实时通道（主进程侧重复 start 为 no-op，失败达上限进入回退）
   watch(
@@ -57,6 +64,7 @@ onBeforeUnmount(() => {
   if (timer !== undefined) window.clearInterval(timer)
   window.removeEventListener('focus', onFocus)
   offPush?.()
+  offOpen?.()
 })
 </script>
 

@@ -34,6 +34,7 @@ import {
   messageBusStatus,
   type MessageBusMessage
 } from './api/messagebus'
+import { showPushNotification } from './notify'
 
 /** 推送广播给所有窗口的 renderer */
 function broadcast(channel: string, payload: unknown): void {
@@ -122,7 +123,10 @@ export function registerIpc(): void {
   ipcMain.handle('messagebus:start', (_e, userId: number) =>
     messageBusStart(userId, (msgs: MessageBusMessage[]) => {
       const notif = msgs.find((m) => m.channel.startsWith('/notification/'))
-      if (notif) broadcast('notification:push', notif)
+      if (notif) {
+        broadcast('notification:push', notif)
+        showPushNotification(notif) // 系统原生通知；点击聚焦主窗，带 topic_id 时跳转楼层
+      }
     })
   )
   ipcMain.handle('messagebus:stop', () => {

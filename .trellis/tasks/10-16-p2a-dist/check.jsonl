@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "验收对照不变量（打包不得破坏主进程出口/凭据加密/协议回调）"}
+{"file": ".trellis/tasks/10-16-p2a-dist/prd.md", "reason": "AC1–AC6 逐条核对"}

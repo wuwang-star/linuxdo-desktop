@@ -1,0 +1,30 @@
+# electron-builder 打包配置（P2a）。
+# 发版三步（详见 README）：改 package.json 版本号 → pnpm run dist → GitHub Release 上传产物。
+appId: com.linuxdo.desktop
+productName: LinuxDo Desktop
+icon: build/icon.png
+directories:
+  buildResources: build
+files:
+  # electron-vite 产物（out/**）；electron-builder 自动追加 package.json 与生产依赖 node_modules
+  - out/**
+asar: true
+extraResources:
+  # 托盘图标：打包态从资源目录读取（asar 内相对路径在运行期不可靠）
+  - from: build/icon.png
+    to: icon.png
+win:
+  target:
+    - nsis
+nsis:
+  # 双击即装（per-user），无目录选择页——自用阶段最简
+  oneClick: true
+  perMachine: false
+  artifactName: ${productName}-${version}-setup.${ext}
+# 更新通道（GitHub Releases）：repo 就绪后取消注释并填 owner/repo，重打安装包即可。
+# 未配置 publish + 本地无 GH_TOKEN 时 electron-builder 不上传；updater 侧检测不到
+# app-update.yml 会静默跳过（src/main/updater.ts）。
+# publish:
+#   provider: github
+#   owner: your-owner
+#   repo: your-repo

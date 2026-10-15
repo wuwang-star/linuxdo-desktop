@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, shell } from 'electron'
+import { app, BrowserWindow, Menu, session, Tray, nativeImage, shell } from 'electron'
 import { join, resolve } from 'node:path'
 import { registerIpc } from './ipc'
 import { USER_AGENT, fetchLatest } from './api/client'
@@ -6,8 +6,16 @@ import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
+import { focusMainWindow } from './win'
+import { initUpdater } from './updater'
 
 const AUTH_PROTOCOL = 'linuxdo-desktop'
+
+// 关窗 ≠ 退出：点 × 隐藏到托盘，托盘菜单「退出」（或系统退出）才真正退出
+let appIsQuitting = false
+app.on('before-quit', () => {
+  appIsQuitting = true
+})
 
 // DoH 命令行开关接线（保留）。注意：dns-over-https-mode/templates 是 Chrome 浏览器层开关，
 // Electron 44 的网络服务不消费（v44.0.0 源码核实：system_network_context_manager.cc 的
@@ -36,12 +44,7 @@ if (!app.requestSingleInstanceLock()) {
         if (!handleAuthCallbackUrl(arg)) handleConnectCallbackUrl(arg)
       }
     }
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (!win.isDestroyed()) {
-        if (win.isMinimized()) win.restore()
-        win.focus()
-      }
-    }
+    focusMainWindow()
   })
 
   // 注册自定义协议（dev 模式下把入口路径一并写进注册表）
@@ -99,6 +102,40 @@ app.whenReady().then(() => {
       }, 2000)
     })
   }
+
+  // 托盘常驻：图标 dev 态取 build/，打包态取资源目录（electron-builder extraResources 复制）
+  const trayIconPath = app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '../../build/icon.png')
+  const trayImage = nativeImage.createFromPath(trayIconPath)
+  const tray = new Tray(process.platform === 'win32' ? trayImage.resize({ width: 16, height: 16 }) : trayImage)
+  tray.setToolTip('LinuxDo Desktop')
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: '显示主窗', click: () => focusMainWindow() },
+      { type: 'separator' },
+      {
+        label: '退出',
+        click: () => {
+          appIsQuitting = true
+          app.quit()
+        }
+      }
+    ])
+  )
+  // Windows 左键单击托盘图标恢复窗口（右键弹菜单）
+  tray.on('click', () => focusMainWindow())
+
+  // 点 × 隐藏到托盘而非退出；托盘「退出」/before-quit 置位后放行
+  win.on('close', (e) => {
+    if (!appIsQuitting) {
+      e.preventDefault()
+      win.hide()
+    }
+  })
+
+  // 自动更新：仅打包态启用，publish 未配置/失败一律静默
+  initUpdater()
 
   // API 自检模式：用 Electron 网络栈实测 linux.do 连通性（CI/验收用）
   if (process.argv.includes('--api-probe')) {

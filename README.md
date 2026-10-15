@@ -33,6 +33,20 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 
 **当前 Electron 44 下 DoH 实际不生效**：`dns-over-https-mode` / `dns-over-https-templates` 是 Chrome 浏览器层命令行开关，Electron 的网络服务不消费（源码核实 v44.0.0 `system_network_context_manager.cc` 硬编码 DoH off），DNS 实际走系统解析。默认关闭、不假装生效；设置与诊断按钮保留，待后续采用本地 DoH 代理或 host-resolver-rules 方案时复用（另立任务）。
 
+## 打包与发版（Windows）
+
+```bash
+pnpm run dist        # 产物：dist/LinuxDo Desktop-<版本>-setup.exe（NSIS 双击即装，per-user）
+                     # 另有 dist/win-unpacked/（免安装目录，可直接 smoke："./LinuxDo Desktop.exe" --smoke）
+```
+
+- 首次构建会下载 NSIS/winCodeSign 工具链；失败/超时设镜像后重试：
+  `$env:ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"`（与 ELECTRON_MIRROR 并列）。
+- 图标：`build/icon.png`（512px，占位设计）由 `node build/gen-icon.mjs` 生成（纯 Node 标准库，零依赖）；正式设计定稿后直接替换该 png 重打，electron-builder 自动转 ico。
+- **发版三步**：改 `package.json` 版本号 → `pnpm run dist` → 到 GitHub Release 上传 `*-setup.exe` 与 `.blockmap`（repo 待定，见下）。
+- **自动更新**（electron-updater，GitHub Releases 通道）：仅打包态启用；`electron-builder.yml` 未配置 `publish` 时更新自动跳过（无 `app-update.yml` 即不初始化），一切错误静默。repo 就绪后填入 publish 段的 owner/repo 并重打安装包即接通；发版时上传新版产物，已装客户端启动 30s 后检查并提示重启安装。
+- 无代码签名证书：SmartScreen 会告警（风险已接受，自用不阻塞）；macOS 构建与签名后置另立任务。
+
 ## 安全边界
 
 - 登录凭据只存本机（safeStorage 加密），不参与任何同步/导出

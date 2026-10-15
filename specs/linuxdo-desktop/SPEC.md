@@ -53,3 +53,16 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **评审结论（源码级核实）**：`dns-over-https-mode`/`dns-over-https-templates` 是 Chrome 浏览器层开关（chrome/common/chrome_switches），Electron 的网络服务不消费——`shell/browser/net/system_network_context_manager.cc` 的 `OnNetworkServiceCreated` 硬编码 `SecureDnsMode::kOff`（v44.0.0 核实）。`src/main/index.ts` 的命令行开关接线为空转（保留以备上游支持），**DNS 实际走系统解析**。
 - 本任务交付：设置基建（`settings.ts`：默认 enabled=false、mode=secure、template=Cloudflare；模板必须 `https://` 合法 URL，规范化为 href、含空白拒绝，非法静默回退默认；`dohEnabled` 布尔归一防脏数据；配置原子写盘——临时文件 + rename，防半截 JSON 毁掉同文件 translate 配置）+ `diag:resolveDns` 诊断按钮（`resolveHost('linux.do')`，Electron 44 已移除 resolveDNS，用替代 API）。UI 顶部明示「实验功能：暂未生效」。
 - 真实现路径（另立任务）：本地 DoH 代理 + `host-resolver-rules` 映射，或上游 Electron 消费浏览器层开关后直接复用现有接线。届时 mode 语义：secure=仅加密解析（失败即断）；auto=加密优先、失败回退系统 DNS（DoH 域被墙环境切 auto）。
+
+### P2a 打包分发（2026-10-16）
+
+- **electron-builder 配置**（`electron-builder.yml`）：appId `com.linuxdo.desktop` / productName `LinuxDo Desktop`；`files: out/**`（electron-builder 自动追加 package.json 与生产依赖 node_modules）；asar 开；NSIS oneClick per-user；产物 `dist/LinuxDo Desktop-<ver>-setup.exe` + `win-unpacked/`。
+- **依赖归位**：vue/pinia/vue-router 移入 devDependencies（electron-vite 已整体打进 renderer 资产，进 `dependencies` 只会白白进 asar）；运行时依赖仅 `electron-updater`。
+- **图标**：`build/icon.png` 512px 占位（圆角靛蓝底+白 L+橙点），由 `build/gen-icon.mjs` 生成——纯 Node 标准库（zlib + 手写 CRC32，2×2 超采样），零依赖；替换 png 重打即可换正式图标。托盘/安装包共用；托盘图标 dev 取 `build/`、打包取 `resources/icon.png`（extraResources），Windows 下 resize 16px。
+- **踩坑记录**：`publish: never` 在 electron-builder 26 不是合法值——会去找名为 "never" 的 publisher 模块报 `Cannot find module for publisher "never"`。不想上传就整体省略 publish 键（本地无 GH_TOKEN 时本来就不上传）。
+- **自动更新降级链**（`src/main/updater.ts`）：dev 完全不启用；publish 未配置 → 打包产物无 `resources/app-update.yml`（已实测）→ existsSync 守卫直接不初始化；检查/下载失败 logger 关闭 + catch 全静默。启用方式：builder.yml 填 publish owner/repo 重打。行为：启动延迟 30s 单次检查，`update-downloaded` 弹原生通知，点击聚焦，重启即装。
+- **托盘与关窗语义**：`appIsQuitting` flag + `before-quit` 置位；点 × → `preventDefault + hide()` 驻留托盘，托盘菜单「退出」才真退。`win.ts focusMainWindow()` 为托盘点击/通知点击/second-instance 三处共用恢复+聚焦。
+- **原生通知**（`src/main/notify.ts`）：MessageBus push → 主进程 `Notification`；payload 字段防御式提取（`topic_id`/`post_number`/`data.topic_title`，与频道名同一校正点：未经登录态实测），缺 `topic_id` 降级为点击仅聚焦、不猜字段。点击 → `notification:open` IPC → renderer `router.push('/t/<id>?pn=<n>')`（TopicView ?pn 直达楼层）。
+- **协议注册（安装态）**：`index.ts` 的 `process.defaultApp` 分支仅 dev 生效；打包态 `setAsDefaultProtocolClient` 默认参数（`"...\LinuxDo Desktop.exe" "%1"`），NSIS per-user 下预期有效，真机安装验证待人工。
+- **风险接受**：Windows 无签名证书，SmartScreen 告警不阻塞自用；macOS 构建签名后置另立任务。发版流程见 README「打包与发版」。
+- **待真机人工验收**：双击安装（应用名/图标/SmartScreen）、`linuxdo-desktop://` 回调、托盘交互（×隐藏/恢复/退出）、原生通知点击跳转、AC5 升级链路（repo 就绪后）。

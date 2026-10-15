@@ -47,6 +47,17 @@ const api = {
     return () => {
       ipcRenderer.removeListener('notification:push', listener)
     }
+  },
+  // 原生通知点击（主进程已聚焦主窗）：renderer 负责路由跳转，返回解绑函数
+  onNotificationOpen: (cb: (payload: { topicId: number; postNumber: number | null }) => void) => {
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      payload: { topicId: number; postNumber: number | null }
+    ): void => cb(payload)
+    ipcRenderer.on('notification:open', listener)
+    return () => {
+      ipcRenderer.removeListener('notification:open', listener)
+    }
   }
 }
 
