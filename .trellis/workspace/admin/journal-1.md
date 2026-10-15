@@ -281,3 +281,34 @@ brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+
 - 给 GitHub repo（owner/repo）→ 填 builder.yml publish 接通 AC5 升级链路
 - 登录「系统浏览器读登录态」方案 A/B/C 待用户选（B=_t 半自动回填推荐）
 - 排队：settings-center（先调研 FluxDO/ALDR 设置结构）；DoH 真实现另立任务
+
+
+## Session 10: 设置中心（七分类+设计 tokens）+ DoH 默认端点
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-settings-center
+**Branch**: `master`
+
+### Summary
+
+目标推进到排队任务：zread 调研 FluxDO（lib/pages 设置分页面：appearance/preferences/network(doh/proxy/ratelimit)/notifications/data_management/app_logs/about）与 ALDR（偏好域 ~100 字段：模式/图像/主题/字体/外观/布局/性能/网络/交互/快捷键/过滤器+组合导出省凭据），research.md 存档。首轮三分类交付后用户两次加码：「参考项目设置页有各种分类」→ 扩七分类（外观/阅读占位说明卡+通知真实开关+日志=诊断卡迁入）；「DoH 设置太简陋，框架定了设计呢」→ styles.css 建 CSS tokens（色彩/间距/圆角/字阶+brand 兼容别名）+ 组件化表单（field-row/switch/segmented/banner），设置中心为设计基准页，DoH 组卡片行重做。通知开关补上 p2a 原生通知无开关的缺口（settings 持久化+notify.ts 即时生效）。用户指定 DoH 默认模板 edge.1molchuan.top/linuxdo（自建端点，预设首位+非法回退同步，旧用户存值优先）。全流程按轻量化规则：无评审子智能体，收尾仅内联 typecheck+smoke。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4face00` | feat: 设置中心七分类+通知开关+设计 tokens+DoH 默认端点 edge.1molchuan.top |
+
+### Testing
+
+- [OK] typecheck 0 错（实现每步+收尾复跑）；smoke SMOKE_OK；版本常量 0.1.0 注入 chunk 已核实
+- [待人工] AC2 通知开关关→push 不弹；AC3 日志五列；AC4 七分类切换+占位卡；AC6 tokens 视觉/dark 对比度
+
+### Status
+
+[进行中] 代码交付，AC2–AC4/AC6 待 dev 真机人工验收
+
+### Next Steps
+
+- 用户 dev 验收设置中心与视觉；此前积压：P1 AC1–3、P2a 真机安装/托盘/协议回调、GitHub repo（AC5）、登录方案 A/B/C、DoH 真实现立项
+- 后续页面（登录/列表/阅读）吃 tokens 的设计统一任务待排
