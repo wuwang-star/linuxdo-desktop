@@ -3,6 +3,29 @@ import type { DiscoursePost, DiscourseTopic } from '../../../main/api/client'
 
 const CHUNK = 20
 const progressKey = (topicId: number): string => `ldd:progress:${topicId}`
+const LIKE_ACTION = 2
+
+/** 解析 post 的点赞状态（Discourse actions_summary 中 id=2 为 like） */
+export function likeInfo(post: DiscoursePost): { count: number; acted: boolean } {
+  const a = post.actions_summary?.find((x) => x.id === LIKE_ACTION)
+  return { count: a?.count ?? 0, acted: a?.acted === true }
+}
+
+/** 本地更新点赞状态（乐观 UI） */
+function withLike(post: DiscoursePost, liked: boolean, delta: number): DiscoursePost {
+  const summary = (post.actions_summary ?? []).map((s) => ({ ...s }))
+  const idx = summary.findIndex((s) => s.id === LIKE_ACTION)
+  if (idx >= 0) {
+    summary[idx] = {
+      ...summary[idx],
+      count: Math.max(0, (summary[idx].count ?? 0) + delta),
+      acted: liked
+    }
+  } else {
+    summary.push({ id: LIKE_ACTION, count: Math.max(0, delta), acted: liked })
+  }
+  return { ...post, actions_summary: summary }
+}
 
 export interface TopicState {
   topic: DiscourseTopic | null
@@ -148,6 +171,51 @@ export const useTopicStore = defineStore('topic', {
     },
     readProgress(topicId: number): number {
       return Number(localStorage.getItem(progressKey(topicId)) ?? '0')
+    },
+    /** 回帖：成功后把新楼追加到流末尾并跳转过去 */
+    async sendReply(raw: string, replyTo?: number): Promise<boolean> {
+      if (!this.topic || !raw.trim()) return false
+      try {
+        const post = await window.api.createReply(this.topic.id, raw.trim(), replyTo)
+        if (!this.postNumberToId.has(post.post_number)) {
+          this.stream.push(post.id)
+          this.ingestPosts([post])
+          this.maxLoadedIdx = this.stream.length - 1
+          this.pendingJump = post.post_number
+        }
+        return true
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : String(e)
+        return false
+      }
+    },
+    /** 点赞/取消点赞（乐观更新，失败回滚并提示） */
+    async toggleLike(postId: number): Promise<void> {
+      const post = this.postsById.get(postId)
+      if (!post) return
+      const info = likeInfo(post)
+      try {
+        if (info.acted) {
+          await window.api.unlikePost(postId)
+          this.postsById.set(postId, withLike(post, false, -1))
+        } else {
+          await window.api.likePost(postId)
+          this.postsById.set(postId, withLike(post, true, 1))
+        }
+      } catch (e) {
+        this.postsById.set(postId, post)
+        this.error = e instanceof Error ? e.message : String(e)
+      }
+    },
+    /** 收藏主题（P1 仅添加） */
+    async bookmark(): Promise<void> {
+      if (!this.topic || this.topic.bookmarked) return
+      try {
+        await window.api.bookmarkTopic(this.topic.id)
+        this.topic = { ...this.topic, bookmarked: true }
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : String(e)
+      }
     }
   }
 })

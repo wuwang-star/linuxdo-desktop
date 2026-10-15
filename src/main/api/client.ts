@@ -81,6 +81,8 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
     try {
       const res = await net.fetch(url, {
         method: opts.method ?? 'GET',
+        // 关键：主进程无 origin，same-origin 默认值不会带 cookie，必须显式 include
+        credentials: 'include',
         headers: {
           Accept: 'application/json',
           'User-Agent': USER_AGENT,
@@ -88,7 +90,7 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
           ...authHeadersProvider(),
           ...opts.headers
         },
-        body: opts.body === undefined ? undefined : JSON.stringify(opts.body)
+        body: opts.body === undefined ? undefined : opts.body instanceof URLSearchParams ? opts.body : JSON.stringify(opts.body)
       })
       const ms = Date.now() - started
       pushDiag({ time: new Date().toISOString(), method: opts.method ?? 'GET', url, status: res.status, ms })
@@ -153,6 +155,8 @@ export interface DiscoursePost {
   avatar_template: string
   cooked: string
   reply_to_post_number?: number | null
+  /** 点赞等操作摘要：id=2 为 like；acted 表示当前用户已操作 */
+  actions_summary?: Array<{ id: number; count?: number; acted?: boolean; can_undo?: boolean }>
   reply_count?: number
   created_at: string
   like_count?: number
@@ -178,6 +182,9 @@ export interface DiscourseTopic {
     stream: number[]
   }
   suggested_topics?: DiscourseTopicLite[]
+  bookmarked?: boolean
+  last_read_post_number?: number
+  highest_post_number?: number
 }
 
 export interface TopicListResponse {
@@ -242,3 +249,126 @@ export function fetchPostsByIds(topicId: number, postIds: number[]): Promise<Pos
 export function fetchCurrentUser(): Promise<CurrentUserResponse> {
   return discourseRequest<CurrentUserResponse>('/session/current.json')
 }
+
+// ---------- CSRF 与写操作（cookie 会话） ----------
+
+let csrfToken: string | null = null
+
+export async function ensureCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken
+  const res = await discourseRequest<{ csrf: string }>('/session/csrf.json')
+  csrfToken = res.csrf
+  return csrfToken
+}
+
+/**
+ * 写操作统一入口：form-encoded + X-CSRF-Token。
+ * CSRF 过期（403）时刷新 token 自动重试一次。
+ */
+async function writeRequest<T>(
+  method: 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  form: Record<string, string | number | boolean | undefined>
+): Promise<T> {
+  const doCall = async (): Promise<T> => {
+    const token = await ensureCsrfToken()
+    const body = new URLSearchParams()
+    for (const [k, v] of Object.entries(form)) {
+      if (v !== undefined) body.set(k, String(v))
+    }
+    return discourseRequest<T>(path, {
+      method,
+      headers: {
+        'X-CSRF-Token': token,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body
+    })
+  }
+  try {
+    return await doCall()
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('403')) {
+      csrfToken = null
+      return doCall()
+    }
+    throw err
+  }
+}
+
+/** 回帖（可指定回复楼层）；成功返回新建的 post 对象 */
+export function createReply(
+  topicId: number,
+  raw: string,
+  replyToPostNumber?: number
+): Promise<DiscoursePost> {
+  return writeRequest<DiscoursePost>('POST', '/posts.json', {
+    topic_id: topicId,
+    raw,
+    reply_to_post_number: replyToPostNumber
+  })
+}
+
+const LIKE_ACTION_TYPE = 2
+
+/** 点赞（post_action_type_id=2） */
+export function likePost(postId: number): Promise<unknown> {
+  return writeRequest<unknown>('POST', '/post_actions', {
+    id: postId,
+    post_action_type_id: LIKE_ACTION_TYPE,
+    flag_topic: false
+  })
+}
+
+/** 取消点赞 */
+export function unlikePost(postId: number): Promise<unknown> {
+  return writeRequest<unknown>('DELETE', `/post_actions/${postId}`, {
+    post_action_type_id: LIKE_ACTION_TYPE
+  })
+}
+
+/** 收藏主题（P1 只做添加；移除需要 bookmark id，留待后续） */
+export function bookmarkTopic(topicId: number): Promise<unknown> {
+  return writeRequest<unknown>('POST', '/bookmarks', {
+    bookmarkable_id: topicId,
+    bookmarkable_type: 'Topic'
+  })
+}
+
+// ---------- 通知 ----------
+
+export interface DiscourseNotification {
+  id: number
+  notification_type: number
+  read: boolean
+  high_priority: boolean
+  created_at: string
+  post_number: number
+  topic_id: number
+  slug: string
+  fancy_title?: string
+  data?: {
+    topic_title?: string
+    original_username?: string
+    display_username?: string
+    revision_number?: number
+  }
+}
+
+export interface NotificationsResponse {
+  notifications: DiscourseNotification[]
+  total_rows_notifications?: number
+  seen_notification_id?: number
+  load_more_notifications?: string
+}
+
+export function fetchNotifications(page = 1): Promise<NotificationsResponse> {
+  return discourseRequest<NotificationsResponse>('/notifications.json', {
+    query: { recent: true, page, limit: 30 }
+  })
+}
+
+export function markNotificationsRead(): Promise<unknown> {
+  return writeRequest<unknown>('PUT', '/notifications/mark-read', {})
+}
+export const TAIL_MARKER_888 = 1

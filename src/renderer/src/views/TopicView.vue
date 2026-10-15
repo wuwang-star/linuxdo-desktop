@@ -9,6 +9,13 @@ const store = useTopicStore()
 const scroller = ref<HTMLElement | null>(null)
 const topicId = computed(() => Number(route.params.id))
 
+// ---- 回复编辑器 ----
+const composerOpen = ref(false)
+const composerText = ref('')
+const replyingToFloor = ref<number | null>(null)
+const sending = ref(false)
+const bookmarking = ref(false)
+
 const total = computed(() => store.stream.length || store.topic?.posts_count || 0)
 const timelineTicks = computed(() => {
   const n = total.value
@@ -70,8 +77,37 @@ watch(
   () => void consumePendingJump()
 )
 
+function openComposer(replyToFloor: number | null): void {
+  replyingToFloor.value = replyToFloor
+  composerOpen.value = true
+}
+
+async function sendReply(): Promise<void> {
+  if (!composerText.value.trim() || sending.value) return
+  sending.value = true
+  store.error = ''
+  const ok = await store.sendReply(composerText.value, replyingToFloor.value ?? undefined)
+  sending.value = false
+  if (ok) {
+    composerText.value = ''
+    composerOpen.value = false
+    replyingToFloor.value = null
+  }
+}
+
+async function doBookmark(): Promise<void> {
+  if (bookmarking.value) return
+  bookmarking.value = true
+  await store.bookmark()
+  bookmarking.value = false
+}
+
 onMounted(() => {
-  void store.open(topicId.value)
+  void store.open(topicId.value).then(() => {
+    // 通知跳转：?pn=直达楼层
+    const pn = Number(route.query.pn ?? 0)
+    if (pn > 0) void store.jumpTo(pn)
+  })
   scroller.value?.addEventListener('scroll', onScroll, { passive: true })
   void nextTick().then(() => void consumePendingJump())
 })
@@ -90,21 +126,32 @@ function go(postNumber: number): void {
   <div class="topic-page">
     <div ref="scroller" class="topic-scroller">
       <div v-if="store.loading" class="loading">加载中…</div>
-      <div v-else-if="store.error" class="error">{{ store.error }}</div>
+      <div v-else-if="store.error && !store.topic" class="error">{{ store.error }}</div>
       <template v-else-if="store.topic">
         <h1 class="topic-title-h1">{{ store.topic.title }}</h1>
         <div class="topic-sub">
-          共 {{ store.topic.posts_count }} 楼 · 已读至 #{{ store.readProgress(topicId) || 1 }}
+          <span>共 {{ store.topic.posts_count }} 楼 · 已读至 #{{ store.readProgress(topicId) || 1 }}</span>
           <label class="only-op">
             <input type="checkbox" v-model="store.onlyOp" />
             只看楼主
           </label>
+          <button class="act" :class="{ acted: store.topic.bookmarked }" :disabled="bookmarking || store.topic.bookmarked" @click="doBookmark">
+            {{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}
+          </button>
           <span v-if="store.minLoadedIdx > 0" class="hint">（向上滚动加载更早楼层）</span>
         </div>
+        <div v-if="store.error" class="error-inline">{{ store.error }}</div>
 
         <div v-if="store.loadingOlder" class="loading">加载更早楼层…</div>
 
-        <PostItem v-for="p in store.visiblePosts" :key="p.id" :post="p" @jump="go" />
+        <PostItem
+          v-for="p in store.visiblePosts"
+          :key="p.id"
+          :post="p"
+          @jump="go"
+          @like="(id) => store.toggleLike(id)"
+          @reply="openComposer"
+        />
 
         <div v-if="store.visiblePosts.length === 0" class="loading">没有可见楼层</div>
       </template>
@@ -122,5 +169,27 @@ function go(postNumber: number): void {
         {{ n }}
       </button>
     </aside>
+
+    <!-- 回复编辑器 -->
+    <div v-if="composerOpen" class="composer">
+      <div class="composer-head">
+        <span v-if="replyingToFloor">回复 #{{ replyingToFloor }}</span>
+        <span v-else>回复主题</span>
+        <button class="act" @click="composerOpen = false; replyingToFloor = null">收起</button>
+      </div>
+      <textarea
+        v-model="composerText"
+        placeholder="支持 Markdown…（Ctrl+Enter 发送）"
+        @keydown.ctrl.enter.prevent="sendReply"
+        @keydown.meta.enter.prevent="sendReply"
+      ></textarea>
+      <div class="composer-foot">
+        <span class="hint">发帖走原站 API，以当前登录账号提交</span>
+        <button class="primary" :disabled="sending || !composerText.trim()" @click="sendReply">
+          {{ sending ? '发送中…' : '发送' }}
+        </button>
+      </div>
+    </div>
+    <button v-else class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
   </div>
 </template>

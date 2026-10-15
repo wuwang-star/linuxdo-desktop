@@ -1,7 +1,8 @@
 import { app, BrowserWindow, session, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpc } from './ipc'
-import { USER_AGENT } from './api/client'
+import { USER_AGENT, fetchLatest } from './api/client'
+import { probeP1 } from './api/probe'
 
 app.whenReady().then(() => {
   // 浏览器级 UA（去 Electron 痕迹），登录窗口与渲染进程共用默认 session
@@ -48,24 +49,24 @@ app.whenReady().then(() => {
 
   // API 自检模式：用 Electron 网络栈实测 linux.do 连通性（CI/验收用）
   if (process.argv.includes('--api-probe')) {
-    void import('./api/client')
-      .then(async ({ fetchLatest }) => {
+    void (async () => {
+      try {
+        const res = await fetchLatest()
+        const n = res.topic_list?.topics?.length ?? 0
+        console.log(`API_PROBE_OK topics=${n}`)
+        if (n > 0) console.log(`API_PROBE_FIRST=${res.topic_list.topics[0]?.title ?? ''}`)
         try {
-          const res = await fetchLatest()
-          const n = res.topic_list?.topics?.length ?? 0
-          console.log(`API_PROBE_OK topics=${n}`)
-          if (n > 0) console.log(`API_PROBE_FIRST=${res.topic_list.topics[0]?.title ?? ''}`)
+          await probeP1()
         } catch (e) {
-          console.error(`API_PROBE_FAIL ${e instanceof Error ? e.message : String(e)}`)
-          process.exitCode = 1
-        } finally {
-          app.quit()
+          console.log(`P1_PROBE_SKIP ${e instanceof Error ? e.message : String(e)}`)
         }
-      })
-      .catch((e) => {
-        console.error(`API_PROBE_FAIL ${String(e)}`)
+      } catch (e) {
+        console.error(`API_PROBE_FAIL ${e instanceof Error ? e.message : String(e)}`)
+        process.exitCode = 1
+      } finally {
         app.quit()
-      })
+      }
+    })()
   }
 })
 

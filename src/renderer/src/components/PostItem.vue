@@ -1,16 +1,53 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { DiscoursePost } from '../../../main/api/client'
 import { avatarUrl, relTime } from '../utils/format'
+import { likeInfo } from '../stores/topic'
 
 const props = defineProps<{ post: DiscoursePost }>()
-const emit = defineEmits<{ (e: 'jump', postNumber: number): void }>()
+const emit = defineEmits<{
+  (e: 'jump', postNumber: number): void
+  (e: 'like', postId: number): void
+  (e: 'reply', postNumber: number): void
+}>()
 
+const like = computed(() => likeInfo(props.post))
 const floor = computed(() => `#${props.post.post_number}`)
+
+// ---- 翻译（localStorage 缓存 + 按需调用） ----
+const trKey = computed(() => `ldd:tr:${props.post.id}`)
+const translation = ref<string>(localStorage.getItem(trKey.value) ?? '')
+const trLoading = ref(false)
+const trError = ref('')
+const trVisible = ref(false)
+
+async function translate(): Promise<void> {
+  if (translation.value) {
+    trVisible.value = !trVisible.value
+    return
+  }
+  trVisible.value = true
+  if (trLoading.value) return
+  trLoading.value = true
+  trError.value = ''
+  try {
+    const el = document.getElementById(`cooked-${props.post.id}`)
+    const text = (el?.textContent ?? '').trim()
+    if (!text) throw new Error('没有可翻译的文本')
+    const out = await window.api.translatePost(props.post.id, text)
+    translation.value = out
+    localStorage.setItem(trKey.value, out)
+  } catch (e) {
+    trError.value = e instanceof Error ? e.message : String(e)
+    trVisible.value = false
+  } finally {
+    trLoading.value = false
+  }
+}
 </script>
 
 <template>
-  <article class="post" :data-post-number="post.post_number" :id="`post-${post.post_number}`">
+  <article class="post" :id="`post-${post.post_number}`">
     <img class="avatar" :src="avatarUrl(post.avatar_template)" alt="" loading="lazy" />
     <div class="post-body">
       <header class="post-head">
@@ -22,8 +59,23 @@ const floor = computed(() => `#${props.post.post_number}`)
         <span class="time">{{ relTime(post.created_at) }}</span>
       </header>
       <!-- cooked 为 Discourse 服务端已净化的 HTML -->
-      <div class="cooked" v-html="post.cooked"></div>
-      <footer v-if="post.like_count" class="post-foot">❤ {{ post.like_count }}</footer>
+      <div class="cooked" :id="`cooked-${post.id}`" v-html="post.cooked"></div>
+
+      <div v-if="translation && trVisible" class="tr-block">
+        <div class="tr-label">译文</div>
+        <div class="tr-text">{{ translation }}</div>
+      </div>
+
+      <footer class="post-actions">
+        <button class="act" :class="{ acted: like.acted }" @click="emit('like', post.id)">
+          {{ like.acted ? '❤' : '🤍' }} {{ like.count || '' }}
+        </button>
+        <button class="act" @click="emit('reply', post.post_number)">💬 回复</button>
+        <button class="act" :disabled="trLoading" @click="translate">
+          {{ trLoading ? '翻译中…' : translation ? (trVisible ? '隐藏译文' : '显示译文') : '译' }}
+        </button>
+        <span v-if="trError" class="tr-error">{{ trError }}</span>
+      </footer>
     </div>
   </article>
 </template>

@@ -2,15 +2,48 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import type { DiagEntry } from '../../../main/api/client'
+import type { TranslateConfig } from '../../../main/api/settings'
 
 const auth = useAuthStore()
 const apiKey = ref('')
 const apiUsername = ref('')
 const diag = ref<DiagEntry[]>([])
 
+// ---- 翻译服务配置 ----
+const trBaseUrl = ref('')
+const trModel = ref('')
+const trKey = ref('')
+const trSaving = ref(false)
+const trMessage = ref('')
+const trConfigured = ref(false)
+
+async function saveTranslate(): Promise<void> {
+  if (trSaving.value) return
+  trSaving.value = true
+  trMessage.value = ''
+  try {
+    const cfg: TranslateConfig = await window.api.setTranslateConfig(
+      trBaseUrl.value,
+      trModel.value,
+      trKey.value ? trKey.value : undefined
+    )
+    trConfigured.value = Boolean(cfg.baseUrl) && cfg.hasKey
+    trKey.value = ''
+    trMessage.value = '翻译服务配置已保存'
+  } catch (e) {
+    trMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    trSaving.value = false
+  }
+}
+
 onMounted(async () => {
   await auth.refresh()
   diag.value = await window.api.diagnostics()
+  const cfg = await window.api.getTranslateConfig()
+  trBaseUrl.value = cfg.baseUrl
+  trModel.value = cfg.model
+  trConfigured.value = Boolean(cfg.baseUrl) && cfg.hasKey
 })
 </script>
 
@@ -40,6 +73,23 @@ onMounted(async () => {
         </button>
         <button v-if="auth.status?.apiKey" @click="auth.clearApiKey()">清除</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>翻译服务（OpenAI 兼容）</h2>
+      <p class="tip">
+        用于楼内「译」按钮的双语翻译。填任意 OpenAI 兼容端点（如 https://api.openai.com/v1 或自建网关）。
+        API Key 以系统加密存储在本机。状态：{{ trConfigured ? '✅ 已配置' : '未配置' }}
+      </p>
+      <input v-model="trBaseUrl" placeholder="Base URL，如 https://api.openai.com/v1" />
+      <input v-model="trModel" placeholder="模型，如 gpt-4o-mini" />
+      <input v-model="trKey" placeholder="API Key（留空表示不修改）" type="password" />
+      <div class="row">
+        <button class="primary" :disabled="trSaving || !trBaseUrl || !trModel" @click="saveTranslate">
+          {{ trSaving ? '保存中…' : '保存' }}
+        </button>
+      </div>
+      <p v-if="trMessage" class="message">{{ trMessage }}</p>
     </section>
 
     <section class="card">

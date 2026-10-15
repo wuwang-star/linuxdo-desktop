@@ -1,0 +1,1 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "架构不变量：网络层在主进程、UA/退避、凭据 safeStorage、私有端点需抓包"}

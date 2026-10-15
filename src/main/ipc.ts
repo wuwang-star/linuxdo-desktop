@@ -5,9 +5,17 @@ import {
   fetchCategoryTopics,
   fetchTopic,
   fetchPostsByIds,
+  createReply,
+  likePost,
+  unlikePost,
+  bookmarkTopic,
+  fetchNotifications,
+  markNotificationsRead,
   getDiag
 } from './api/client'
 import { initAuth, loginStatus, openCookieLogin, setApiKey, clearApiKey } from './api/auth'
+import { getTranslateConfig, setTranslateConfig } from './api/settings'
+import { translatePostText } from './api/translate'
 
 export function registerIpc(): void {
   initAuth()
@@ -33,4 +41,21 @@ export function registerIpc(): void {
     return true
   })
   ipcMain.handle('diag:list', () => getDiag())
+
+  // ---------- P1：写操作 / 通知 / 翻译 ----------
+  ipcMain.handle('topic:reply', (_e, topicId: number, raw: string, replyTo?: number) =>
+    createReply(topicId, raw, replyTo)
+  )
+  ipcMain.handle('post:like', (_e, postId: number) => likePost(postId))
+  ipcMain.handle('post:unlike', (_e, postId: number) => unlikePost(postId))
+  ipcMain.handle('topic:bookmark', (_e, topicId: number) => bookmarkTopic(topicId))
+  ipcMain.handle('notifications:list', (_e, page: number) => fetchNotifications(page ?? 1))
+  ipcMain.handle('notifications:markRead', () => markNotificationsRead())
+  ipcMain.handle('translate:post', (_e, postId: number, text: string) =>
+    translatePostText(postId, text)
+  )
+  ipcMain.handle('settings:getTranslate', () => getTranslateConfig())
+  ipcMain.handle('settings:setTranslate', (_e, baseUrl: string, model: string, key?: string) => {
+    return setTranslateConfig(baseUrl, model, key)
+  })
 }
