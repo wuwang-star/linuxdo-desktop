@@ -123,3 +123,33 @@ User API Key 官方流程完整实现（内嵌授权窗口拦截 linuxdo-desktop
 ### Next Steps
 
 - 用户 dev 实测方式一授权与重启留存；P2 继续
+
+
+## Session 5: 授权页支持系统浏览器复用登录态
+<!-- trellis-session: v=2 fp=f2d298f076e76f1f -->
+
+**Date**: 2026-10-15
+**Task**: 授权页支持系统浏览器复用登录态
+**Branch**: `master`
+
+### Summary
+
+「一键申请授权」默认改为 shell.openExternal 打开系统默认浏览器——授权页直接携带用户浏览器里的 linux.do 登录态，点一下授权即可；回传经 linuxdo-desktop:// 自定义协议（app.setAsDefaultProtocolClient，dev 模式写入 electron.exe+入口路径），OS 拉起的第二实例由 requestSingleInstanceLock + second-instance 事件转发给持有 RSA 私钥的运行实例解密落存；macOS 走 open-url。内嵌窗口授权保留为备选（无浏览器环境时）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `99dec0e` | feat: 授权页支持系统浏览器打开 —— 复用浏览器 linux.do 登录态；linuxdo-desktop:// 协议注册 + 单实例锁转发回调（second-instance/open-url），内嵌窗口授权保留为备选 |
+
+### Testing
+
+- [OK] typecheck 0 错；build 0 错
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户 dev 实测：重启 dev → 设置页 → 系统浏览器授权 → 浏览器点授权 → 应用自动收到回调显示成功 → 重启免登录
