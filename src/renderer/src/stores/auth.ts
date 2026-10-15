@@ -20,12 +20,37 @@ export const useAuthStore = defineStore('auth', {
       this.message = ''
       try {
         const ok = await window.api.openLogin()
-        this.message = ok ? '登录成功' : '登录窗口已关闭（未检测到登录态）'
+        this.message = ok ? '登录成功（cookie 已落盘）' : '登录窗口已关闭（未检测到登录态）'
       } catch (e) {
         this.message = e instanceof Error ? e.message : String(e)
       } finally {
         this.loading = false
         await this.refresh()
+      }
+    },
+    async startUserApiKey() {
+      this.loading = true
+      this.message = ''
+      try {
+        const res = await window.api.openUserApiKeyLogin()
+        this.message = res.ok
+          ? `授权成功${res.username ? `：@${res.username}（API Key 已加密保存，重启免登录）` : '（API Key 已加密保存）'}`
+          : `授权失败：${res.error ?? '未知错误'}`
+      } catch (e) {
+        this.message = e instanceof Error ? e.message : String(e)
+      } finally {
+        this.loading = false
+        await this.refresh()
+      }
+    },
+    async pasteTCookie(value: string) {
+      if (!value.trim()) return
+      this.loading = true
+      try {
+        this.status = await window.api.setTCookie(value)
+        this.message = this.status.user ? 'cookie 注入成功' : 'cookie 已注入，但未识别到登录态（值可能已过期）'
+      } finally {
+        this.loading = false
       }
     },
     async saveApiKey(key: string, username: string) {

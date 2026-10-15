@@ -13,7 +13,15 @@ import {
   markNotificationsRead,
   getDiag
 } from './api/client'
-import { initAuth, loginStatus, openCookieLogin, setApiKey, clearApiKey } from './api/auth'
+import {
+  initAuth,
+  loginStatus,
+  openCookieLogin,
+  openUserApiKeyLogin,
+  setApiKey,
+  clearApiKey,
+  setTCookieManually
+} from './api/auth'
 import { getTranslateConfig, setTranslateConfig } from './api/settings'
 import { translatePostText } from './api/translate'
 
@@ -32,6 +40,8 @@ export function registerIpc(): void {
   )
   ipcMain.handle('auth:status', () => loginStatus())
   ipcMain.handle('auth:openLogin', () => openCookieLogin())
+  ipcMain.handle('auth:openUserApiKeyLogin', () => openUserApiKeyLogin())
+  ipcMain.handle('auth:setTCookie', (_e, value: string) => setTCookieManually(value ?? ''))
   ipcMain.handle('auth:setApiKey', (_e, key: string, username: string) => {
     setApiKey(key, username)
     return loginStatus()

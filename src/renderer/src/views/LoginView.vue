@@ -37,6 +37,15 @@ async function saveTranslate(): Promise<void> {
   }
 }
 
+// ---- 登录方式 ----
+const tCookie = ref('')
+
+async function pasteCookie(): Promise<void> {
+  if (!tCookie.value.trim() || auth.loading) return
+  await auth.pasteTCookie(tCookie.value)
+  tCookie.value = ''
+}
+
 onMounted(async () => {
   await auth.refresh()
   diag.value = await window.api.diagnostics()
@@ -55,15 +64,40 @@ onMounted(async () => {
       <p v-else>未登录（游客可浏览公开内容）</p>
       <ul class="status-list">
         <li>Cookie 会话：{{ auth.status?.cookie ? '✅' : '—' }}</li>
-        <li>User API Key：{{ auth.status?.apiKey ? '✅' : '—' }}</li>
+        <li>
+          API Key：{{ auth.status?.apiKey ? `✅（${auth.status.apiKeyKind === 'user-api-key' ? '用户授权' : '手动填入'}）` : '—' }}
+        </li>
       </ul>
-      <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口（推荐）</button>
-      <p class="tip">登录窗口是真实浏览器环境：账号密码 / OAuth / Cloudflare 验证都在其中完成，成功后自动关闭。</p>
       <p v-if="auth.message" class="message">{{ auth.message }}</p>
     </section>
 
     <section class="card">
-      <h2>User API Key（可选）</h2>
+      <h2>方式一：授权 User API Key（推荐，重启免登录）</h2>
+      <p class="tip">打开 linux.do 授权页，点一次「授权」即可。Key 经系统加密长期保存在本机，不依赖浏览器 cookie，站点可随时撤销。</p>
+      <div class="row">
+        <button class="primary" :disabled="auth.loading" @click="auth.startUserApiKey()">一键申请授权</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>方式二：浏览器登录（支持 Connect / OAuth / 2FA）</h2>
+      <p class="tip">弹出的窗口就是真实浏览器，照常登录即可；检测到登录态后自动关闭并落盘 cookie。</p>
+      <div class="row">
+        <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>方式三：粘贴 _t cookie（测试用，秒切会话）</h2>
+      <p class="tip">浏览器 F12 → Application → Cookies → linux.do → 复制 <code>_t</code> 的值粘贴到这里。</p>
+      <div class="row">
+        <input v-model="tCookie" placeholder="_t cookie 值" style="flex:1" />
+        <button class="primary" :disabled="auth.loading || !tCookie.trim()" @click="pasteCookie">注入</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>方式四：手动填 Api-Key（持有现成 Key 时）</h2>
       <p class="tip">若你持有 linux.do 的 User API Key，可在此填入；凭据将以系统加密存储在本机。</p>
       <input v-model="apiUsername" placeholder="用户名（如 neo）" />
       <input v-model="apiKey" placeholder="API Key" type="password" />
