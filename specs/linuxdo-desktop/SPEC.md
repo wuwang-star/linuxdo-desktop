@@ -66,3 +66,13 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **协议注册（安装态）**：`index.ts` 的 `process.defaultApp` 分支仅 dev 生效；打包态 `setAsDefaultProtocolClient` 默认参数（`"...\LinuxDo Desktop.exe" "%1"`），NSIS per-user 下预期有效，真机安装验证待人工。
 - **风险接受**：Windows 无签名证书，SmartScreen 告警不阻塞自用；macOS 构建签名后置另立任务。发版流程见 README「打包与发版」。
 - **待真机人工验收**：双击安装（应用名/图标/SmartScreen）、`linuxdo-desktop://` 回调、托盘交互（×隐藏/恢复/退出）、原生通知点击跳转、AC5 升级链路（repo 就绪后）。
+
+### 伴生扩展桥接（P2，2026-10-16，方案 C 定稿）
+
+- **背景**：系统浏览器 cookie 沙箱化，应用无法直读；linux.do Connect（OIDC）仅身份联邦无论坛会话权限。用户选定方案 C——伴生 MV3 扩展作合规桥：「Edge 登录一次，应用自动跟随」。Chrome 商店分发、`_t` 以外 cookie、扩展自动更新均 Out of Scope。
+- **扩展**（仓库根 `extension/`，零构建零依赖）：manifest MV3，permissions `cookies`+`storage`，host_permissions `*://*.linux.do/*` 与 `http://127.0.0.1:17366/*`。`background.js` service worker：`cookies.onChanged`（domain 匹配 `(^|\.)linux\.do$` 且 name=_t、非 removed）→ 1.5s 防抖 → 带配对码 POST /ingest；MV3 SW 可休眠，事件自动唤醒，无常驻需求。popup：配对码输入（存 `chrome.storage.local`，只存码不存 cookie）+ 立即推送（runtime message 走同一函数）+ 结果摘要。
+- **接收口**（`src/main/api/bridge.ts`）：`node:http` server 绑 `127.0.0.1:17366`（与 connect.ts 的 17365 回环先例并列，独立端口防冲突）。`POST /ingest`，请求体 `{"pairCode":"123456","tCookie":"..."}`；码错 401、缺字段 400、方法/路径错 404、体超 16KB 413；合法 → `setTCookieManually(tCookie)`（复用 auth.ts 手动粘贴通道，含 flushCookies + loginStatus 刷新）→ 200 `{"ok":true,"username":"..."}`；OPTIONS 预检 204；CORS 头仅为调试便利（扩展有 host_permissions 不受限）。应用启动 `initBridge()` 按持久化开关自动 start（默认关，不 start 零痕）。
+- **配对码**：6 位数字（`crypto.randomInt`，保留前导零），首次启用时生成并持久化 translate-settings.json（`bridgeEnabled`/`bridgePairCode`，Boolean 归一，沿用原子写盘；既有 translate/DoH/notification setter 均已改为透传 bridge 字段防覆盖）；UI 可重新生成，旧码立即失效。
+- **安全边界**：仅回环绑定 + 弱配对码（防本机其他程序误撞，不做 safeStorage 加密——弱凭据加密反增跨启动复杂度）；`_t` 属敏感会话凭据，扩展与应用两端只在内存转发，响应/日志/chrome.storage 一律不落不回显；端口固定 17366（扩展 manifest 写死），被占用时报错透出 UI 不阻塞应用。
+- **IPC 三件**：`bridge:getStatus` / `bridge:setEnabled` / `bridge:regenPair`（返回统一 `BridgeStatus`：enabled/pairCode/listening/lastPushTime/lastPushOk/lastError）；UI 在登录页方式二卡片内（开关 + 等宽配对码 + 重新生成 + 最近推送），renderer 5s 轮询 status、检测到新推送即 `auth.refresh()`。
+- **待人工验收**：AC1 全链路（真实 Edge + linux.do 登录态，加载扩展 → 自动同步 10s 内可见）；端口占用场景与打包态行为。

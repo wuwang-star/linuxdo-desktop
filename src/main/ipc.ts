@@ -42,6 +42,11 @@ import {
   messageBusStatus,
   type MessageBusMessage
 } from './api/messagebus'
+import {
+  getBridgeStatus,
+  setBridgeEnabled,
+  regenBridgePair
+} from './api/bridge'
 import { showPushNotification } from './notify'
 
 /** 推送广播给所有窗口的 renderer */
@@ -145,4 +150,9 @@ export function registerIpc(): void {
     return true
   })
   ipcMain.handle('messagebus:status', () => messageBusStatus())
+
+  // ---------- 伴生扩展桥接（Edge 自动同步 _t；开关即启停 127.0.0.1:17366 监听） ----------
+  ipcMain.handle('bridge:getStatus', () => getBridgeStatus())
+  ipcMain.handle('bridge:setEnabled', (_e, enabled: boolean) => setBridgeEnabled(Boolean(enabled)))
+  ipcMain.handle('bridge:regenPair', () => regenBridgePair())
 }

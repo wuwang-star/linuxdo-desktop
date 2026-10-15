@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import type { BridgeStatus } from '../../../main/api/bridge'
 
 const auth = useAuthStore()
 const apiKey = ref('')
@@ -8,6 +9,60 @@ const apiUsername = ref('')
 
 // ---- 登录方式 ----
 const tCookie = ref('')
+
+// ---- Edge 扩展桥接（方式二卡片内） ----
+const bridgeStatus = ref<BridgeStatus | null>(null)
+const bridgeEnabled = ref(false)
+const bridgeBusy = ref(false)
+let bridgeTimer: ReturnType<typeof setInterval> | undefined
+let lastSeenPush: string | null = null
+
+async function loadBridge(): Promise<void> {
+  try {
+    const st = await window.api.getBridgeStatus()
+    bridgeStatus.value = st
+    bridgeEnabled.value = st.enabled
+    // 有新推送（无论成败）就刷新登录态，让「已登录」状态 10s 内可见
+    if (st.lastPushTime && st.lastPushTime !== lastSeenPush) {
+      lastSeenPush = st.lastPushTime
+      await auth.refresh()
+    }
+  } catch {
+    /* 主进程未就绪等，忽略本次轮询 */
+  }
+}
+
+async function toggleBridge(): Promise<void> {
+  if (bridgeBusy.value) return
+  bridgeBusy.value = true
+  try {
+    bridgeStatus.value = await window.api.setBridgeEnabled(bridgeEnabled.value)
+    bridgeEnabled.value = bridgeStatus.value.enabled
+  } catch (e) {
+    bridgeEnabled.value = !bridgeEnabled.value // 失败回弹开关
+    auth.message = e instanceof Error ? e.message : String(e)
+  } finally {
+    bridgeBusy.value = false
+  }
+}
+
+async function regenPair(): Promise<void> {
+  if (bridgeBusy.value) return
+  bridgeBusy.value = true
+  try {
+    bridgeStatus.value = await window.api.regenBridgePair()
+  } finally {
+    bridgeBusy.value = false
+  }
+}
+
+function lastPushText(st: BridgeStatus): string {
+  if (!st.lastPushTime) return '尚无推送'
+  const t = new Date(st.lastPushTime).toLocaleTimeString()
+  if (st.lastPushOk === true) return `${t} 推送成功`
+  if (st.lastPushOk === false) return `${t} 推送被拒${st.lastError ? `（${st.lastError}）` : '（配对码不正确或请求异常）'}`
+  return t
+}
 
 // ---- Connect 身份登录 ----
 const connClientId = ref('')
@@ -68,6 +123,15 @@ onMounted(async () => {
   connClientId.value = conn.identity ? connClientId.value || '' : connClientId.value
   connMode.value = conn.callbackMode
   connIdentity.value = conn.identity
+  await loadBridge()
+  // 桥接轮询：捕捉扩展自动推送并刷新登录态（5s，页面卸载即停）
+  bridgeTimer = setInterval(() => {
+    void loadBridge()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (bridgeTimer !== undefined) clearInterval(bridgeTimer)
 })
 </script>
 
@@ -101,6 +165,35 @@ onMounted(async () => {
         <input v-model="tCookie" placeholder="_t cookie 值" style="flex:1" />
         <button class="primary" :disabled="auth.loading || !tCookie.trim()" @click="pasteCookie">注入</button>
       </div>
+
+      <!-- Edge 扩展桥接：浏览器登录一次，应用自动跟随 -->
+      <div class="field-row" style="margin-top:8px">
+        <div class="field-main">
+          <div class="field-label">Edge 扩展桥接</div>
+          <div class="field-desc">
+            在 Edge 加载仓库 <code>extension/</code> 目录的扩展并填入配对码后，浏览器里 linux.do
+            的 <code>_t</code> 登录态变化会自动同步进应用（仅本机回环 127.0.0.1:17366 + 配对码，详见 extension/README.md）。
+          </div>
+        </div>
+        <label class="switch field-control">
+          <input type="checkbox" v-model="bridgeEnabled" :disabled="bridgeBusy" @change="toggleBridge" />
+          <span class="switch-track"></span>
+          <span class="switch-thumb"></span>
+        </label>
+      </div>
+      <template v-if="bridgeStatus?.enabled">
+        <div class="row" style="align-items:center">
+          <code style="font-family:Consolas,monospace; font-size:20px; letter-spacing:6px">
+            {{ bridgeStatus.pairCode || '……' }}
+          </code>
+          <button :disabled="bridgeBusy" @click="regenPair">重新生成</button>
+          <span class="tip" style="margin:0">
+            {{ bridgeStatus.listening ? '监听中' : '未监听' }}{{ bridgeStatus.lastError ? ` · ${bridgeStatus.lastError}` : '' }}
+          </span>
+        </div>
+        <p class="tip">最近推送：{{ lastPushText(bridgeStatus) }}</p>
+      </template>
+      <p v-else class="tip">桥接当前关闭；开启后立即开始监听，关闭即停止（端口不占用）。</p>
     </section>
 
     <section class="card">

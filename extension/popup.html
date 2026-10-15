@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>LinuxDo Desktop 桥接</title>
+  <style>
+    body { width: 300px; margin: 0; padding: 14px; font: 13px/1.6 system-ui, "Microsoft YaHei", sans-serif; color: #1f2328; }
+    h1 { font-size: 14px; margin: 0 0 8px; }
+    label { display: block; margin: 10px 0 4px; color: #57606a; }
+    input { width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1px solid #d0d7de; border-radius: 6px; font: 15px Consolas, monospace; letter-spacing: 3px; }
+    .btns { display: flex; gap: 8px; margin-top: 12px; }
+    button { flex: 1; padding: 7px 0; border: 1px solid #d0d7de; border-radius: 6px; background: #f6f8fa; cursor: pointer; }
+    button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #status { margin-top: 10px; padding: 7px 9px; border-radius: 6px; background: #f6f8fa; color: #57606a; word-break: break-all; }
+    #status.ok { background: #dafbe1; color: #116329; }
+    #status.err { background: #ffebe9; color: #cf222e; }
+    .tip { margin-top: 10px; font-size: 12px; color: #8b949e; }
+  </style>
+</head>
+<body>
+  <h1>LinuxDo Desktop 桥接</h1>
+  <label for="pairCode">配对码（在应用「登录页 → 方式二 → Edge 扩展桥接」开启后复制）</label>
+  <input id="pairCode" inputmode="numeric" maxlength="6" placeholder="6 位数字" />
+  <div class="btns">
+    <button id="save">保存配对码</button>
+    <button id="push" class="primary">立即推送</button>
+  </div>
+  <div id="status">就绪</div>
+  <p class="tip">配对码保存在本扩展本地；_t cookie 只在推送瞬间经内存转发到 127.0.0.1:17366，不做任何存储。</p>
+  <script src="popup.js"></script>
+</body>
+</html>

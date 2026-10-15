@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "LinuxDo Desktop 桥接",
+  "version": "1.0.0",
+  "description": "把浏览器里 linux.do 的 _t 登录 cookie 自动同步到 LinuxDo Desktop 桌面客户端（仅本机回环 + 配对码）",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": ["*://*.linux.do/*", "http://127.0.0.1:17366/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LinuxDo Desktop 桥接"
+  }
+}

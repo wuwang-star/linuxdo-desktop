@@ -11,6 +11,7 @@ import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '..
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
+import type { BridgeStatus } from '../main/api/bridge'
 
 export interface LoginStatus {
   cookie: boolean
@@ -55,6 +56,9 @@ export interface ApiBridge {
   messageBusStart(userId: number): Promise<MessageBusStatus>
   messageBusStop(): Promise<boolean>
   messageBusStatus(): Promise<MessageBusStatus>
+  getBridgeStatus(): Promise<BridgeStatus>
+  setBridgeEnabled(enabled: boolean): Promise<BridgeStatus>
+  regenBridgePair(): Promise<BridgeStatus>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
 }

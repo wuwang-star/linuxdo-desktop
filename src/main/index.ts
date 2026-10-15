@@ -6,6 +6,7 @@ import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
+import { initBridge } from './api/bridge'
 import { focusMainWindow } from './win'
 import { initUpdater } from './updater'
 
@@ -65,6 +66,9 @@ app.whenReady().then(() => {
   session.defaultSession.setUserAgent(USER_AGENT)
 
   registerIpc()
+
+  // 伴生扩展桥接：按持久化开关决定是否监听 127.0.0.1:17366（默认关闭，零痕）
+  initBridge()
 
   const win = new BrowserWindow({
     width: 1280,

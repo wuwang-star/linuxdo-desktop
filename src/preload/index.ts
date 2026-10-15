@@ -42,6 +42,9 @@ const api = {
   messageBusStart: (userId: number) => ipcRenderer.invoke('messagebus:start', userId),
   messageBusStop: () => ipcRenderer.invoke('messagebus:stop'),
   messageBusStatus: () => ipcRenderer.invoke('messagebus:status'),
+  getBridgeStatus: () => ipcRenderer.invoke('bridge:getStatus'),
+  setBridgeEnabled: (enabled: boolean) => ipcRenderer.invoke('bridge:setEnabled', enabled),
+  regenBridgePair: () => ipcRenderer.invoke('bridge:regenPair'),
   // 主进程推送订阅：返回解绑函数
   onNotificationPush: (cb: (payload: unknown) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, payload: unknown): void => cb(payload)

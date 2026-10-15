@@ -1,6 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, writeFileSync, renameSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { randomInt } from 'node:crypto'
 
 export interface TranslateConfig {
   baseUrl: string
@@ -21,6 +22,12 @@ export interface NotificationConfig {
   enabled: boolean
 }
 
+/** 伴生扩展桥接配置：开关 + 6 位数字配对码（弱凭据，仅防本机其他程序误撞，见 SPEC） */
+export interface BridgeConfig {
+  enabled: boolean
+  pairCode: string
+}
+
 /**
  * DoH 默认值：关闭 + secure + 自建模板（用户指定自建端点 edge.1molchuan.top，2026-10-16）。
  * enabled 默认 false：Electron 44 网络服务不消费 DoH 命令行开关（源码核实，见 SPEC），
@@ -35,6 +42,8 @@ interface StoredConfig {
   dohMode: DohMode
   dohTemplate: string
   notificationEnabled: boolean
+  bridgeEnabled: boolean
+  bridgePairCode: string
 }
 
 const cfgFile = (): string => join(app.getPath('userData'), 'translate-settings.json')
@@ -72,6 +81,19 @@ function dohFieldsOf(raw: Partial<StoredConfig>): {
   }
 }
 
+/** 桥接两字段提取（旧配置文件无字段时取默认值：关闭 + 空码） */
+function bridgeFieldsOf(c: StoredConfig | null): { bridgeEnabled: boolean; bridgePairCode: string } {
+  return {
+    bridgeEnabled: c?.bridgeEnabled ?? false,
+    bridgePairCode: typeof c?.bridgePairCode === 'string' ? c.bridgePairCode : ''
+  }
+}
+
+/** 6 位数字配对码（密码学随机，前导零保留） */
+function genPairCode(): string {
+  return String(randomInt(0, 1_000_000)).padStart(6, '0')
+}
+
 /** 原子写盘：临时文件 + rename（同目录保证同卷），防半截 JSON 连带毁掉同文件的 translate 配置 */
 function writeConfigFile(data: StoredConfig): void {
   const target = cfgFile()
@@ -90,7 +112,9 @@ function loadOnce(): void {
         model: raw.model ?? '',
         ...dohFieldsOf(raw),
         // 旧配置文件无此字段（p2a 之前）→ 默认开启；其余值 Boolean 强转防脏数据
-        notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled)
+        notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled),
+        bridgeEnabled: raw.bridgeEnabled === undefined ? false : Boolean(raw.bridgeEnabled),
+        bridgePairCode: typeof raw.bridgePairCode === 'string' ? raw.bridgePairCode : ''
       }
     }
   } catch {
@@ -122,7 +146,8 @@ export function setTranslateConfig(baseUrl: string, model: string, key?: string)
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
-    notificationEnabled: cache?.notificationEnabled ?? true
+    notificationEnabled: cache?.notificationEnabled ?? true,
+    ...bridgeFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -191,7 +216,8 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     dohEnabled: Boolean(enabled),
     dohMode: mode === 'auto' ? 'auto' : 'secure',
     dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template,
-    notificationEnabled: cache?.notificationEnabled ?? true
+    notificationEnabled: cache?.notificationEnabled ?? true,
+    ...bridgeFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -218,7 +244,8 @@ export function setNotificationConfig(enabled: boolean): NotificationConfig {
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
-    notificationEnabled: Boolean(enabled)
+    notificationEnabled: Boolean(enabled),
+    ...bridgeFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -226,4 +253,73 @@ export function setNotificationConfig(enabled: boolean): NotificationConfig {
     /* 配置写失败不阻塞，内存态仍生效 */
   }
   return getNotificationConfig()
+}
+
+// ---------- 伴生扩展桥接（Edge 自动同步 _t，bridge.ts 消费） ----------
+
+/**
+ * 读取桥接配置。配对码为空且开关已开时现场生成并持久化（首次启用即出码）。
+ * 注意：生成的码不落 safeStorage——弱凭据仅防本机其他程序误撞，回环绑定已限攻击面。
+ */
+export function getBridgeConfig(): BridgeConfig {
+  loadOnce()
+  let code = bridgeFieldsOf(cache).bridgePairCode
+  if (!code && cache?.bridgeEnabled) {
+    code = genPairCode()
+    cache = { ...cache, bridgePairCode: code }
+    try {
+      writeConfigFile(cache)
+    } catch {
+      /* 写失败不阻塞，内存态生效 */
+    }
+  }
+  return { enabled: cache?.bridgeEnabled ?? false, pairCode: code }
+}
+
+/** 开关桥接（持久化）。开启时若无码则生成；监听器的启停由 bridge.ts 负责 */
+export function setBridgeEnabled(enabled: boolean): BridgeConfig {
+  loadOnce()
+  const base = cache ?? {
+    baseUrl: '',
+    model: '',
+    dohEnabled: DOH_DEFAULT.enabled,
+    dohMode: DOH_DEFAULT.mode,
+    dohTemplate: DOH_DEFAULT.template,
+    notificationEnabled: true,
+    bridgeEnabled: false,
+    bridgePairCode: ''
+  }
+  const next = Boolean(enabled)
+  let code = bridgeFieldsOf(cache).bridgePairCode
+  if (next && !code) code = genPairCode()
+  cache = { ...base, bridgeEnabled: next, bridgePairCode: code }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 写失败不阻塞，内存态仍生效 */
+  }
+  return { enabled: next, pairCode: code }
+}
+
+/** 重新生成配对码（旧码立即失效），无论开关状态均可调用 */
+export function regenBridgePair(): BridgeConfig {
+  loadOnce()
+  const base = cache ?? {
+    baseUrl: '',
+    model: '',
+    dohEnabled: DOH_DEFAULT.enabled,
+    dohMode: DOH_DEFAULT.mode,
+    dohTemplate: DOH_DEFAULT.template,
+    notificationEnabled: true,
+    bridgeEnabled: false,
+    bridgePairCode: ''
+  }
+  const code = genPairCode()
+  cache = { ...base, bridgePairCode: code }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 写失败不阻塞，内存态仍生效 */
+  }
+  return { enabled: cache.bridgeEnabled, pairCode: code }
 }
