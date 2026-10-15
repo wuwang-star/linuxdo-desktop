@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-10-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~155 | Active |
+| `journal-1.md` | ~185 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-10-15 | 登录通道实测定稿 + Connect 调研 | `db54743` | `master` |
 | 5 | 2026-10-15 | 授权页支持系统浏览器复用登录态 | `99dec0e` | `master` |
 | 4 | 2026-10-15 | 登录三通道 + 登录态留存 | `4bf5a4a` | `master` |
 | 3 | 2026-10-15 | P1：互动/通知/翻译落地 + 两个关键根因修复 | `6ba8196` | `master` |

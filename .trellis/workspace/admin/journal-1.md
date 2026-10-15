@@ -153,3 +153,33 @@ User API Key 官方流程完整实现（内嵌授权窗口拦截 linuxdo-desktop
 ### Next Steps
 
 - 用户 dev 实测：重启 dev → 设置页 → 系统浏览器授权 → 浏览器点授权 → 应用自动收到回调显示成功 → 重启免登录
+
+
+## Session 6: 登录通道实测定稿 + Connect 调研
+<!-- trellis-session: v=2 fp=aab043d1a56e9b70 -->
+
+**Date**: 2026-10-15
+**Task**: 登录通道实测定稿 + Connect 调研
+**Branch**: `master`
+
+### Summary
+
+用户实测 /user_api_key/new 返回「页面不存在或是不公开」→ linux.do 禁用 user-api-key 自助申请，无申请途径。UI 调整：浏览器窗口登录升为主通道，_t 注入为测试通道，user-api-key 降级标注未开放并支持取消等待（cancelPendingUserApiKey）。Connect OIDC 调研（.well-known 200）：scopes 仅 openid/profile/email，身份联邦用，无论坛 API 权限，不适用。结论记入 SPEC 决策 5。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `db54743` | fix: 登录方式按实测定稿 —— user-api-key 被 linux.do 禁用（UI 降级+可取消等待），浏览器窗口登录升为主通道；调研 Connect OIDC（仅身份 scope 无论坛 API 权限）并记入 SPEC |
+
+### Testing
+
+- [OK] typecheck 0 错；build 0 错
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户重启 dev 验证：浏览器窗口登录 → 重启免登录（cookie 留存）；继续 P1 剩余人工验证（通知/回复/点赞/翻译）
