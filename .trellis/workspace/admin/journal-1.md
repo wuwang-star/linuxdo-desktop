@@ -63,3 +63,33 @@ brainstorm 定稿（Electron+Vue3，自建 UI 走 Discourse API）→ promote �
 ### Next Steps
 
 - P1：回复/点赞/收藏写操作、MessageBus 通知、翻译（双语）
+
+
+## Session 3: P1：互动/通知/翻译落地 + 两个关键根因修复
+<!-- trellis-session: v=2 fp=489ed006c992c167 -->
+
+**Date**: 2026-10-15
+**Task**: P1：互动/通知/翻译落地 + 两个关键根因修复
+**Branch**: `master`
+
+### Summary
+
+CSRF 基建（403 自动刷新重试）+ 回复/点赞/收藏写操作（form-encoded + X-CSRF-Token）；通知（60s 轮询未读徽标+通知页+原生 toast+pn 直达楼层）；翻译（OpenAI 兼容配置 safeStorage 加密 + 楼内双语显示 + localStorage 缓存）。根因 1：rollup 对同模块混用静态/动态 import 的 CJS 输出会生成不完整命名空间（静默丢失新增导出）→ 全部改静态导入。根因 2：Electron net.fetch 主进程无 origin，默认 credentials 不带 cookie → 显式 credentials:'include'。探测发现 dev 实例占用 userData 时第二实例读不到最新 cookie（Chromium 单实例锁），登录态功能需在用户 dev 内人工验证。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6ba8196` | feat(P1): 互动写操作、通知与翻译 —— CSRF 基建+回复/点赞/收藏、通知列表+未读铃铛+原生 toast、OpenAI 兼容双语翻译；修复 net.fetch 需显式 credentials:include 才携带 cookie；消除模块混用静态/动态导入导致的 rollup 命名空间不完整问题 |
+
+### Testing
+
+- [OK] typecheck 0 错；build 0 错；--api-probe latest.json 30 主题；probeP1 已进包（COOKIES/SESSION/CSRF/NOTIF 分步输出）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户 dev 内验证：右上角用户名、铃铛通知、回复/点赞/收藏、翻译配置；P2：楼中楼嵌套、离线、托盘
