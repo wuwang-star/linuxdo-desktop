@@ -35,3 +35,31 @@ brainstorm 定稿（Electron+Vue3，自建 UI 走 Discourse API）→ promote �
 ### Next Steps
 
 - npm run dev 人工验证 UI；P1：回复/点赞/收藏/通知、翻译
+
+
+## Session 2: P0 数据链路全通：cookie 登录 + API 30 主题
+<!-- trellis-session: v=2 fp=081b87ebf808b008 -->
+
+**Date**: 2026-10-15
+**Task**: P0 数据链路全通：cookie 登录 + API 30 主题
+**Branch**: `master`
+
+### Summary
+
+用户经嵌入式登录窗口成功获取 _t cookie；--api-probe 复测 latest.json 返回 30 主题，确认 Electron 网络栈+默认 session cookie+退避客户端整条数据链路可用，此前的匿名 429 限流随登录态解除。P0 验收项全部闭环（UI 交互项由用户 dev 模式人工确认中）。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] --api-probe → API_PROBE_OK topics=30
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- P1：回复/点赞/收藏写操作、MessageBus 通知、翻译（双语）
