@@ -1,4 +1,4 @@
-import { app, safeStorage } from 'electron'
+import { app, net, safeStorage } from 'electron'
 import { createServer, type Server } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
@@ -198,10 +198,13 @@ async function exchangeCode(code: string, verifier: string, redirectUri: string)
     client_secret: secrets?.clientSecret ?? '',
     code_verifier: verifier
   })
-  const res = await fetch(`${CONNECT_ISSUER}/oauth2/token`, {
+  // net.fetch 走 Chromium 网络栈（系统代理/共享 session）；Node 全局 fetch 直连，
+  // 在代理环境下会连不上 connect.linux.do（浏览器能开授权页而 token 交换挂死的根因）
+  const res = await net.fetch(`${CONNECT_ISSUER}/oauth2/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body
+    body,
+    signal: AbortSignal.timeout(20_000)
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -215,8 +218,9 @@ async function exchangeCode(code: string, verifier: string, redirectUri: string)
 }
 
 async function fetchIdentity(): Promise<ConnectIdentity> {
-  const res = await fetch(`${CONNECT_ISSUER}/api/user`, {
-    headers: { Authorization: `Bearer ${secrets?.accessToken ?? ''}` }
+  const res = await net.fetch(`${CONNECT_ISSUER}/api/user`, {
+    headers: { Authorization: `Bearer ${secrets?.accessToken ?? ''}` },
+    signal: AbortSignal.timeout(20_000)
   })
   if (!res.ok) throw new Error(`身份拉取失败 HTTP ${res.status}`)
   const raw = (await res.json()) as Record<string, unknown>
