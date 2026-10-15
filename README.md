@@ -6,13 +6,17 @@
 
 ## 快速开始
 
+包管理器统一用 **pnpm**（`pnpm-workspace.yaml` 已放行 Electron/esbuild 的构建脚本）。
+
 ```bash
-npm install          # 若 Electron 二进制下载失败：$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"; node node_modules/electron/install.js
-npm run dev          # 开发模式（热重载）
-npm run typecheck    # 类型检查（node + renderer）
-npm run build        # 产物构建到 out/
-npm run smoke        # 冒烟：启动→窗口→SMOKE_OK→自动退出
+pnpm install         # 若 Electron 二进制下载失败：$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"; node node_modules/electron/install.js
+pnpm run dev         # 开发模式（热重载）
+pnpm run typecheck   # 类型检查（node + renderer）
+pnpm run build       # 产物构建到 out/
+pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 ```
+
+> 注意：pnpm ≥10 默认不执行依赖的 postinstall 脚本；若换环境后报 `Electron uninstall`，确认 `pnpm-workspace.yaml` 的 `allowBuilds` 含 `electron: true`，再补跑上面的镜像命令。不要混用 npm（会产生两套 lockfile）。
 
 ## 当前能力（P0）
 

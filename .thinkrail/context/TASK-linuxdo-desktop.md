@@ -127,11 +127,15 @@ latest/top/categories/c/<slug>.json、t/<id>.json（post_stream 分页）、sear
 - [ ] 前端框架（推荐 Vue 3）
 - [ ] 整体设计批准
 
-# 状态（更新）
+# 状态（终）
 
 - [x] 研究 FluxDO / ALDR
-- [x] Electron/Tauri 对比
-- [x] 用户澄清轮（形态/复用/平台/背景/MVP）
-- [x] 定稿设计写入本 spec
-- [ ] 终审轮（壳选型 + 框架 + 批准）
-- [ ] 批准后：promote 到 durable spec，进入实现
+- [x] Electron/Tauri 对比 → **Electron**（用户批准）
+- [x] 前端框架 → **Vue 3 + Vite + Pinia**（用户批准）
+- [x] 设计批准（2026-10-15）
+- [x] Promote：specs/linuxdo-desktop/SPEC.md（spec_validate 通过）
+- [x] Trellis 任务：10-15-linuxdo-desktop-p0（PRD + 上下文清单）
+- [x] P0 实现：脚手架 / API 客户端（UA+退避+诊断）/ 登录（cookie 窗口+api-key）/ 列表 / 主题阅读（懒加载+进度）/ reply_to 跳转 / 只看楼主 / 时间轴
+- [x] 验证：typecheck ✓ build ✓ smoke（SMOKE_OK）✓
+- ⚠️ 环境发现：本机（数据中心 IP）匿名访问 linux.do JSON API 被 429 限流（Electron 网络栈实测；PowerShell 直接 403）。非代码缺陷；登录 cookie 会话/住宅 IP 预期正常。交互式 UI 验证留待 `npm run dev` 人工确认。
+- [ ] P1/P2 按 PRD 分期继续（回复互动、翻译、离线、桌面壳能力等）
