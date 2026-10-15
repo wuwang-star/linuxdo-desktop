@@ -30,3 +30,20 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - Linux 平台、移动端（FluxDO 已覆盖移动场景）。
 - 原站替代（不镜像 linux.do 内容服务）。
 - P2 之后的 VoIP/音视频通话等站内不存在的功能。
+
+## P1 收尾实测与端点记录（2026-10-15）
+
+### MessageBus 实时通知
+
+- 端点：`POST https://linux.do/message-bus/<uuid>/poll`（uuid 每次启动随机），表单体 key=频道名、value=last_seen_id。
+- **频道名按 `/notification/<user_id>` 实现，请求编码与响应形态未经登录态实测，待手工验收确认**（本机无登录 cookie；站点公开端点匿名 429）。实现于 `src/main/api/messagebus.ts`：长轮询独立生命周期（不走 client.ts 统一封装，429 退避语义不适用于 30s 挂起请求），我方 65s 超时按空轮询处理；响应解析自适应兼容完整 JSON 数组与流式分块（`/频道\n消息id\njson\n`）两种形态；连续失败 3 次进入回退（renderer 退回 60s 手动轮询，本会话不自动复活，重新登录且切换账号时可重置）。
+- last_seen_id 存内存：重启从 0 重拉 backlog；push 仅触发全量 `auth.refresh()`，幂等由服务端状态重算保证；断线重连携带最后 seen id。
+
+### 帖子编辑端点
+
+- 读原文：`GET /posts/{id}.json`（单楼接口含 `raw` 与 `can_edit`；列表/流接口不含 raw）。
+- 提交编辑：`PUT /posts/{id}.json`，form-encoded，参数为 Rails 嵌套键 `post[raw]`（`post[edit_reason]` 可空），走既有 CSRF 逻辑。编辑入口仅 `can_edit === true` 时渲染，权限判断以 API 为准。
+
+### 阅读队列
+
+- 纯 renderer 本地状态（Pinia + localStorage 键 `ldd-queue`），不发请求不经 IPC，无敏感数据不入 safeStorage。

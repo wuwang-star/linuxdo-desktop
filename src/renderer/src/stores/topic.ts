@@ -216,6 +216,19 @@ export const useTopicStore = defineStore('topic', {
       } catch (e) {
         this.error = e instanceof Error ? e.message : String(e)
       }
+    },
+    /** 编辑楼层：成功后就地合并更新该楼；失败返回 false 且原楼不变 */
+    async editPost(postId: number, raw: string): Promise<boolean> {
+      const prev = this.postsById.get(postId)
+      try {
+        const updated = await window.api.updatePost(postId, raw.trim())
+        // PUT 响应可能缺 can_edit/actions_summary 等字段，与旧对象合并避免丢编辑按钮/点赞态
+        this.postsById.set(postId, prev ? { ...prev, ...updated } : updated)
+        return true
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : String(e)
+        return false
+      }
     }
   }
 })

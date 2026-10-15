@@ -10,6 +10,7 @@ import type {
 import type { TranslateConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
+import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
 
 export interface LoginStatus {
   cookie: boolean
@@ -36,6 +37,8 @@ export interface ApiBridge {
   likePost(postId: number): Promise<unknown>
   unlikePost(postId: number): Promise<unknown>
   bookmarkTopic(topicId: number): Promise<unknown>
+  getPostRaw(postId: number): Promise<import('../main/api/client').DiscoursePost>
+  updatePost(postId: number, raw: string): Promise<import('../main/api/client').DiscoursePost>
   fetchNotifications(page: number): Promise<NotificationsResponse>
   markNotificationsRead(): Promise<unknown>
   translatePost(postId: number, text: string): Promise<string>
@@ -44,6 +47,10 @@ export interface ApiBridge {
   getConnectStatus(): Promise<ConnectStatus>
   saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>
   connectLogin(): Promise<{ ok: boolean; username?: string; error?: string }>
+  messageBusStart(userId: number): Promise<MessageBusStatus>
+  messageBusStop(): Promise<boolean>
+  messageBusStatus(): Promise<MessageBusStatus>
+  onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
 }
 
 declare global {

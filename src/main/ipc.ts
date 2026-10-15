@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import {
   fetchLatest,
   fetchCategories,
@@ -9,6 +9,8 @@ import {
   likePost,
   unlikePost,
   bookmarkTopic,
+  fetchPostRaw,
+  updatePost,
   fetchNotifications,
   markNotificationsRead,
   getDiag
@@ -26,6 +28,19 @@ import {
 import { getTranslateConfig, setTranslateConfig } from './api/settings'
 import { translatePostText } from './api/translate'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
+import {
+  messageBusStart,
+  messageBusStop,
+  messageBusStatus,
+  type MessageBusMessage
+} from './api/messagebus'
+
+/** 推送广播给所有窗口的 renderer */
+function broadcast(channel: string, payload: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(channel, payload)
+  }
+}
 
 export function registerIpc(): void {
   initAuth()
@@ -67,6 +82,9 @@ export function registerIpc(): void {
   ipcMain.handle('post:like', (_e, postId: number) => likePost(postId))
   ipcMain.handle('post:unlike', (_e, postId: number) => unlikePost(postId))
   ipcMain.handle('topic:bookmark', (_e, topicId: number) => bookmarkTopic(topicId))
+  // ---------- 帖子编辑 ----------
+  ipcMain.handle('post:getRaw', (_e, postId: number) => fetchPostRaw(postId))
+  ipcMain.handle('post:update', (_e, postId: number, raw: string) => updatePost(postId, raw))
   ipcMain.handle('notifications:list', (_e, page: number) => fetchNotifications(page ?? 1))
   ipcMain.handle('notifications:markRead', () => markNotificationsRead())
   ipcMain.handle('translate:post', (_e, postId: number, text: string) =>
@@ -84,4 +102,17 @@ export function registerIpc(): void {
       saveConnectConfig(clientId, callbackMode, clientSecret)
   )
   ipcMain.handle('connect:login', () => connectLogin())
+
+  // ---------- MessageBus 实时通知（cookie 登录态由 renderer 在就绪后调用 start） ----------
+  ipcMain.handle('messagebus:start', (_e, userId: number) =>
+    messageBusStart(userId, (msgs: MessageBusMessage[]) => {
+      const notif = msgs.find((m) => m.channel.startsWith('/notification/'))
+      if (notif) broadcast('notification:push', notif)
+    })
+  )
+  ipcMain.handle('messagebus:stop', () => {
+    messageBusStop()
+    return true
+  })
+  ipcMain.handle('messagebus:status', () => messageBusStatus())
 }

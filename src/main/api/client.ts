@@ -154,6 +154,10 @@ export interface DiscoursePost {
   name?: string
   avatar_template: string
   cooked: string
+  /** 原始 Markdown（仅 /posts/{id}.json 单楼接口返回） */
+  raw?: string
+  /** 当前用户是否可编辑该楼（编辑入口以此为准） */
+  can_edit?: boolean
   reply_to_post_number?: number | null
   /** 点赞等操作摘要：id=2 为 like；acted 表示当前用户已操作 */
   actions_summary?: Array<{ id: number; count?: number; acted?: boolean; can_undo?: boolean }>
@@ -332,6 +336,21 @@ export function bookmarkTopic(topicId: number): Promise<unknown> {
   return writeRequest<unknown>('POST', '/bookmarks', {
     bookmarkable_id: topicId,
     bookmarkable_type: 'Topic'
+  })
+}
+
+// ---------- 帖子编辑 ----------
+
+/** 取单楼完整数据（含 raw 原文，编辑预填用） */
+export function fetchPostRaw(postId: number): Promise<DiscoursePost> {
+  return discourseRequest<DiscoursePost>(`/posts/${postId}.json`)
+}
+
+/** 编辑楼层：PUT /posts/{id}.json，form-encoded 走既有 CSRF 逻辑（post[raw] 为 Rails 嵌套键记法） */
+export function updatePost(postId: number, raw: string): Promise<DiscoursePost> {
+  return writeRequest<DiscoursePost>('PUT', `/posts/${postId}.json`, {
+    'post[raw]': raw,
+    'post[edit_reason]': ''
   })
 }
 

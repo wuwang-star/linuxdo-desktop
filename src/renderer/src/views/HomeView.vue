@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useTopicListStore } from '../stores/topicList'
+import { useQueueStore } from '../stores/queue'
 import { avatarUrl, relTime } from '../utils/format'
 import type { DiscourseTopicLite } from '../../../main/api/client'
 
 const store = useTopicListStore()
+const queue = useQueueStore()
 const sentinel = ref<HTMLElement | null>(null)
 const showCats = ref(false)
+
+function toggleQueue(t: DiscourseTopicLite): void {
+  if (queue.has(t.id)) queue.remove(t.id)
+  else queue.add(t.id, t.title)
+}
 
 const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '最新'))
 
@@ -77,6 +84,9 @@ onMounted(() => {
             alt=""
             loading="lazy"
           />
+          <button class="act" :class="{ acted: queue.has(t.id) }" @click="toggleQueue(t)">
+            {{ queue.has(t.id) ? '✓ 已入队' : '＋ 入队' }}
+          </button>
         </div>
       </div>
     </article>

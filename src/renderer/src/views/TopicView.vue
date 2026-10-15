@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore } from '../stores/topic'
+import { useQueueStore } from '../stores/queue'
+import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
 const route = useRoute()
+const router = useRouter()
 const store = useTopicStore()
+const queue = useQueueStore()
 const scroller = ref<HTMLElement | null>(null)
 const topicId = computed(() => Number(route.params.id))
 
-// ---- 回复编辑器 ----
+// ---- 回复/编辑编辑器 ----
 const composerOpen = ref(false)
 const composerText = ref('')
 const replyingToFloor = ref<number | null>(null)
-const sending = ref(false)
+/** 非空表示处于编辑模式（正在编辑这层楼） */
+const editingPost = ref<DiscoursePost | null>(null)
+const composerBusy = ref(false)
 const bookmarking = ref(false)
 
 const total = computed(() => store.stream.length || store.topic?.posts_count || 0)
@@ -78,20 +84,52 @@ watch(
 )
 
 function openComposer(replyToFloor: number | null): void {
+  // 从编辑模式切回回复时清掉残留的旧楼原文，避免误发
+  if (editingPost.value) composerText.value = ''
+  editingPost.value = null
   replyingToFloor.value = replyToFloor
   composerOpen.value = true
 }
 
-async function sendReply(): Promise<void> {
-  if (!composerText.value.trim() || sending.value) return
-  sending.value = true
+/** 编辑楼层：取原文 raw 预填编辑器 */
+async function openEdit(post: DiscoursePost): Promise<void> {
+  if (composerBusy.value) return
+  composerBusy.value = true
   store.error = ''
-  const ok = await store.sendReply(composerText.value, replyingToFloor.value ?? undefined)
-  sending.value = false
-  if (ok) {
-    composerText.value = ''
-    composerOpen.value = false
+  try {
+    const full = await window.api.getPostRaw(post.id)
+    editingPost.value = post
+    composerText.value = full.raw ?? ''
     replyingToFloor.value = null
+    composerOpen.value = true
+  } catch (e) {
+    store.error = e instanceof Error ? e.message : String(e)
+  } finally {
+    composerBusy.value = false
+  }
+}
+
+function closeComposer(): void {
+  composerOpen.value = false
+  composerText.value = ''
+  replyingToFloor.value = null
+  editingPost.value = null
+}
+
+async function sendComposer(): Promise<void> {
+  const text = composerText.value.trim()
+  if (!text || composerBusy.value) return
+  composerBusy.value = true
+  store.error = ''
+  try {
+    if (editingPost.value) {
+      // 编辑：成功后就地更新；失败保留原楼并提示
+      if (await store.editPost(editingPost.value.id, text)) closeComposer()
+    } else if (await store.sendReply(text, replyingToFloor.value ?? undefined)) {
+      closeComposer()
+    }
+  } finally {
+    composerBusy.value = false
   }
 }
 
@@ -120,6 +158,21 @@ onBeforeUnmount(() => {
 function go(postNumber: number): void {
   void store.jumpTo(postNumber)
 }
+
+// ---- 阅读队列：入队切换 + 按入队顺序的上/下一贴 ----
+const queueNav = computed(() => queue.neighbors(topicId.value))
+
+function toggleQueue(): void {
+  const t = store.topic
+  if (!t) return
+  if (queue.has(t.id)) queue.remove(t.id)
+  else queue.add(t.id, t.title)
+}
+
+function goNeighbor(dir: 'prev' | 'next'): void {
+  const id = queueNav.value[dir]
+  if (id !== null) void router.push(`/t/${id}`)
+}
 </script>
 
 <template>
@@ -138,6 +191,14 @@ function go(postNumber: number): void {
           <button class="act" :class="{ acted: store.topic.bookmarked }" :disabled="bookmarking || store.topic.bookmarked" @click="doBookmark">
             {{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}
           </button>
+          <button class="act" :class="{ acted: queue.has(topicId) }" @click="toggleQueue">
+            {{ queue.has(topicId) ? '✓ 已入队' : '＋ 入队' }}
+          </button>
+          <template v-if="queue.count > 0">
+            <button class="act" :disabled="!queueNav.prev" @click="goNeighbor('prev')">← 上一贴</button>
+            <button class="act" :disabled="!queueNav.next" @click="goNeighbor('next')">下一贴 →</button>
+            <span class="hint">队列 {{ queue.count }} 个 · 按入队顺序</span>
+          </template>
           <span v-if="store.minLoadedIdx > 0" class="hint">（向上滚动加载更早楼层）</span>
         </div>
         <div v-if="store.error" class="error-inline">{{ store.error }}</div>
@@ -151,6 +212,7 @@ function go(postNumber: number): void {
           @jump="go"
           @like="(id) => store.toggleLike(id)"
           @reply="openComposer"
+          @edit="openEdit"
         />
 
         <div v-if="store.visiblePosts.length === 0" class="loading">没有可见楼层</div>
@@ -170,23 +232,25 @@ function go(postNumber: number): void {
       </button>
     </aside>
 
-    <!-- 回复编辑器 -->
+    <!-- 回复/编辑编辑器 -->
     <div v-if="composerOpen" class="composer">
       <div class="composer-head">
-        <span v-if="replyingToFloor">回复 #{{ replyingToFloor }}</span>
+        <span v-if="editingPost">编辑 #{{ editingPost.post_number }}</span>
+        <span v-else-if="replyingToFloor">回复 #{{ replyingToFloor }}</span>
         <span v-else>回复主题</span>
-        <button class="act" @click="composerOpen = false; replyingToFloor = null">收起</button>
+        <button class="act" @click="closeComposer">收起</button>
       </div>
       <textarea
         v-model="composerText"
         placeholder="支持 Markdown…（Ctrl+Enter 发送）"
-        @keydown.ctrl.enter.prevent="sendReply"
-        @keydown.meta.enter.prevent="sendReply"
+        @keydown.ctrl.enter.prevent="sendComposer"
+        @keydown.meta.enter.prevent="sendComposer"
       ></textarea>
       <div class="composer-foot">
-        <span class="hint">发帖走原站 API，以当前登录账号提交</span>
-        <button class="primary" :disabled="sending || !composerText.trim()" @click="sendReply">
-          {{ sending ? '发送中…' : '发送' }}
+        <span v-if="store.error" class="error-inline">{{ store.error }}</span>
+        <span v-else class="hint">{{ editingPost ? '保存走原站 API，失败时原楼不变' : '发帖走原站 API，以当前登录账号提交' }}</span>
+        <button class="primary" :disabled="composerBusy || !composerText.trim()" @click="sendComposer">
+          {{ composerBusy ? (editingPost ? '保存中…' : '发送中…') : editingPost ? '保存' : '发送' }}
         </button>
       </div>
     </div>

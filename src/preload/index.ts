@@ -21,6 +21,8 @@ const api = {
   likePost: (postId: number) => ipcRenderer.invoke('post:like', postId),
   unlikePost: (postId: number) => ipcRenderer.invoke('post:unlike', postId),
   bookmarkTopic: (topicId: number) => ipcRenderer.invoke('topic:bookmark', topicId),
+  getPostRaw: (postId: number) => ipcRenderer.invoke('post:getRaw', postId),
+  updatePost: (postId: number, raw: string) => ipcRenderer.invoke('post:update', postId, raw),
   fetchNotifications: (page: number) => ipcRenderer.invoke('notifications:list', page),
   markNotificationsRead: () => ipcRenderer.invoke('notifications:markRead'),
   translatePost: (postId: number, text: string) => ipcRenderer.invoke('translate:post', postId, text),
@@ -30,7 +32,18 @@ const api = {
   getConnectStatus: () => ipcRenderer.invoke('connect:getStatus'),
   saveConnectConfig: (clientId: string, callbackMode: 'protocol' | 'loopback', clientSecret?: string) =>
     ipcRenderer.invoke('connect:saveConfig', clientId, callbackMode, clientSecret),
-  connectLogin: () => ipcRenderer.invoke('connect:login')
+  connectLogin: () => ipcRenderer.invoke('connect:login'),
+  messageBusStart: (userId: number) => ipcRenderer.invoke('messagebus:start', userId),
+  messageBusStop: () => ipcRenderer.invoke('messagebus:stop'),
+  messageBusStatus: () => ipcRenderer.invoke('messagebus:status'),
+  // 主进程推送订阅：返回解绑函数
+  onNotificationPush: (cb: (payload: unknown) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: unknown): void => cb(payload)
+    ipcRenderer.on('notification:push', listener)
+    return () => {
+      ipcRenderer.removeListener('notification:push', listener)
+    }
+  }
 }
 
 export type ApiBridge = typeof api

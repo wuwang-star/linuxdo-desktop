@@ -9,6 +9,7 @@ const emit = defineEmits<{
   (e: 'jump', postNumber: number): void
   (e: 'like', postId: number): void
   (e: 'reply', postNumber: number): void
+  (e: 'edit', post: DiscoursePost): void
 }>()
 
 const like = computed(() => likeInfo(props.post))
@@ -71,6 +72,8 @@ async function translate(): Promise<void> {
           {{ like.acted ? '❤' : '🤍' }} {{ like.count || '' }}
         </button>
         <button class="act" @click="emit('reply', post.post_number)">💬 回复</button>
+        <!-- 编辑入口以 API 返回的 can_edit 为准 -->
+        <button v-if="post.can_edit" class="act" @click="emit('edit', post)">✏ 编辑</button>
         <button class="act" :disabled="trLoading" @click="translate">
           {{ trLoading ? '翻译中…' : translation ? (trVisible ? '隐藏译文' : '显示译文') : '译' }}
         </button>
