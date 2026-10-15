@@ -1,6 +1,7 @@
 node_modules/
 out/
 dist/
+src/renderer/out-verify/
 *.tsbuildinfo
 .env
 .env.*

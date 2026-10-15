@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "验收对照架构不变量（网络出口、凭据存储、抓包前置）"}
+{"file": ".trellis/tasks/10-15-p1-wrapup/prd.md", "reason": "AC1–AC5 逐条核对"}

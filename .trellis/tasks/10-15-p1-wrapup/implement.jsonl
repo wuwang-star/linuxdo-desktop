@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "不变量：主进程统一网络出口、UA/退避、凭据 safeStorage、端点先抓包；登录通道定稿（cookie 主通道）"}
+{"file": ".thinkrail/context/TASK-linuxdo-desktop.md", "reason": "roadmap P1 分期定义（实时通知/多主题队列/编辑）与 MVP 重点，本任务范围来源"}
