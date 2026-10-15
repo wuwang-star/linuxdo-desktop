@@ -72,35 +72,34 @@ onMounted(async () => {
     </section>
 
     <section class="card">
-      <h2>方式一：授权 User API Key（推荐，重启免登录）</h2>
-      <p class="tip">
-        用你的系统浏览器（Chrome/Edge，自带 linux.do 登录态）打开授权页，点一次「授权」即可。
-        Key 经系统加密长期保存在本机，不依赖 cookie，站点可随时撤销。
-      </p>
-      <div class="row">
-        <button class="primary" :disabled="auth.loading" @click="auth.startUserApiKey('system-browser')">
-          系统浏览器授权（推荐）
-        </button>
-        <button :disabled="auth.loading" @click="auth.startUserApiKey('embedded')">应用内窗口授权</button>
-      </div>
-      <p class="tip">浏览器授权后应用会自动收到回调并保存；若浏览器弹出「打开 LinuxDo Desktop?」请选择允许。</p>
-    </section>
-
-    <section class="card">
-      <h2>方式二：浏览器登录（支持 Connect / OAuth / 2FA）</h2>
-      <p class="tip">弹出的窗口就是真实浏览器，照常登录即可；检测到登录态后自动关闭并落盘 cookie。</p>
+      <h2>方式一（推荐）：浏览器窗口登录</h2>
+      <p class="tip">弹出的窗口就是真实浏览器，支持 Connect / OAuth / 账密 / 2FA；检测到登录态后自动关闭并落盘 cookie（重启保留）。</p>
       <div class="row">
         <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>方式三：粘贴 _t cookie（测试用，秒切会话）</h2>
+      <h2>方式二：粘贴 _t cookie（测试用，秒切会话）</h2>
       <p class="tip">浏览器 F12 → Application → Cookies → linux.do → 复制 <code>_t</code> 的值粘贴到这里。</p>
       <div class="row">
         <input v-model="tCookie" placeholder="_t cookie 值" style="flex:1" />
         <button class="primary" :disabled="auth.loading || !tCookie.trim()" @click="pasteCookie">注入</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>方式三：User API Key 授权（linux.do 当前未开放 ⚠️）</h2>
+      <p class="tip">
+        实测 linux.do 管理员已关闭自助申请（授权页报「页面不存在或是不公开页面」），普通用户无法使用；
+        若日后开放或用于其他 Discourse 站点，此通道可直接复用浏览器登录态。
+      </p>
+      <div class="row">
+        <button :disabled="auth.loading" @click="auth.startUserApiKey('system-browser')">系统浏览器授权</button>
+        <button :disabled="auth.loading" @click="auth.startUserApiKey('embedded')">应用内窗口授权</button>
+        <button v-if="auth.loading" @click="auth.cancelUserApiKey()">取消等待</button>
+      </div>
+      <p class="tip">浏览器授权后应用会自动收到回调并保存；若浏览器弹出「打开 LinuxDo Desktop?」请选择允许。</p>
     </section>
 
     <section class="card">

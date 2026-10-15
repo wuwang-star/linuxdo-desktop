@@ -155,6 +155,14 @@ interface PendingAuth {
 
 let pendingAuth: PendingAuth | null = null
 
+/** 用户手动取消等待浏览器回调（如站点未开放授权页时） */
+export function cancelPendingUserApiKey(): void {
+  const pending = pendingAuth
+  if (!pending) return
+  pendingAuth = null
+  pending.finish({ ok: false, error: '已取消等待授权' })
+}
+
 /** 处理 linuxdo-desktop://user-api-key?payload=... 回调（来自 second-instance / open-url / 内嵌窗口拦截） */
 export function handleAuthCallbackUrl(raw: string): boolean {
   let u: URL

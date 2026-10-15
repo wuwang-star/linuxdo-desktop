@@ -18,6 +18,7 @@ import {
   loginStatus,
   openCookieLogin,
   openUserApiKeyLogin,
+  cancelPendingUserApiKey,
   setApiKey,
   clearApiKey,
   setTCookieManually
@@ -40,10 +41,13 @@ export function registerIpc(): void {
   )
   ipcMain.handle('auth:status', () => loginStatus())
   ipcMain.handle('auth:openLogin', () => openCookieLogin())
-  ipcMain.handle(
-    'auth:openUserApiKeyLogin',
-    (_e, mode?: 'system-browser' | 'embedded') => openUserApiKeyLogin(mode ?? 'system-browser')
+  ipcMain.handle('auth:openUserApiKeyLogin', (_e, mode?: 'system-browser' | 'embedded') =>
+    openUserApiKeyLogin(mode ?? 'system-browser')
   )
+  ipcMain.handle('auth:cancelUserApiKey', () => {
+    cancelPendingUserApiKey()
+    return true
+  })
   ipcMain.handle('auth:setTCookie', (_e, value: string) => setTCookieManually(value ?? ''))
   ipcMain.handle('auth:setApiKey', (_e, key: string, username: string) => {
     setApiKey(key, username)

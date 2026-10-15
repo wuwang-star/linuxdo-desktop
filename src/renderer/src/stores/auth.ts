@@ -43,6 +43,11 @@ export const useAuthStore = defineStore('auth', {
         await this.refresh()
       }
     },
+    async cancelUserApiKey() {
+      await window.api.cancelUserApiKey()
+      this.loading = false
+      this.message = '已取消授权等待'
+    },
     async pasteTCookie(value: string) {
       if (!value.trim()) return
       this.loading = true

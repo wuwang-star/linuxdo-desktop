@@ -11,6 +11,7 @@ const api = {
   openLogin: () => ipcRenderer.invoke('auth:openLogin'),
   openUserApiKeyLogin: (mode?: 'system-browser' | 'embedded') =>
     ipcRenderer.invoke('auth:openUserApiKeyLogin', mode),
+  cancelUserApiKey: () => ipcRenderer.invoke('auth:cancelUserApiKey'),
   setTCookie: (value: string) => ipcRenderer.invoke('auth:setTCookie', value),
   setApiKey: (key: string, username: string) => ipcRenderer.invoke('auth:setApiKey', key, username),
   clearApiKey: () => ipcRenderer.invoke('auth:clearApiKey'),

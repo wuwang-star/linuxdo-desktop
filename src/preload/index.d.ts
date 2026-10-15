@@ -26,6 +26,7 @@ export interface ApiBridge {
   loginStatus(): Promise<LoginStatus>
   openLogin(): Promise<boolean>
   openUserApiKeyLogin(mode?: 'system-browser' | 'embedded'): Promise<{ ok: boolean; username?: string; error?: string }>
+  cancelUserApiKey(): Promise<boolean>
   setTCookie(value: string): Promise<LoginStatus>
   setApiKey(key: string, username: string): Promise<LoginStatus>
   clearApiKey(): Promise<boolean>

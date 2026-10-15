@@ -16,7 +16,7 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 2. **Electron**（非 Tauri）：单一 TS 语言栈；Win/mac 同 Chromium 内核；嵌入式登录窗口可与 API 请求共享 cookie jar（CF 兜底）；生态适合新手。代价是体积/内存，可接受。
 3. **Vue 3 + Vite + Pinia + TypeScript**；构建链 electron-vite；打包 electron-builder + electron-updater（GitHub Releases）。
 4. **网络层在主进程**：所有 linux.do 请求经主进程统一出口（浏览器级 UA、限流退避、诊断），renderer 只经 IPC 消费，避免 renderer 侧 CORS/CF 问题。
-5. **登录双通道**：Discourse user-api-key（Api-Key header）为主；嵌入式登录窗口（真实浏览器环境过 CF）后的 cookie 会话为兜底。
+5. **登录通道（2026-10-15 实测定稿）**：linux.do 管理员已禁用 Discourse user-api-key 自助申请（`/user_api_key/new` 返回"页面不存在或是不公开"），普通用户无从申请。主通道 = 嵌入式浏览器登录（真实浏览器环境过 CF，`_t` cookie + `flushStore` 落盘，重启保留）；测试通道 = 手动注入 `_t` cookie；user-api-key 完整流程（RSA+nonce+协议回调）保留在代码中以备站点开放或用于其他 Discourse 站点。另调研 linux.do Connect（OIDC）：scopes 仅 openid/profile/email（身份联邦），无论坛 API 权限，不适用于本客户端的会话需求。
 6. FluxDO 代码 GPL-3.0：禁止复制；API 端点知识可自由使用。ALDR MIT：亦不复用代码，仅参考设计。
 
 ## 不变量
