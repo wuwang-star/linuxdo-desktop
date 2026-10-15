@@ -7242,11 +7242,11 @@ const useAuthStore = /* @__PURE__ */ defineStore("auth", {
         await this.refresh();
       }
     },
-    async startUserApiKey() {
+    async startUserApiKey(mode = "system-browser") {
       this.loading = true;
-      this.message = "";
+      this.message = mode === "system-browser" ? "已在系统浏览器打开授权页，点击页面上的「授权」按钮即可…" : "";
       try {
-        const res = await window.api.openUserApiKeyLogin();
+        const res = await window.api.openUserApiKeyLogin(mode);
         this.message = res.ok ? `授权成功${res.username ? `：@${res.username}（API Key 已加密保存，重启免登录）` : "（API Key 已加密保存）"}` : `授权失败：${res.error ?? "未知错误"}`;
       } catch (e) {
         this.message = e instanceof Error ? e.message : String(e);
@@ -9193,17 +9193,17 @@ const router = createRouter({
     {
       path: "/t/:id",
       name: "topic",
-      component: () => __vitePreload(() => import("./TopicView-DsBf5Abj.js"), true ? [] : void 0, import.meta.url)
+      component: () => __vitePreload(() => import("./TopicView-BW7oij67.js"), true ? [] : void 0, import.meta.url)
     },
     {
       path: "/login",
       name: "login",
-      component: () => __vitePreload(() => import("./LoginView-BTGE8U8t.js"), true ? [] : void 0, import.meta.url)
+      component: () => __vitePreload(() => import("./LoginView-CZYGKruT.js"), true ? [] : void 0, import.meta.url)
     },
     {
       path: "/notifications",
       name: "notifications",
-      component: () => __vitePreload(() => import("./NotificationsView-DvIRZaw6.js"), true ? [] : void 0, import.meta.url)
+      component: () => __vitePreload(() => import("./NotificationsView-ByFcLgrM.js"), true ? [] : void 0, import.meta.url)
     }
   ]
 });

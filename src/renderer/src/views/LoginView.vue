@@ -73,10 +73,17 @@ onMounted(async () => {
 
     <section class="card">
       <h2>方式一：授权 User API Key（推荐，重启免登录）</h2>
-      <p class="tip">打开 linux.do 授权页，点一次「授权」即可。Key 经系统加密长期保存在本机，不依赖浏览器 cookie，站点可随时撤销。</p>
+      <p class="tip">
+        用你的系统浏览器（Chrome/Edge，自带 linux.do 登录态）打开授权页，点一次「授权」即可。
+        Key 经系统加密长期保存在本机，不依赖 cookie，站点可随时撤销。
+      </p>
       <div class="row">
-        <button class="primary" :disabled="auth.loading" @click="auth.startUserApiKey()">一键申请授权</button>
+        <button class="primary" :disabled="auth.loading" @click="auth.startUserApiKey('system-browser')">
+          系统浏览器授权（推荐）
+        </button>
+        <button :disabled="auth.loading" @click="auth.startUserApiKey('embedded')">应用内窗口授权</button>
       </div>
+      <p class="tip">浏览器授权后应用会自动收到回调并保存；若浏览器弹出「打开 LinuxDo Desktop?」请选择允许。</p>
     </section>
 
     <section class="card">

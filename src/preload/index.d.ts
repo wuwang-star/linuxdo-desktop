@@ -25,7 +25,7 @@ export interface ApiBridge {
   fetchPosts(topicId: number, postIds: number[]): Promise<PostStreamPostsResponse>
   loginStatus(): Promise<LoginStatus>
   openLogin(): Promise<boolean>
-  openUserApiKeyLogin(): Promise<{ ok: boolean; username?: string; error?: string }>
+  openUserApiKeyLogin(mode?: 'system-browser' | 'embedded'): Promise<{ ok: boolean; username?: string; error?: string }>
   setTCookie(value: string): Promise<LoginStatus>
   setApiKey(key: string, username: string): Promise<LoginStatus>
   clearApiKey(): Promise<boolean>

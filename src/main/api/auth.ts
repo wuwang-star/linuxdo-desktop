@@ -1,4 +1,4 @@
-import { app, BrowserWindow, safeStorage, session } from 'electron'
+import { app, BrowserWindow, safeStorage, session, shell } from 'electron'
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateKeyPairSync, privateDecrypt, randomBytes, constants as cryptoConstants } from 'node:crypto'
@@ -136,29 +136,127 @@ async function flushCookies(): Promise<void> {
 
 /**
  * 方式一（推荐）：Discourse User API Key 官方流程。
- * 生成 RSA 密钥对 → 内嵌窗口打开授权页 → 用户点授权 →
- * 站点把 {key, nonce} 用公钥加密回传到 auth_redirect → 解密校验后 safeStorage 落存。
+ * 生成 RSA 密钥对 → 打开授权页（系统浏览器或内嵌窗口）→ 用户点授权 →
+ * 站点把 {key, nonce} 用公钥加密回传到 linuxdo-desktop:// → 解密校验后 safeStorage 落存。
  * Key 长期有效，不依赖 cookie，重启即恢复。
+ *
+ * 系统浏览器模式：授权页带着用户浏览器里已登录的 linux.do 会话打开，
+ * 一点授权即可；回调经 OS 协议拉起应用（单实例锁转发到本进程）。
  */
-export function openUserApiKeyLogin(timeoutMs = 5 * 60 * 1000): Promise<{
-  ok: boolean
-  username?: string
-  error?: string
-}> {
+
+export type UserApiKeyResult = { ok: boolean; username?: string; error?: string }
+export type AuthCallback = (result: UserApiKeyResult) => void
+
+interface PendingAuth {
+  privateKey: KeyObject
+  clientId: string
+  finish: AuthCallback
+}
+
+let pendingAuth: PendingAuth | null = null
+
+/** 处理 linuxdo-desktop://user-api-key?payload=... 回调（来自 second-instance / open-url / 内嵌窗口拦截） */
+export function handleAuthCallbackUrl(raw: string): boolean {
+  let u: URL
+  try {
+    u = new URL(raw)
+  } catch {
+    return false
+  }
+  if (u.protocol !== 'linuxdo-desktop:') return false
+  const pending = pendingAuth
+  if (!pending) return true // 无待授权请求（如冷启动误触发），静默忽略
+  const payload = u.searchParams.get('payload')
+  pendingAuth = null
+  if (!payload) {
+    pending.finish({ ok: false, error: '回调缺少 payload' })
+    return true
+  }
+  void decryptAndStore(pending.privateKey, pending.clientId, payload, pending.finish)
+  return true
+}
+
+/** 解密回传 payload（兼容 OAEP-SHA256 / OAEP-SHA1 / PKCS1 三种填充），校验 nonce 后落存 */
+async function decryptAndStore(
+  privateKey: KeyObject,
+  clientId: string,
+  payloadHex: string,
+  finish: AuthCallback
+): Promise<void> {
+  try {
+    const buf = Buffer.from(payloadHex, 'hex')
+    const attempts: Array<{ padding: number; oaepHash?: string }> = [
+      { padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
+      { padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha1' },
+      { padding: cryptoConstants.RSA_PKCS1_PADDING }
+    ]
+    let json: string | undefined
+    for (const opt of attempts) {
+      try {
+        json = privateDecrypt(
+          { key: privateKey, padding: opt.padding, oaepHash: opt.oaepHash } as Parameters<
+            typeof privateDecrypt
+          >[0],
+          buf
+        ).toString('utf8')
+        break
+      } catch {
+        /* 尝试下一种填充 */
+      }
+    }
+    if (!json) throw new Error('payload 解密失败')
+    const parsed = JSON.parse(json) as { key?: string; nonce?: string }
+    if (parsed.nonce !== clientId) throw new Error('nonce 校验失败（可能被篡改）')
+    if (!parsed.key) throw new Error('站点未返回 key')
+    const username = await setUserApiKey(parsed.key)
+    finish({ ok: true, username })
+  } catch (e) {
+    finish({ ok: false, error: e instanceof Error ? e.message : String(e) })
+  }
+}
+
+function buildAuthorizeUrl(clientId: string, pubPem: string): URL {
+  const url = new URL('https://linux.do/user_api_key/new')
+  url.searchParams.set('application_name', 'LinuxDo Desktop')
+  url.searchParams.set('client_id', clientId)
+  url.searchParams.set('scopes', 'read,write,session_info,notifications,message_bus')
+  url.searchParams.set('public_key', pubPem)
+  url.searchParams.set('auth_redirect', 'linuxdo-desktop://user-api-key')
+  return url
+}
+
+export function openUserApiKeyLogin(mode: 'system-browser' | 'embedded' = 'system-browser'): Promise<UserApiKeyResult> {
   return new Promise((resolve) => {
     const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
     const clientId = randomBytes(16).toString('hex')
     const pubPem = publicKey.export({ type: 'spki', format: 'pem' }).toString()
-    const redirect = 'linuxdo-desktop://user-api-key'
+    const url = buildAuthorizeUrl(clientId, pubPem)
+    const timeoutMs = mode === 'system-browser' ? 10 * 60 * 1000 : 5 * 60 * 1000
 
-    const url = new URL('https://linux.do/user_api_key/new')
-    url.searchParams.set('application_name', 'LinuxDo Desktop')
-    url.searchParams.set('client_id', clientId)
-    url.searchParams.set('scopes', 'read,write,session_info,notifications,message_bus')
-    url.searchParams.set('public_key', pubPem)
-    url.searchParams.set('auth_redirect', redirect)
+    let win: BrowserWindow | null = null
+    let settled = false
+    const finish = (result: UserApiKeyResult): void => {
+      if (settled) return
+      settled = true
+      if (timer !== undefined) clearTimeout(timer)
+      pendingAuth = null
+      if (win && !win.isDestroyed()) win.close()
+      resolve(result)
+    }
+    let timer: NodeJS.Timeout | undefined = setTimeout(
+      () => finish({ ok: false, error: mode === 'system-browser' ? '授权超时（未收到浏览器回调，可改用应用内窗口授权）' : '授权超时' }),
+      timeoutMs
+    )
+    pendingAuth = { privateKey, clientId, finish }
 
-    const win = new BrowserWindow({
+    if (mode === 'system-browser') {
+      void shell
+        .openExternal(url.toString())
+        .catch((e: unknown) => finish({ ok: false, error: `无法打开系统浏览器：${String(e)}` }))
+      return
+    }
+
+    win = new BrowserWindow({
       width: 900,
       height: 900,
       title: '授权 LinuxDo Desktop',
@@ -169,69 +267,12 @@ export function openUserApiKeyLogin(timeoutMs = 5 * 60 * 1000): Promise<{
         nodeIntegration: false
       }
     })
-
-    let settled = false
-    const finish = (result: { ok: boolean; username?: string; error?: string }): void => {
-      if (settled) return
-      settled = true
-      if (timer !== undefined) clearTimeout(timer)
-      if (!win.isDestroyed()) win.close()
-      resolve(result)
-    }
-
-    let timer: NodeJS.Timeout | undefined = setTimeout(() => finish({ ok: false, error: '授权超时' }), timeoutMs)
     win.on('closed', () => finish({ ok: false, error: '授权窗口已关闭' }))
-
-    // 解密回传 payload（兼容 OAEP-SHA256 / OAEP-SHA1 / PKCS1 三种填充）
-    const handlePayload = async (payloadHex: string): Promise<void> => {
-      try {
-        const buf = Buffer.from(payloadHex, 'hex')
-        const attempts: Array<{ padding: number; oaepHash?: string }> = [
-          { padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
-          { padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha1' },
-          { padding: cryptoConstants.RSA_PKCS1_PADDING }
-        ]
-        let json: string | undefined
-        for (const opt of attempts) {
-          try {
-            json = privateDecrypt(
-              { key: privateKey as KeyObject, padding: opt.padding, oaepHash: opt.oaepHash } as Parameters<
-                typeof privateDecrypt
-              >[0],
-              buf
-            ).toString('utf8')
-            break
-          } catch {
-            /* 尝试下一种填充 */
-          }
-        }
-        if (!json) throw new Error('payload 解密失败')
-        const parsed = JSON.parse(json) as { key?: string; nonce?: string }
-        if (parsed.nonce !== clientId) throw new Error('nonce 校验失败（可能被篡改）')
-        if (!parsed.key) throw new Error('站点未返回 key')
-        const username = await setUserApiKey(parsed.key)
-        finish({ ok: true, username })
-      } catch (e) {
-        finish({ ok: false, error: e instanceof Error ? e.message : String(e) })
-      }
-    }
-
     const intercept = (event: Electron.Event, targetUrl: string): void => {
-      try {
-        const u = new URL(targetUrl)
-        if (u.protocol === 'linuxdo-desktop:') {
-          event.preventDefault()
-          const payload = u.searchParams.get('payload')
-          if (payload) void handlePayload(payload)
-          else finish({ ok: false, error: '回调缺少 payload' })
-        }
-      } catch {
-        /* 非 URL 目标忽略 */
-      }
+      if (handleAuthCallbackUrl(targetUrl)) event.preventDefault()
     }
     win.webContents.on('will-navigate', intercept)
     win.webContents.on('will-redirect', intercept)
-
     void win.loadURL(url.toString())
   })
 }

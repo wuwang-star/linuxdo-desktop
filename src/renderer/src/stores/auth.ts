@@ -28,11 +28,11 @@ export const useAuthStore = defineStore('auth', {
         await this.refresh()
       }
     },
-    async startUserApiKey() {
+    async startUserApiKey(mode: 'system-browser' | 'embedded' = 'system-browser') {
       this.loading = true
-      this.message = ''
+      this.message = mode === 'system-browser' ? '已在系统浏览器打开授权页，点击页面上的「授权」按钮即可…' : ''
       try {
-        const res = await window.api.openUserApiKeyLogin()
+        const res = await window.api.openUserApiKeyLogin(mode)
         this.message = res.ok
           ? `授权成功${res.username ? `：@${res.username}（API Key 已加密保存，重启免登录）` : '（API Key 已加密保存）'}`
           : `授权失败：${res.error ?? '未知错误'}`
