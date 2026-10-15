@@ -1,0 +1,30 @@
+{
+  "name": "linuxdo-desktop",
+  "version": "0.1.0",
+  "description": "LinuxDo 桌面客户端（Electron + Vue 3，自建 UI 走 Discourse API）",
+  "main": "./out/main/index.js",
+  "author": "admin",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false && vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "smoke": "electron-vite build && electron ./out/main/index.js --smoke",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "dependencies": {
+    "pinia": "^3.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^4.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vue-tsc": "^3.0.0"
+  }
+}

@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "架构决策：Electron+Vue3 自建 UI、主进程网络层、登录双通道、不变量"}
+{"file": ".thinkrail/context/TASK-linuxdo-desktop.md", "reason": "brainstorm 定稿：用户决策、Electron vs Tauri 终审、MVP 分期与风险"}

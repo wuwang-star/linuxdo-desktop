@@ -1,0 +1,32 @@
+---
+id: spec-linuxdo-desktop
+type: architecture-design
+status: active
+title: LinuxDo 桌面客户端架构（Electron + Vue 3 自建 UI）
+tags: [linuxdo, discourse, electron, vue3, desktop]
+---
+
+## 驱动
+
+linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 FluxDO（Flutter，GPL-3.0，仅参考行为不复用代码）与 Awesome LinuxDo Reader（MIT，仅参考设计）。MVP 重点：连续阅读工作区、楼中楼/讨论上下文、翻译/离线/同步、桌面壳能力。
+
+## 决策
+
+1. **完全自建 UI + Discourse JSON API**，不做原站套壳；不内嵌 ALDR，全部自研。
+2. **Electron**（非 Tauri）：单一 TS 语言栈；Win/mac 同 Chromium 内核；嵌入式登录窗口可与 API 请求共享 cookie jar（CF 兜底）；生态适合新手。代价是体积/内存，可接受。
+3. **Vue 3 + Vite + Pinia + TypeScript**；构建链 electron-vite；打包 electron-builder + electron-updater（GitHub Releases）。
+4. **网络层在主进程**：所有 linux.do 请求经主进程统一出口（浏览器级 UA、限流退避、诊断），renderer 只经 IPC 消费，避免 renderer 侧 CORS/CF 问题。
+5. **登录双通道**：Discourse user-api-key（Api-Key header）为主；嵌入式登录窗口（真实浏览器环境过 CF）后的 cookie 会话为兜底。
+6. FluxDO 代码 GPL-3.0：禁止复制；API 端点知识可自由使用。ALDR MIT：亦不复用代码，仅参考设计。
+
+## 不变量
+
+- linux.do 站点私有插件端点（Reactions/Boost/Voting）实现前必须抓包核实，并集中封装在 API 客户端层。
+- API 客户端必须内置：浏览器级 UA、429 指数退避、错误诊断信息透出。
+- 登录凭据（api key / cookie）只存本机（safeStorage 加密），永不进同步/导出。
+
+## 范围之外
+
+- Linux 平台、移动端（FluxDO 已覆盖移动场景）。
+- 原站替代（不镜像 linux.do 内容服务）。
+- P2 之后的 VoIP/音视频通话等站内不存在的功能。
