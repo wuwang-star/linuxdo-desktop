@@ -312,3 +312,36 @@ brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+
 
 - 用户 dev 验收设置中心与视觉；此前积压：P1 AC1–3、P2a 真机安装/托盘/协议回调、GitHub repo（AC5）、登录方案 A/B/C、DoH 真实现立项
 - 后续页面（登录/列表/阅读）吃 tokens 的设计统一任务待排
+
+
+## Session 11: Connect 实测调试 + 伴生扩展桥接（方案 C）
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-companion-ext
+**Branch**: `master`
+
+### Summary
+
+用户 Connect 后台建好 OAuth 应用（回调=本地回环 17365），实测回环已触发但登录未落地。根因定位：connect.ts 的 token 交换/身份拉取用 Node 全局 fetch（undici），不走系统代理——浏览器（Clash）能开授权页而主进程直连 connect.linux.do 超时。修复：改 Electron net.fetch（系统代理）+20s 超时（7df7a90）。用户中途点进方式三 user_api_key 死通道造成「页面不存在」干扰判断（该通道本就标 ⚠️ 未开放）。用户确认要方案 C：伴生 MV3 扩展桥接——extension/ 零构建扩展读 linux.do _t 经 cookies.onChanged 自动 POST 应用回环口 17366/ingest（配对码防护、仅绑 127.0.0.1、凭据不回显），走既有 setTCookieManually 落登录态；settings 增 bridgeEnabled/bridgePairCode；LoginView 方式二卡片加桥接行。另：设置中心已交付（七分类+设计 tokens+通知开关+DoH 默认端点 edge.1molchuan.top，4face00），并在打包应用实机自验七分类/关于页 v0.1.0/联动画法全过。登录页多入口易点串的 UX 债已记待收编。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a9f4851` | feat: 伴生 Edge 扩展桥接（方案 C）——扩展+回环口 17366+配对码+桥接行 UI |
+| `7df7a90` | fix: Connect token 交换改 net.fetch 走系统代理（根因修复） |
+
+### Testing
+
+- [OK] typecheck 0 错（每任务收尾复跑）；smoke SMOKE_OK
+- [待人工] Connect 全链路（net.fetch 修复后复验）；扩展桥接 AC1（Edge 加载 extension/ → 填配对码 → 登录自动同步）；设置中心 AC2（通知开关对真实 push）
+
+### Status
+
+[进行中] companion-ext 代码交付待人工 AC1；Connect 修复待复验；p1-wrapup/p2-doh/p2a-dist/settings-center 待验收归档
+
+### Next Steps
+
+- 用户 Edge 加载 extension/（edge://extensions 开发人员模式）→ 应用开桥接填配对码 → Edge 登录 linux.do 验证自动同步
+- Connect 授权重试（net.fetch 修复后）；成功记 SPEC 实测结论
+- 积压决策不变：GitHub repo（AC5）、DoH 真实现立项；登录页多入口 UX 收编任务待排
