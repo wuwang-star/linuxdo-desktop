@@ -183,3 +183,33 @@ User API Key 官方流程完整实现（内嵌授权窗口拦截 linuxdo-desktop
 ### Next Steps
 
 - 用户重启 dev 验证：浏览器窗口登录 → 重启免登录（cookie 留存）；继续 P1 剩余人工验证（通知/回复/点赞/翻译）
+
+
+## Session 7: Connect 身份登录接入（OAuth2+PKCE）
+<!-- trellis-session: v=2 fp=4d045759809999af -->
+
+**Date**: 2026-10-15
+**Task**: Connect 身份登录接入（OAuth2+PKCE）
+**Branch**: `master`
+
+### Summary
+
+用户在 connect.linux.do/dash/sso 自建 OAuth 应用。实现：PKCE S256 + state 授权码流程（系统浏览器打开 /oauth2/authorize），双回调模式（协议 linuxdo-desktop://connect 复用单实例锁转发；本地回环 127.0.0.1:17365/callback 内置 http 服务+成功提示页），token 交换与 /api/user 身份拉取，ClientSecret/accessToken/refreshToken safeStorage 加密。回调路由按 payload/code 分流。明确边界：Connect 仅身份（openid/profile/email），无论坛 API 权限，论坛会话仍走 cookie 登录。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `99dec0e` | feat: 授权页支持系统浏览器打开 —— 复用浏览器 linux.do 登录态；linuxdo-desktop:// 协议注册 + 单实例锁转发回调（second-instance/open-url），内嵌窗口授权保留为备选 |
+
+### Testing
+
+- [OK] typecheck 0 错；build 0 错
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户填 ClientId/Secret 选回调模式实测 Connect 授权；继续 P1 人工验证与 P2
