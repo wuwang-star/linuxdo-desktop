@@ -246,3 +246,38 @@ brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+
 
 - 用户 `pnpm run dev` cookie 登录实测 AC1/AC2/AC3；通过后 `task.py archive 10-15-p1-wrapup`
 - MessageBus 若实测频道名/分块格式不符，只改 messagebus.ts 解析器（extractChunks）；长轮询整体不通则降级 15s 短轮询（AC1 仍满足），决定记入 SPEC
+
+
+## Session 9: DoH（实验降级）+ Trellis 轻量化 + P2a 打包分发
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-p2-doh、.trellis/tasks/10-16-p2a-dist
+**Branch**: `master`
+
+### Summary
+
+用户连发多条方向指令：doh 优先开发；质量/安全双评审先不做（太慢）→ 改 workflow.md 2.2 与 trellis-check SKILL 为「默认内联 typecheck+smoke，全量评审用户明确要求才做」（两份 skill 副本同步）；功能/UI/设置都要参考 FluxDO+ALDR（已存记忆，任务 PRD 落地）。DoH：trellis-implement 六步交付后，独立评审揪出 P0——dns-over-https-mode/templates 是 Chrome 浏览器层开关，Electron 44 网络服务硬编码 SecureDnsMode::kOff 不消费（源码级核实），整个功能空转。如实降级：默认关闭、UI 标「实验·暂未生效」、README/SPEC 记源码依据与真实现路径（本地 DoH 代理 / host-resolver-rules，另立任务）；顺修 P2×4（模板 URL 规范化、布尔归一、原子写盘、非法模板保存反馈）。P2a：安装包 106MB 产出、win-unpacked SMOKE_OK、托盘/原生通知/updater 降级链落地；偏差 publish:never 无效改省略 publish 键。设置中心任务（10-16-settings-center）按用户要求排队，PRD 写明参考两系统。流程变化后不再派评审子智能体，收尾仅内联 typecheck+smoke。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `53a5e60` | feat: DoH 加密 DNS 设置基建（实验）——开关接线/持久化/UI/resolveHost 诊断按钮；Electron 44 不消费该开关如实降级 |
+| `84b8683` | chore: Trellis 流程轻量化——2.2 默认内联检查，全量评审 opt-in |
+| `1ef8105` | feat: P2a 打包分发——NSIS 安装包/托盘/原生通知/updater 降级链，产物 106MB SMOKE_OK |
+
+### Testing
+
+- [OK] typecheck 0 错（每个任务收尾复跑）；smoke SMOKE_OK；dist 产物 win-unpacked smoke 通过
+- [待人工] DoH AC1–3（当前功能未生效，等真实现任务）；P1 的 AC1–3（登录态验收）；P2a AC1–5 真机项（双击安装/协议回调/托盘/通知点击/升级链路）
+
+### Status
+
+[进行中] DoH 以「实验·未生效」状态收尾；P2a 代码交付待真机验收；三任务（p1-wrapup/p2-doh/p2a-dist）in_progress，settings-center 排队
+
+### Next Steps
+
+- 用户真机验收：装 dist 安装包 → 登录 → 通知/队列/编辑（P1）+ 托盘/协议回调（P2a）
+- 给 GitHub repo（owner/repo）→ 填 builder.yml publish 接通 AC5 升级链路
+- 登录「系统浏览器读登录态」方案 A/B/C 待用户选（B=_t 半自动回填推荐）
+- 排队：settings-center（先调研 FluxDO/ALDR 设置结构）；DoH 真实现另立任务
