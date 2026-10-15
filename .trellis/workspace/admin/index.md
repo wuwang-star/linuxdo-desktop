@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 3
+- **Total Sessions**: 4
 - **Last Active**: 2026-10-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~95 | Active |
+| `journal-1.md` | ~125 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 4 | 2026-10-15 | 登录三通道 + 登录态留存 | `4bf5a4a` | `master` |
 | 3 | 2026-10-15 | P1：互动/通知/翻译落地 + 两个关键根因修复 | `6ba8196` | `master` |
 | 2 | 2026-10-15 | P0 数据链路全通：cookie 登录 + API 30 主题 | - | `master` |
 | 1 | 2026-10-15 | P0：Electron+Vue3 脚手架与核心阅读落地 | `070d3a8` | `master` |

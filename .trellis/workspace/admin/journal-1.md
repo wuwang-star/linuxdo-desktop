@@ -93,3 +93,33 @@ CSRF 基建（403 自动刷新重试）+ 回复/点赞/收藏写操作（form-en
 ### Next Steps
 
 - 用户 dev 内验证：右上角用户名、铃铛通知、回复/点赞/收藏、翻译配置；P2：楼中楼嵌套、离线、托盘
+
+
+## Session 4: 登录三通道 + 登录态留存
+<!-- trellis-session: v=2 fp=07ddfeb81fdb378e -->
+
+**Date**: 2026-10-15
+**Task**: 登录三通道 + 登录态留存
+**Branch**: `master`
+
+### Summary
+
+User API Key 官方流程完整实现（内嵌授权窗口拦截 linuxdo-desktop:// 回调，解密校验 nonce 后 safeStorage 落存，请求自动带 User-Api-Key 头，重启免登录）；浏览器登录成功后 cookies.flushStore 强化落盘；手动 _t cookie 注入（一年有效期+落盘）。UAK_PAGE 403 系探测进程非浏览器环境被 CF 拦，真实授权窗口为完整 Chromium 不受影响，需用户在 dev 内点「一键申请授权」实测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4bf5a4a` | feat(P1): 登录三通道与登录态留存 —— ①User API Key 官方授权流程（RSA 密钥对+nonce 校验+OAEP 多填充兼容解密，safeStorage 长期保存，User-Api-Key 头）②内嵌浏览器登录（成功后 flushStore 落盘）③手动粘贴 _t cookie（测试秒切）；认证头区分 user/admin 两类 Key |
+
+### Testing
+
+- [OK] typecheck 0 错；build 0 错
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户 dev 实测方式一授权与重启留存；P2 继续
