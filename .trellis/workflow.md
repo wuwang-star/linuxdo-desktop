@@ -222,7 +222,7 @@ Inline mode: skip jsonl curation; Phase 2 reads artifacts/specs via `trellis-bef
 
 ### Phase 2: Execute
 - 2.1 Implement `[required · repeatable]`
-- 2.2 Quality check `[required · repeatable]`
+- 2.2 Quality check `[required · repeatable · lightweight by default]` — 默认主会话内联跑快命令（typecheck + smoke/构建），**不派子智能体做全量/安全评审**；全量 trellis-check 或独立安全评审仅在用户明确要求时进行（用户 2026-10-16 决策：重检查触发太慢，先不做）
 - 2.3 Rollback `[on demand]`
 
 <!-- Per-turn breadcrumb: shown while status='in_progress'.

@@ -109,3 +109,10 @@ Report every violation you find. Then:
 - Design or judgment (naming a shared concept, moving a module boundary, changing a public interface, reassigning where behavior lives) → record the evidence and your recommendation, and stop. Do not rewrite it silently.
 
 If a fix would touch files outside the current task's scope, say so and stop instead of widening the change.
+
+---
+
+## Lightweight Default（2026-10-16 用户决策）
+
+默认**不要**自动派子智能体执行本技能的全量检查：主会话内联跑快命令即可（`pnpm run typecheck` + `pnpm run smoke`/build）。
+全量检查（跨层一致性/安全评审/复用审计）仅在**用户明确要求**时执行——触发太慢是用户明示原因。
