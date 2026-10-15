@@ -390,4 +390,3 @@ export function fetchNotifications(page = 1): Promise<NotificationsResponse> {
 export function markNotificationsRead(): Promise<unknown> {
   return writeRequest<unknown>('PUT', '/notifications/mark-read', {})
 }
-export const TAIL_MARKER_888 = 1
