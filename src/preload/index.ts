@@ -32,6 +32,8 @@ const api = {
   getDohConfig: () => ipcRenderer.invoke('settings:getDoh'),
   setDohConfig: (enabled: boolean, mode: string, template: string) =>
     ipcRenderer.invoke('settings:setDoh', enabled, mode, template),
+  getNotificationConfig: () => ipcRenderer.invoke('settings:getNotification'),
+  setNotificationConfig: (enabled: boolean) => ipcRenderer.invoke('settings:setNotification', enabled),
   resolveDns: () => ipcRenderer.invoke('diag:resolveDns'),
   getConnectStatus: () => ipcRenderer.invoke('connect:getStatus'),
   saveConnectConfig: (clientId: string, callbackMode: 'protocol' | 'loopback', clientSecret?: string) =>

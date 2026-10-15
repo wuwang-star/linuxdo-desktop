@@ -51,7 +51,7 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 ### DoH 加密 DNS（P2，2026-10-15；评审后改判「开关无效，暂不生效」）
 
 - **评审结论（源码级核实）**：`dns-over-https-mode`/`dns-over-https-templates` 是 Chrome 浏览器层开关（chrome/common/chrome_switches），Electron 的网络服务不消费——`shell/browser/net/system_network_context_manager.cc` 的 `OnNetworkServiceCreated` 硬编码 `SecureDnsMode::kOff`（v44.0.0 核实）。`src/main/index.ts` 的命令行开关接线为空转（保留以备上游支持），**DNS 实际走系统解析**。
-- 本任务交付：设置基建（`settings.ts`：默认 enabled=false、mode=secure、template=Cloudflare；模板必须 `https://` 合法 URL，规范化为 href、含空白拒绝，非法静默回退默认；`dohEnabled` 布尔归一防脏数据；配置原子写盘——临时文件 + rename，防半截 JSON 毁掉同文件 translate 配置）+ `diag:resolveDns` 诊断按钮（`resolveHost('linux.do')`，Electron 44 已移除 resolveDNS，用替代 API）。UI 顶部明示「实验功能：暂未生效」。
+- 本任务交付：设置基建（`settings.ts`：默认 enabled=false、mode=secure、template=`https://edge.1molchuan.top/linuxdo`（用户指定自建端点，2026-10-16 起为默认，旧值 Cloudflare 仍为预设之一）；模板必须 `https://` 合法 URL，规范化为 href、含空白拒绝，非法静默回退默认；`dohEnabled` 布尔归一防脏数据；配置原子写盘——临时文件 + rename，防半截 JSON 毁掉同文件 translate 配置）+ `diag:resolveDns` 诊断按钮（`resolveHost('linux.do')`，Electron 44 已移除 resolveDNS，用替代 API）。UI 顶部明示「实验功能：暂未生效」。
 - 真实现路径（另立任务）：本地 DoH 代理 + `host-resolver-rules` 映射，或上游 Electron 消费浏览器层开关后直接复用现有接线。届时 mode 语义：secure=仅加密解析（失败即断）；auto=加密优先、失败回退系统 DNS（DoH 域被墙环境切 auto）。
 
 ### P2a 打包分发（2026-10-16）

@@ -91,9 +91,10 @@ onBeforeUnmount(() => {
           🔔
           <span v-if="unread > 0" class="badge">{{ unread > 99 ? '99+' : unread }}</span>
         </RouterLink>
+        <RouterLink to="/settings">设置</RouterLink>
         <RouterLink to="/login" class="login-link">
           <template v-if="who">@{{ who }}</template>
-          <template v-else>登录 / 设置</template>
+          <template v-else>登录</template>
         </RouterLink>
       </nav>
     </div>

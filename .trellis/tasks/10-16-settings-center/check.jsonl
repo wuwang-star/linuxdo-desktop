@@ -1,0 +1,2 @@
+{"file": ".trellis/tasks/10-16-settings-center/prd.md", "reason": "AC1–AC4 逐条核对（行为不变迁移）"}
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "确认未引入 renderer 直连与凭据路径变化"}

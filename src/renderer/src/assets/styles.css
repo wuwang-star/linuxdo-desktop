@@ -1,12 +1,26 @@
+/* ---------- 设计 tokens（设置中心为基准页；--accent/--border 为真源，--brand/--line 为兼容别名） ---------- */
 :root {
   --bg: #f6f7f9;
   --panel: #ffffff;
   --text: #1b1f24;
   --muted: #6b7280;
-  --brand: #1a7f64;
-  --brand-weak: #e6f2ee;
-  --line: #e5e7eb;
+  --accent: #1a7f64;
+  --brand: var(--accent);
+  --accent-weak: #e6f2ee;
+  --brand-weak: var(--accent-weak);
+  --border: #e5e7eb;
+  --line: var(--border);
   --bad: #c0392b;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --font-mono: Consolas, monospace;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -14,10 +28,11 @@
     --panel: #1d2126;
     --text: #e6e8ea;
     --muted: #9aa1a9;
-    --brand: #3ecf9a;
-    --brand-weak: #1d2b26;
-    --line: #2b3138;
+    --accent: #3ecf9a;
+    --accent-weak: #1d2b26;
+    --border: #2b3138;
     --bad: #e57368;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -110,6 +125,8 @@ button.primary:disabled { opacity: .5; }
 .diag-row { display: flex; gap: 8px; color: var(--muted); }
 .diag-row .st { width: 30px; }
 .diag-row .ms { width: 60px; }
+.diag-row .time { width: 70px; font-size: 11px; opacity: 0.85; }
+.diag-row .method { width: 44px; }
 .diag-row.bad { color: var(--bad); }
 .diag-row .url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -166,4 +183,49 @@ button.primary:disabled { opacity: .5; }
 .doh-radios { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
 .doh-radios label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .dns-result { font-family: Consolas, monospace; word-break: break-all; }
+
+/* ---------- 设置中心：布局 ---------- */
+.settings-page { max-width: 860px; margin: 0 auto; padding: var(--space-5) var(--space-4) 60px; display: flex; gap: var(--space-4); align-items: flex-start; }
+.settings-nav { flex: none; width: 132px; display: flex; flex-direction: column; gap: var(--space-1); position: sticky; top: var(--space-3); }
+.settings-nav button { text-align: left; padding: var(--space-2) 14px; border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 10px; }
+.settings-nav button:hover { background: var(--panel); color: var(--text); }
+.settings-nav button.active { color: var(--accent); background: var(--accent-weak); border-color: var(--accent); }
+.settings-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.settings-version { color: var(--muted); font-size: 12px; margin-left: var(--space-2); }
+.settings-entry { display: inline-flex; align-items: center; padding: 6px 14px; }
+@media (max-width: 640px) {
+  .settings-page { flex-direction: column; }
+  .settings-nav { position: static; width: 100%; flex-direction: row; }
+}
+
+/* ---------- 设置中心：卡片行（标签+说明在左，控件在右） ---------- */
+.field-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; }
+.field-row + .field-row { border-top: 1px solid var(--border); }
+.field-main { min-width: 0; }
+.field-label { font-weight: 600; font-size: 13px; }
+.field-desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.field-control { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
+.field-control select, .field-control input { width: 240px; }
+
+/* ---------- 设置中心：switch（纯 CSS，label+checkbox） ---------- */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
+.switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; background: transparent; opacity: 0; cursor: pointer; z-index: 1; }
+.switch-track { position: absolute; inset: 0; background: var(--border); border-radius: var(--radius-pill); transition: background 0.15s; }
+.switch-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--panel); border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.15s; }
+.switch input:checked ~ .switch-track { background: var(--accent); }
+.switch input:checked ~ .switch-thumb { transform: translateX(18px); }
+.switch input:disabled ~ .switch-track { opacity: 0.5; }
+
+/* ---------- 设置中心：segmented control（纯 CSS，radio） ---------- */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg); }
+.seg-opt { position: relative; }
+.seg-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; background: transparent; opacity: 0; cursor: pointer; z-index: 1; }
+.seg-opt span { display: block; padding: 6px 14px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.seg-opt + .seg-opt { border-left: 1px solid var(--border); }
+.seg-opt input:checked + span { background: var(--panel); color: var(--accent); font-weight: 600; }
+.seg-opt input:disabled + span { opacity: 0.5; cursor: default; }
+
+/* ---------- 设置中心：banner（醒目但不刺眼的提示行） ---------- */
+.settings-banner { display: flex; align-items: flex-start; gap: var(--space-2); background: var(--accent-weak); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); font-size: 12px; color: var(--text); }
+.settings-banner .banner-icon { flex: none; line-height: 1.6; }
 

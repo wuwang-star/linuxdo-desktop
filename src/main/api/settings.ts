@@ -17,12 +17,16 @@ export interface DohConfig {
   template: string
 }
 
+export interface NotificationConfig {
+  enabled: boolean
+}
+
 /**
- * DoH 默认值：关闭 + secure + Cloudflare 模板。
+ * DoH 默认值：关闭 + secure + 自建模板（用户指定自建端点 edge.1molchuan.top，2026-10-16）。
  * enabled 默认 false：Electron 44 网络服务不消费 DoH 命令行开关（源码核实，见 SPEC），
  * 默认开启只是「假装生效」；待真实现（本地 DoH 代理等）落地后再放开。
  */
-const DOH_DEFAULT: DohConfig = { enabled: false, mode: 'secure', template: 'https://1.1.1.1/dns-query' }
+const DOH_DEFAULT: DohConfig = { enabled: false, mode: 'secure', template: 'https://edge.1molchuan.top/linuxdo' }
 
 interface StoredConfig {
   baseUrl: string
@@ -30,6 +34,7 @@ interface StoredConfig {
   dohEnabled: boolean
   dohMode: DohMode
   dohTemplate: string
+  notificationEnabled: boolean
 }
 
 const cfgFile = (): string => join(app.getPath('userData'), 'translate-settings.json')
@@ -80,7 +85,13 @@ function loadOnce(): void {
   try {
     if (existsSync(cfgFile())) {
       const raw = JSON.parse(readFileSync(cfgFile(), 'utf8')) as StoredConfig
-      cache = { baseUrl: raw.baseUrl ?? '', model: raw.model ?? '', ...dohFieldsOf(raw) }
+      cache = {
+        baseUrl: raw.baseUrl ?? '',
+        model: raw.model ?? '',
+        ...dohFieldsOf(raw),
+        // 旧配置文件无此字段（p2a 之前）→ 默认开启；其余值 Boolean 强转防脏数据
+        notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled)
+      }
     }
   } catch {
     cache = null
@@ -110,7 +121,8 @@ export function setTranslateConfig(baseUrl: string, model: string, key?: string)
     model: model.trim(),
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
-    dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template
+    dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    notificationEnabled: cache?.notificationEnabled ?? true
   }
   try {
     writeConfigFile(cache)
@@ -178,7 +190,8 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     model: cache?.model ?? '',
     dohEnabled: Boolean(enabled),
     dohMode: mode === 'auto' ? 'auto' : 'secure',
-    dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template
+    dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template,
+    notificationEnabled: cache?.notificationEnabled ?? true
   }
   try {
     writeConfigFile(cache)
@@ -186,4 +199,31 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     /* 配置写失败不阻塞，内存态仍生效 */
   }
   return getDohConfig()
+}
+
+export function getNotificationConfig(): NotificationConfig {
+  loadOnce()
+  return { enabled: cache?.notificationEnabled ?? true }
+}
+
+/**
+ * 保存原生通知开关（明文 JSON，与 translate/DoH 同文件）。
+ * 内存 cache 即时生效——notify.ts 每次发送前读取，无需重启。
+ */
+export function setNotificationConfig(enabled: boolean): NotificationConfig {
+  loadOnce()
+  cache = {
+    baseUrl: cache?.baseUrl ?? '',
+    model: cache?.model ?? '',
+    dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
+    dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
+    dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    notificationEnabled: Boolean(enabled)
+  }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 配置写失败不阻塞，内存态仍生效 */
+  }
+  return getNotificationConfig()
 }

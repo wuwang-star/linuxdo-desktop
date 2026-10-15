@@ -7,7 +7,7 @@ import type {
   TopicListResponse,
   DiagEntry
 } from '../main/api/client'
-import type { TranslateConfig, DohConfig, DohMode } from '../main/api/settings'
+import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
@@ -46,6 +46,8 @@ export interface ApiBridge {
   setTranslateConfig(baseUrl: string, model: string, key?: string): Promise<TranslateConfig>
   getDohConfig(): Promise<DohConfig>
   setDohConfig(enabled: boolean, mode: DohMode, template: string): Promise<DohConfig>
+  getNotificationConfig(): Promise<NotificationConfig>
+  setNotificationConfig(enabled: boolean): Promise<NotificationConfig>
   resolveDns(): Promise<{ ok: boolean; addresses?: string[]; error?: string }>
   getConnectStatus(): Promise<ConnectStatus>
   saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>
@@ -58,6 +60,8 @@ export interface ApiBridge {
 }
 
 declare global {
+  /** 构建期由 electron.vite.config.ts renderer define 注入的 package.json version */
+  const __APP_VERSION__: string
   interface Window {
     api: ApiBridge
   }

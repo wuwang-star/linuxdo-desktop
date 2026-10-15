@@ -1,5 +1,6 @@
 import { Notification, BrowserWindow } from 'electron'
 import type { MessageBusMessage } from './api/messagebus'
+import { getNotificationConfig } from './api/settings'
 import { focusMainWindow } from './win'
 
 /**
@@ -27,6 +28,8 @@ function extractPushInfo(m: MessageBusMessage): PushInfo {
 }
 
 export function showPushNotification(m: MessageBusMessage): void {
+  // 设置中心开关：关 = 完全不弹系统通知（进程内徽标/toast 不受影响，仍在 renderer 侧）
+  if (!getNotificationConfig().enabled) return
   if (!Notification.isSupported()) return
   const info = extractPushInfo(m)
   const n = new Notification({

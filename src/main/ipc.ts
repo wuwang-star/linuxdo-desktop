@@ -25,7 +25,15 @@ import {
   clearApiKey,
   setTCookieManually
 } from './api/auth'
-import { getTranslateConfig, setTranslateConfig, getDohConfig, setDohConfig, type DohMode } from './api/settings'
+import {
+  getTranslateConfig,
+  setTranslateConfig,
+  getDohConfig,
+  setDohConfig,
+  getNotificationConfig,
+  setNotificationConfig,
+  type DohMode
+} from './api/settings'
 import { translatePostText } from './api/translate'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
@@ -100,6 +108,9 @@ export function registerIpc(): void {
   ipcMain.handle('settings:setDoh', (_e, enabled: boolean, mode: DohMode, template: string) =>
     setDohConfig(enabled, mode, template)
   )
+  // ---------- 原生通知开关（内存即时生效，notify.ts 发送前读取） ----------
+  ipcMain.handle('settings:getNotification', () => getNotificationConfig())
+  ipcMain.handle('settings:setNotification', (_e, enabled: boolean) => setNotificationConfig(enabled))
   // resolveHost 走 Chromium host resolver（secure 模式下即 DoH 客户端），结果仅作诊断展示。
   // 注：设计稿写的 resolveDNS 在 Electron 44 已移除，此处用替代 API resolveHost。
   ipcMain.handle('diag:resolveDns', async () => {

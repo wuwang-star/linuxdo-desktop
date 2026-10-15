@@ -26,10 +26,11 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 - 最新/分类主题列表，无限滚动
 - 主题阅读：post_stream 全量 id + 分块懒加载（向上加载更早楼层、滚动锚点保持）、已读进度保存与恢复
 - 讨论上下文：reply_to 父回复跳转（按需加载分块）、只看楼主、右侧楼层时间轴
+- 设置中心（顶栏「设置」）：网络（DoH）/ 翻译 / 关于 三分类，未登录可直达
 
 ## 网络（DoH，实验，当前未生效）
 
-应用内建 DoH 设置基建：设置页可开关/切模式（secure/auto）/选解析器模板（Cloudflare/Google/阿里/自定义），并提供 `resolveHost('linux.do')` 测试解析按钮。
+应用内建 DoH 设置基建：设置中心（顶栏「设置」→ 网络）可开关/切模式（secure/auto）/选解析器模板（默认为用户指定自建端点 edge.1molchuan.top，另有 Cloudflare/Google/阿里/自定义），并提供 `resolveHost('linux.do')` 测试解析按钮。
 
 **当前 Electron 44 下 DoH 实际不生效**：`dns-over-https-mode` / `dns-over-https-templates` 是 Chrome 浏览器层命令行开关，Electron 的网络服务不消费（源码核实 v44.0.0 `system_network_context_manager.cc` 硬编码 DoH off），DNS 实际走系统解析。默认关闭、不假装生效；设置与诊断按钮保留，待后续采用本地 DoH 代理或 host-resolver-rules 方案时复用（另立任务）。
 

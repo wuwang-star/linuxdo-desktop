@@ -1,88 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import type { DiagEntry } from '../../../main/api/client'
-import type { TranslateConfig } from '../../../main/api/settings'
 
 const auth = useAuthStore()
 const apiKey = ref('')
 const apiUsername = ref('')
-const diag = ref<DiagEntry[]>([])
-
-// ---- 翻译服务配置 ----
-const trBaseUrl = ref('')
-const trModel = ref('')
-const trKey = ref('')
-const trSaving = ref(false)
-const trMessage = ref('')
-const trConfigured = ref(false)
-
-async function saveTranslate(): Promise<void> {
-  if (trSaving.value) return
-  trSaving.value = true
-  trMessage.value = ''
-  try {
-    const cfg: TranslateConfig = await window.api.setTranslateConfig(
-      trBaseUrl.value,
-      trModel.value,
-      trKey.value ? trKey.value : undefined
-    )
-    trConfigured.value = Boolean(cfg.baseUrl) && cfg.hasKey
-    trKey.value = ''
-    trMessage.value = '翻译服务配置已保存'
-  } catch (e) {
-    trMessage.value = e instanceof Error ? e.message : String(e)
-  } finally {
-    trSaving.value = false
-  }
-}
-
-// ---- DoH 加密 DNS ----
-const dohPresets = ['https://1.1.1.1/dns-query', 'https://dns.google/dns-query', 'https://dns.alidns.com/dns-query']
-const dohEnabled = ref(true)
-const dohMode = ref<'secure' | 'auto'>('secure')
-const dohTemplate = ref(dohPresets[0])
-const dohCustom = ref('')
-const dohSaving = ref(false)
-const dohMessage = ref('')
-const dohTesting = ref(false)
-const dnsResult = ref('')
-
-async function saveDoh(): Promise<void> {
-  if (dohSaving.value) return
-  dohSaving.value = true
-  dohMessage.value = ''
-  try {
-    const tpl = dohTemplate.value === 'custom' ? dohCustom.value : dohTemplate.value
-    const res = await window.api.setDohConfig(dohEnabled.value, dohMode.value, tpl)
-    // 主进程对模板做 https:// 校验，非法静默回退默认；比对返回值提示用户实际落盘结果
-    if (res.template !== tpl) {
-      dohMessage.value = `提交的模板非法，已回退默认：${res.template}`
-    } else {
-      dohMessage.value = '已保存'
-    }
-  } catch (e) {
-    dohMessage.value = e instanceof Error ? e.message : String(e)
-  } finally {
-    dohSaving.value = false
-  }
-}
-
-async function testDns(): Promise<void> {
-  if (dohTesting.value) return
-  dohTesting.value = true
-  dnsResult.value = ''
-  try {
-    const res = await window.api.resolveDns()
-    dnsResult.value = res.ok
-      ? `解析成功（当前运行态）：${res.addresses?.join(', ') || '（无地址）'}`
-      : `解析失败：${res.error ?? '未知错误'}`
-  } catch (e) {
-    dnsResult.value = `解析失败：${e instanceof Error ? e.message : String(e)}`
-  } finally {
-    dohTesting.value = false
-  }
-}
 
 // ---- 登录方式 ----
 const tCookie = ref('')
@@ -142,24 +64,10 @@ async function pasteCookie(): Promise<void> {
 
 onMounted(async () => {
   await auth.refresh()
-  diag.value = await window.api.diagnostics()
-  const cfg = await window.api.getTranslateConfig()
-  trBaseUrl.value = cfg.baseUrl
-  trModel.value = cfg.model
-  trConfigured.value = Boolean(cfg.baseUrl) && cfg.hasKey
   const conn = await window.api.getConnectStatus()
   connClientId.value = conn.identity ? connClientId.value || '' : connClientId.value
   connMode.value = conn.callbackMode
   connIdentity.value = conn.identity
-  const doh = await window.api.getDohConfig()
-  dohEnabled.value = doh.enabled
-  dohMode.value = doh.mode
-  if (dohPresets.includes(doh.template)) {
-    dohTemplate.value = doh.template
-  } else {
-    dohTemplate.value = 'custom'
-    dohCustom.value = doh.template
-  }
 })
 </script>
 
@@ -257,76 +165,10 @@ onMounted(async () => {
     </section>
 
     <section class="card">
-      <h2>翻译服务（OpenAI 兼容）</h2>
-      <p class="tip">
-        用于楼内「译」按钮的双语翻译。填任意 OpenAI 兼容端点（如 https://api.openai.com/v1 或自建网关）。
-        API Key 以系统加密存储在本机。状态：{{ trConfigured ? '✅ 已配置' : '未配置' }}
-      </p>
-      <input v-model="trBaseUrl" placeholder="Base URL，如 https://api.openai.com/v1" />
-      <input v-model="trModel" placeholder="模型，如 gpt-4o-mini" />
-      <input v-model="trKey" placeholder="API Key（留空表示不修改）" type="password" />
+      <h2>设置</h2>
+      <p class="tip">网络（加密 DNS）、通知、翻译与请求诊断均已移至设置中心。</p>
       <div class="row">
-        <button class="primary" :disabled="trSaving || !trBaseUrl || !trModel" @click="saveTranslate">
-          {{ trSaving ? '保存中…' : '保存' }}
-        </button>
-      </div>
-      <p v-if="trMessage" class="message">{{ trMessage }}</p>
-    </section>
-
-    <section class="card">
-      <h2>加密 DNS（DoH）</h2>
-      <p class="tip"><strong>实验功能</strong>：当前 Electron 版本下暂未生效，保留设置以备后续方案。</p>
-      <p class="tip">
-        linux.do 位于 Cloudflare，部分网络存在 DNS 污染导致直连不稳；DoH 用加密解析绕过污染（Cloudflare 域名另附 ECH 加密收益）。
-        此设置面向后续启用方案保留；届时改动需重启应用生效（Chromium 启动期开关限制）。
-      </p>
-      <label class="doh-toggle">
-        <input type="checkbox" v-model="dohEnabled" />
-        启用 DoH（默认开启；关闭则与系统默认行为一致）
-      </label>
-      <div class="doh-radios">
-        <label>
-          <input type="radio" value="secure" v-model="dohMode" :disabled="!dohEnabled" />
-          secure：只用加密 DNS，解析失败即断（DoH 域本身被墙时不可用）
-        </label>
-        <label>
-          <input type="radio" value="auto" v-model="dohMode" :disabled="!dohEnabled" />
-          auto：加密优先，失败回退系统 DNS（DoH 域被墙的网络选这个）
-        </label>
-      </div>
-      <select v-model="dohTemplate" :disabled="!dohEnabled">
-        <option value="https://1.1.1.1/dns-query">Cloudflare：https://1.1.1.1/dns-query</option>
-        <option value="https://dns.google/dns-query">Google：https://dns.google/dns-query</option>
-        <option value="https://dns.alidns.com/dns-query">阿里：https://dns.alidns.com/dns-query</option>
-        <option value="custom">自定义…</option>
-      </select>
-      <input
-        v-if="dohTemplate === 'custom'"
-        v-model="dohCustom"
-        placeholder="自定义 DoH 模板（https:// 开头）"
-        :disabled="!dohEnabled"
-      />
-      <div class="row">
-        <button class="primary" :disabled="dohSaving" @click="saveDoh">
-          {{ dohSaving ? '保存中…' : '保存' }}
-        </button>
-        <button :disabled="dohTesting" @click="testDns">
-          {{ dohTesting ? '解析中…' : '测试解析 linux.do' }}
-        </button>
-      </div>
-      <p v-if="dohMessage" class="message">{{ dohMessage }}</p>
-      <p v-if="dnsResult" class="tip dns-result">{{ dnsResult }}</p>
-    </section>
-
-    <section class="card">
-      <h2>请求诊断（最近）</h2>
-      <div class="diag">
-        <div v-for="(d, i) in diag.slice(0, 20)" :key="i" class="diag-row" :class="{ bad: d.status >= 400 || d.status === 0 }">
-          <span class="st">{{ d.status }}</span>
-          <span class="ms">{{ d.ms }}ms</span>
-          <span class="url">{{ d.url.replace('https://linux.do', '') }}</span>
-        </div>
-        <div v-if="diag.length === 0" class="tip">暂无请求</div>
+        <RouterLink class="act settings-entry" to="/settings">打开设置中心</RouterLink>
       </div>
     </section>
   </div>
