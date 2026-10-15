@@ -26,7 +26,11 @@ const api = {
   translatePost: (postId: number, text: string) => ipcRenderer.invoke('translate:post', postId, text),
   getTranslateConfig: () => ipcRenderer.invoke('settings:getTranslate'),
   setTranslateConfig: (baseUrl: string, model: string, key?: string) =>
-    ipcRenderer.invoke('settings:setTranslate', baseUrl, model, key)
+    ipcRenderer.invoke('settings:setTranslate', baseUrl, model, key),
+  getConnectStatus: () => ipcRenderer.invoke('connect:getStatus'),
+  saveConnectConfig: (clientId: string, callbackMode: 'protocol' | 'loopback', clientSecret?: string) =>
+    ipcRenderer.invoke('connect:saveConfig', clientId, callbackMode, clientSecret),
+  connectLogin: () => ipcRenderer.invoke('connect:login')
 }
 
 export type ApiBridge = typeof api

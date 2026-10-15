@@ -4,6 +4,7 @@ import { registerIpc } from './ipc'
 import { USER_AGENT, fetchLatest } from './api/client'
 import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
+import { handleConnectCallbackUrl } from './api/connect'
 
 const AUTH_PROTOCOL = 'linuxdo-desktop'
 
@@ -17,7 +18,10 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', (_event, argv) => {
     for (const arg of argv) {
-      if (isAuthCallbackUrl(arg)) handleAuthCallbackUrl(arg)
+      if (isAuthCallbackUrl(arg)) {
+        // 路由：payload= → user-api-key；code= → Connect OAuth
+        if (!handleAuthCallbackUrl(arg)) handleConnectCallbackUrl(arg)
+      }
     }
     for (const win of BrowserWindow.getAllWindows()) {
       if (!win.isDestroyed()) {

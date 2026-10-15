@@ -9,6 +9,7 @@ import type {
 } from '../main/api/client'
 import type { TranslateConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
+import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 
 export interface LoginStatus {
   cookie: boolean
@@ -40,6 +41,9 @@ export interface ApiBridge {
   translatePost(postId: number, text: string): Promise<string>
   getTranslateConfig(): Promise<TranslateConfig>
   setTranslateConfig(baseUrl: string, model: string, key?: string): Promise<TranslateConfig>
+  getConnectStatus(): Promise<ConnectStatus>
+  saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>
+  connectLogin(): Promise<{ ok: boolean; username?: string; error?: string }>
 }
 
 declare global {

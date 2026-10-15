@@ -172,6 +172,8 @@ export function handleAuthCallbackUrl(raw: string): boolean {
     return false
   }
   if (u.protocol !== 'linuxdo-desktop:') return false
+  // 只处理 user-api-key 回调（payload）；其余（如 connect 的 code）交由 connect 模块处理
+  if (!u.searchParams.has('payload')) return false
   const pending = pendingAuth
   if (!pending) return true // 无待授权请求（如冷启动误触发），静默忽略
   const payload = u.searchParams.get('payload')

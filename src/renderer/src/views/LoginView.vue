@@ -40,6 +40,53 @@ async function saveTranslate(): Promise<void> {
 // ---- 登录方式 ----
 const tCookie = ref('')
 
+// ---- Connect 身份登录 ----
+const connClientId = ref('')
+const connClientSecret = ref('')
+const connMode = ref<'protocol' | 'loopback'>('loopback')
+const connSaving = ref(false)
+const connLogging = ref(false)
+const connMessage = ref('')
+const connIdentity = ref<{ username: string; trust_level?: number; email?: string } | null>(null)
+
+async function saveConnect(): Promise<void> {
+  if (connSaving.value || !connClientId.value.trim()) return
+  connSaving.value = true
+  connMessage.value = ''
+  try {
+    const st = await window.api.saveConnectConfig(
+      connClientId.value,
+      connMode.value,
+      connClientSecret.value ? connClientSecret.value : undefined
+    )
+    connIdentity.value = st.identity
+    connClientSecret.value = ''
+    connMessage.value = 'Connect 配置已保存'
+  } catch (e) {
+    connMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    connSaving.value = false
+  }
+}
+
+async function connectLoginNow(): Promise<void> {
+  if (connLogging.value) return
+  connLogging.value = true
+  connMessage.value = '已在系统浏览器打开 Connect 授权页…'
+  try {
+    const res = await window.api.connectLogin()
+    if (res.ok) {
+      connMessage.value = `Connect 身份验证成功：@${res.username}`
+      const st = await window.api.getConnectStatus()
+      connIdentity.value = st.identity
+    } else {
+      connMessage.value = `Connect 授权失败：${res.error ?? '未知错误'}`
+    }
+  } finally {
+    connLogging.value = false
+  }
+}
+
 async function pasteCookie(): Promise<void> {
   if (!tCookie.value.trim() || auth.loading) return
   await auth.pasteTCookie(tCookie.value)
@@ -53,6 +100,10 @@ onMounted(async () => {
   trBaseUrl.value = cfg.baseUrl
   trModel.value = cfg.model
   trConfigured.value = Boolean(cfg.baseUrl) && cfg.hasKey
+  const conn = await window.api.getConnectStatus()
+  connClientId.value = conn.identity ? connClientId.value || '' : connClientId.value
+  connMode.value = conn.callbackMode
+  connIdentity.value = conn.identity
 })
 </script>
 
@@ -113,6 +164,40 @@ onMounted(async () => {
         </button>
         <button v-if="auth.status?.apiKey" @click="auth.clearApiKey()">清除</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>LINUX DO Connect 身份（OAuth2，实验）</h2>
+      <p class="tip">
+        用你在 Connect 后台创建的应用（/dash/sso）做身份验证，拿到用户名/信任等级等信息。
+        <strong>注意：这只提供身份，无论坛 API 权限</strong>；回帖/通知仍走上面的论坛登录。
+      </p>
+      <div v-if="connIdentity" class="tr-block" style="margin-bottom:8px">
+        <div class="tr-label">Connect 身份</div>
+        <div class="tr-text">
+          @{{ connIdentity.username }}
+          <span v-if="connIdentity.trust_level !== undefined">（信任等级 {{ connIdentity.trust_level }}）</span>
+          <span v-if="connIdentity.email"> · {{ connIdentity.email }}</span>
+        </div>
+      </div>
+      <input v-model="connClientId" placeholder="Client ID" />
+      <input v-model="connClientSecret" placeholder="Client Secret（留空表示不修改）" type="password" />
+      <div class="row">
+        <select v-model="connMode" style="flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text)">
+          <option value="loopback">回调：本地回环 http://127.0.0.1:17365/callback</option>
+          <option value="protocol">回调：协议 linuxdo-desktop://connect</option>
+        </select>
+      </div>
+      <p class="tip">回调方式必须与 Connect 后台登记的「回调地址」一致。</p>
+      <div class="row">
+        <button :disabled="connSaving || !connClientId.trim()" @click="saveConnect">
+          {{ connSaving ? '保存中…' : '保存配置' }}
+        </button>
+        <button class="primary" :disabled="connLogging" @click="connectLoginNow">
+          {{ connLogging ? '等待浏览器回调…' : '系统浏览器授权（身份）' }}
+        </button>
+      </div>
+      <p v-if="connMessage" class="message">{{ connMessage }}</p>
     </section>
 
     <section class="card">

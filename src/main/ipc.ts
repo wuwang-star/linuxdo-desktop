@@ -25,6 +25,7 @@ import {
 } from './api/auth'
 import { getTranslateConfig, setTranslateConfig } from './api/settings'
 import { translatePostText } from './api/translate'
+import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 
 export function registerIpc(): void {
   initAuth()
@@ -75,4 +76,12 @@ export function registerIpc(): void {
   ipcMain.handle('settings:setTranslate', (_e, baseUrl: string, model: string, key?: string) => {
     return setTranslateConfig(baseUrl, model, key)
   })
+  // ---------- Connect 身份登录（OAuth2，仅身份信息） ----------
+  ipcMain.handle('connect:getStatus', () => getConnectConfig())
+  ipcMain.handle(
+    'connect:saveConfig',
+    (_e, clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string) =>
+      saveConnectConfig(clientId, callbackMode, clientSecret)
+  )
+  ipcMain.handle('connect:login', () => connectLogin())
 }
