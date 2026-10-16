@@ -153,6 +153,7 @@ export interface DiscourseTopicLite {
   pinned?: boolean
   closed?: boolean
   archetype?: string
+  category_id?: number
   like_count?: number
   last_poster_username?: string
   posters?: { user_id: number; description?: string }[]
@@ -260,6 +261,75 @@ export function fetchTop(period: TopPeriod, page = 0): Promise<TopicListResponse
 
 export function fetchCategoryTopics(slug: string, id: number, page = 0): Promise<TopicListResponse> {
   return discourseRequest<TopicListResponse>(`/c/${slug}/${id}.json`, { query: { page } })
+}
+
+/** 全文搜索（/search.json）：q 原样透传，@用户/#分类/order:latest 等操作符由服务端解析 */
+export interface SearchResultPost {
+  id: number
+  topic_id: number
+  blurb?: string
+  username?: string
+  created_at?: string
+}
+
+export interface SearchResponse {
+  posts?: SearchResultPost[]
+  topics?: DiscourseTopicLite[]
+  users?: DiscourseUserLite[]
+  categories?: Array<{ id: number; name: string; color?: string }>
+}
+
+export function fetchSearch(q: string, page = 0): Promise<SearchResponse> {
+  return discourseRequest<SearchResponse>('/search.json', { query: { q, page } })
+}
+
+/** 用户卡/详情页（Discourse 核心端点 /u/:username；字段以实际返回为准，缺失可选） */
+export interface DiscourseUserInfo {
+  id: number
+  username: string
+  name?: string
+  avatar_template?: string
+  title?: string
+  bio_cooked?: string
+  trust_level?: number
+  moderator?: boolean
+  admin?: boolean
+  created_at?: string
+  last_seen_at?: string
+}
+
+export interface UserResponse {
+  user: DiscourseUserInfo
+}
+
+export interface UserSummary {
+  likes_given?: number
+  likes_received?: number
+  topics_entered?: number
+  posts_read?: number
+  days_visited?: number
+  topic_count?: number
+  post_count?: number
+  bookmark_count?: number
+}
+
+export interface UserSummaryTopic {
+  id: number
+  title: string
+  slug: string
+}
+
+export interface UserSummaryResponse {
+  user_summary: UserSummary
+  topics?: UserSummaryTopic[]
+}
+
+export function fetchUser(username: string): Promise<UserResponse> {
+  return discourseRequest<UserResponse>(`/u/${encodeURIComponent(username)}.json`)
+}
+
+export function fetchUserSummary(username: string): Promise<UserSummaryResponse> {
+  return discourseRequest<UserSummaryResponse>(`/u/${encodeURIComponent(username)}/summary.json`)
 }
 
 export function fetchCategories(): Promise<CategoryListResponse> {

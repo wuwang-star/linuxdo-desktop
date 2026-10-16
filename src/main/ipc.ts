@@ -5,6 +5,7 @@ import {
   fetchTop,
   fetchCategories,
   fetchCategoryTopics,
+  fetchSearch,
   fetchTopic,
   fetchPostsByIds,
   createReply,
@@ -56,6 +57,7 @@ import { showPushNotification } from './notify'
 import { getShortcutsStatus, setShortcutsEnabled, type ShortcutKind } from './api/shortcuts'
 import { saveTopic, listTopics, getTopic, removeTopic } from './api/offline'
 import { listThemes, getTheme, importTheme, exportThemeData, removeTheme } from './themes'
+import { fetchUser, fetchUserSummary } from './api/client'
 import {
   getWebdavConfig,
   setWebdavConfig,
@@ -82,6 +84,7 @@ export function registerIpc(): void {
     (_e, slug: string, id: number, page: number) => fetchCategoryTopics(slug, id, page ?? 0)
   )
   ipcMain.handle('discourse:topic', (_e, id: number) => fetchTopic(id))
+  ipcMain.handle('discourse:search', (_e, q: string, page: number) => fetchSearch(q ?? '', page ?? 0))
   ipcMain.handle('discourse:posts', (_e, topicId: number, postIds: number[]) =>
     fetchPostsByIds(topicId, postIds ?? [])
   )
@@ -191,6 +194,10 @@ export function registerIpc(): void {
   ipcMain.handle('themes:import', () => importTheme())
   ipcMain.handle('themes:exportData', (_e, theme: unknown) => exportThemeData(theme))
   ipcMain.handle('themes:remove', (_e, id: string) => removeTheme(id))
+
+  // ---------- 用户卡/详情页（Discourse 核心端点） ----------
+  ipcMain.handle('user:get', (_e, username: string) => fetchUser(username))
+  ipcMain.handle('user:summary', (_e, username: string) => fetchUserSummary(username))
 
   // ---------- WebDAV 手动同步（推送/拉取 + 进度/偏好的 main↔renderer 交换） ----------
   // renderer 应答通道一次性注册（progress/prefs 请求经 token 匹配，见 syncdata.ts askRenderer）

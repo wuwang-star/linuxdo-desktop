@@ -10,6 +10,7 @@ const api = {
   fetchCategoryTopics: (slug: string, id: number, page: number) =>
     ipcRenderer.invoke('discourse:categoryTopics', slug, id, page),
   fetchTopic: (id: number) => ipcRenderer.invoke('discourse:topic', id),
+  fetchSearch: (q: string, page: number) => ipcRenderer.invoke('discourse:search', q, page),
   fetchPosts: (topicId: number, postIds: number[]) => ipcRenderer.invoke('discourse:posts', topicId, postIds),
   loginStatus: () => ipcRenderer.invoke('auth:status'),
   openLogin: () => ipcRenderer.invoke('auth:openLogin'),
@@ -60,6 +61,8 @@ const api = {
   themesImport: () => ipcRenderer.invoke('themes:import'),
   themesExportData: (theme: ThemePackage) => ipcRenderer.invoke('themes:exportData', theme),
   themesRemove: (id: string) => ipcRenderer.invoke('themes:remove', id),
+  getUser: (username: string) => ipcRenderer.invoke('user:get', username),
+  getUserSummary: (username: string) => ipcRenderer.invoke('user:summary', username),
   // WebDAV 手动同步（配置/测试/推送/拉取）
   getWebdavConfig: () => ipcRenderer.invoke('webdav:getConfig'),
   setWebdavConfig: (server: string, username: string, remoteDir: string, password?: string) =>

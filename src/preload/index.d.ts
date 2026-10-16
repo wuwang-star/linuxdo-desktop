@@ -4,9 +4,12 @@ import type {
   DiscourseTopic,
   NotificationsResponse,
   PostStreamPostsResponse,
+  SearchResponse,
   TopicListResponse,
   TopPeriod,
-  DiagEntry
+  DiagEntry,
+  UserResponse,
+  UserSummaryResponse
 } from '../main/api/client'
 import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
@@ -32,6 +35,7 @@ export interface ApiBridge {
   fetchCategories(): Promise<CategoryListResponse>
   fetchCategoryTopics(slug: string, id: number, page: number): Promise<TopicListResponse>
   fetchTopic(id: number): Promise<DiscourseTopic>
+  fetchSearch(q: string, page: number): Promise<SearchResponse>
   fetchPosts(topicId: number, postIds: number[]): Promise<PostStreamPostsResponse>
   loginStatus(): Promise<LoginStatus>
   openLogin(): Promise<boolean>
@@ -78,6 +82,9 @@ export interface ApiBridge {
   themesImport(): Promise<ImportResult>
   themesExportData(theme: ThemePackage): Promise<ExportResult>
   themesRemove(id: string): Promise<boolean>
+  /** 用户卡/详情页（Discourse /u/:username） */
+  getUser(username: string): Promise<UserResponse>
+  getUserSummary(username: string): Promise<UserSummaryResponse>
   /** WebDAV 手动同步：配置（password 留空=不修改）、测试连接（needMkCol=目录不存在可自动创建）、推送/拉取 */
   getWebdavConfig(): Promise<WebdavConfig>
   setWebdavConfig(server: string, username: string, remoteDir: string, password?: string): Promise<WebdavConfig>
