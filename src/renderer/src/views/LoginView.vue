@@ -354,7 +354,13 @@ onUnmounted(() => {
           <div class="wiz-step">
             <span class="wiz-num">2</span>
             <div>
-              点上方<strong>「加载解压缩」</strong>，在路径栏 <strong>Ctrl+V</strong> 粘贴（扩展路径已复制到剪贴板），选中 <code>extension</code> 文件夹后确认。
+              <template v-if="wizard?.mode === 'paste'">
+                Edge 已打开：地址栏粘贴 <code>edge://extensions</code>（<strong>已复制到剪贴板</strong>）→ <strong>回车</strong>。
+                <span class="tip">（点「加载解压缩」时在弹出的文件夹框中手动导航到下方扩展路径，路径可选中复制）</span>
+              </template>
+              <template v-else>
+                点上方<strong>「加载解压缩」</strong>，在路径栏 <strong>Ctrl+V</strong> 粘贴（扩展路径已复制到剪贴板），选中 <code>extension</code> 文件夹后确认。
+              </template>
               <br />
               <strong v-if="bridgeStatus?.extConnectedAt" style="color:var(--accent)">✅ 已检测到扩展</strong>
               <span v-else class="tip">⏳ 等待扩展安装…（实时检测，每 5s 刷新）</span>

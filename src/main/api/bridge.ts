@@ -189,6 +189,12 @@ export interface WizardResult {
   /** 扩展目录绝对路径（dev=仓库 extension/，打包=resources/extension），已复制进剪贴板 */
   extPath: string
   opened: boolean
+  /**
+   * direct=冷启动直进扩展管理页（命令行 URL 有效）；
+   * paste=Edge 已在运行，剪贴板已换成 edge://extensions，需地址栏粘贴
+   * （Chromium M57+ ProcessSingleton 转发会丢弃 edge:// 内部页，见 SPEC）
+   */
+  mode: 'direct' | 'paste'
   /** 非致命提示（剪贴板失败 / 未找到 Edge 等），浮层仍可用 */
   error?: string
 }
@@ -227,12 +233,33 @@ function locateMsEdge(): string | null {
   return null
 }
 
-/** 打开 Edge 扩展管理页并复制路径。命中 msedge.exe 后直呼（不经 cmd/start），失败原因透出 UI */
+/**
+ * Edge 是否在运行：tasklist 按映像名过滤，无匹配时非零退出（execSync 抛错）→ 视为未运行。
+ * 运行与否决定拉起方式——已运行时命令行 URL 会被 ProcessSingleton 丢弃，只能剪贴板兜底。
+ */
+function isMsEdgeRunning(): boolean {
+  try {
+    const out = execSync('tasklist /FI "IMAGENAME eq msedge.exe"', {
+      encoding: 'utf8',
+      timeout: 3000,
+      windowsHide: true
+    })
+    return out.includes('msedge.exe')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 打开 Edge 扩展管理页并复制路径。命中 msedge.exe 后直呼（不经 cmd/start），失败原因透出 UI。
+ * 分流：未运行 → 带参冷启动直进扩展管理页；已运行 → 剪贴板换成 edge://extensions、无参拉起（mode='paste'）。
+ */
 export function installWizard(): WizardResult {
   const extPath = app.isPackaged
     ? join(process.resourcesPath, 'extension')
     : join(app.getAppPath(), 'extension')
   let error: string | undefined
+  let mode: 'direct' | 'paste' = 'direct'
   try {
     clipboard.writeText(extPath)
   } catch (e) {
@@ -244,17 +271,34 @@ export function installWizard(): WizardResult {
     if (!msedge) {
       error = '未找到 Edge，请手动打开 edge://extensions'
     } else {
+      const running = isMsEdgeRunning()
+      mode = running ? 'paste' : 'direct'
       try {
-        const child = spawn(msedge, ['edge://extensions'], {
-          detached: true,
-          shell: false,
-          stdio: 'ignore'
-        })
-        child.on('error', () => {
-          /* 拉起失败：向导浮层的文字指引仍可用，不阻塞 */
-        })
-        child.unref() // 防 Electron 退出拉扯 Edge
-        opened = true
+        if (running) {
+          // 剪贴板让位给 URL（扩展路径浮层里可见、可选中复制）
+          try {
+            clipboard.writeText('edge://extensions')
+          } catch {
+            /* 保持路径在剪贴板 */
+          }
+          const child = spawn(msedge, { detached: true, shell: false, stdio: 'ignore' })
+          child.on('error', () => {
+            /* 拉起失败：向导浮层的文字指引仍可用，不阻塞 */
+          })
+          child.unref() // 防 Electron 退出拉扯 Edge
+          opened = true
+        } else {
+          const child = spawn(msedge, ['edge://extensions'], {
+            detached: true,
+            shell: false,
+            stdio: 'ignore'
+          })
+          child.on('error', () => {
+            /* 拉起失败：向导浮层的文字指引仍可用，不阻塞 */
+          })
+          child.unref()
+          opened = true
+        }
       } catch (e) {
         error = `无法拉起 Edge（可手动打开 edge://extensions）：${e instanceof Error ? e.message : String(e)}`
       }
@@ -262,7 +306,7 @@ export function installWizard(): WizardResult {
   } else {
     error = '自动打开仅支持 Windows，请手动打开浏览器的扩展管理页'
   }
-  return { extPath, opened, error }
+  return { extPath, opened, mode, error }
 }
 
 /** 方式一联动（R7）：系统浏览器打开 linux.do 登录页，登录后靠扩展桥接自动同步（AC1 链路） */
