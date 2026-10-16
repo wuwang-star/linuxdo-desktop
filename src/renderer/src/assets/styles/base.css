@@ -160,3 +160,5 @@ textarea:focus-visible {
 }
 .card h2 { margin: 0 0 10px; font-size: 15px; }
 .card-badge.reco { background: var(--accent); color: #fff; }
+/* 定尺寸图标钮不吃全局 button padding（24/26px 盒子会被 4px 10px 撑爆）：.row-q 在 home.css 同理 */
+.stepper button { padding: 0; }
