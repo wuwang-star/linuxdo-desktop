@@ -115,6 +115,10 @@ button { font: inherit; cursor: pointer; }
 .post { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 8px; }
 .post.flash { animation: flash 1.2s ease; }
 @keyframes flash { 0% { background: var(--brand-weak); } 100% { background: transparent; } }
+
+/* ---------- 树形视图（楼中楼）：缩进容器（margin 由行内 style 按 depth 注入，钳制 ≤3） ---------- */
+.reply-tree { min-width: 0; }
+.thread-line { border-left: 2px solid var(--border); padding-left: 12px; }
 .post-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .author { font-weight: 600; }
 .floor, .time { color: var(--muted); font-size: 12px; }

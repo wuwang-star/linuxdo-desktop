@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
 import { relTime } from '../utils/format'
+import { loadPrefs, savePrefs, type ViewModePref } from '../utils/prefs'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
@@ -26,6 +27,14 @@ const composerBusy = ref(false)
 const bookmarking = ref(false)
 
 const total = computed(() => store.stream.length || store.topic?.posts_count || 0)
+
+// ---- 视图模式（时间流/树形）：偏好存 ldd-reading（重启保留），即时生效 ----
+const viewMode = ref<ViewModePref>(loadPrefs().viewMode)
+function setViewMode(m: ViewModePref): void {
+  viewMode.value = m
+  // 读-改-写：不覆盖 ldd-reading 里的其他字段
+  savePrefs({ ...loadPrefs(), viewMode: m })
+}
 const timelineTicks = computed(() => {
   const n = total.value
   if (!n) return [] as number[]
@@ -233,6 +242,17 @@ function readOffline(): void {
           <span>共 {{ store.topic.posts_count }} 楼 · 已读至 #{{ store.readProgress(topicId) || 1 }}</span>
           <!-- 离线快照阅读：徽标标注快照时间（R4），并隐藏全部网络互动 -->
           <span v-if="store.offline" class="offline-badge">离线 · 保存于 {{ relTime(store.offlineSavedAt) }}</span>
+          <!-- 视图切换：时间流/树形（:checked+@change，避开 v-model 对 union 类型的 DOM 字符串化坑） -->
+          <div class="seg topic-viewmode">
+            <label class="seg-opt">
+              <input type="radio" name="viewmode" value="stream" :checked="viewMode === 'stream'" @change="setViewMode('stream')" />
+              <span>时间流</span>
+            </label>
+            <label class="seg-opt">
+              <input type="radio" name="viewmode" value="tree" :checked="viewMode === 'tree'" @change="setViewMode('tree')" />
+              <span>树形</span>
+            </label>
+          </div>
           <label class="only-op">
             <input type="checkbox" v-model="store.onlyOp" />
             只看楼主
@@ -258,16 +278,37 @@ function readOffline(): void {
 
         <div v-if="store.loadingOlder" class="loading">加载更早楼层…</div>
 
-        <PostItem
-          v-for="p in store.visiblePosts"
-          :key="p.id"
-          :post="p"
-          :offline="store.offline"
-          @jump="go"
-          @like="(id) => store.toggleLike(id)"
-          @reply="openComposer"
-          @edit="openEdit"
-        />
+        <!-- 时间流：纯楼层序（现状不变）；树形：楼中楼缩进+引导线，PostItem 原样复用 -->
+        <template v-if="viewMode === 'stream'">
+          <PostItem
+            v-for="p in store.visiblePosts"
+            :key="p.id"
+            :post="p"
+            :offline="store.offline"
+            @jump="go"
+            @like="(id) => store.toggleLike(id)"
+            @reply="openComposer"
+            @edit="openEdit"
+          />
+        </template>
+        <template v-else>
+          <div
+            v-for="item in store.treePosts"
+            :key="item.post.id"
+            class="reply-tree"
+            :class="{ 'thread-line': item.depth > 0 }"
+            :style="{ marginLeft: item.depth * 16 + 'px' }"
+          >
+            <PostItem
+              :post="item.post"
+              :offline="store.offline"
+              @jump="go"
+              @like="(id) => store.toggleLike(id)"
+              @reply="openComposer"
+              @edit="openEdit"
+            />
+          </div>
+        </template>
 
         <div v-if="store.visiblePosts.length === 0" class="loading">没有可见楼层</div>
       </template>

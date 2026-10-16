@@ -106,3 +106,10 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **HomeView `pane` prop**：pane 模式在 RouterLink `@click` 里 `preventDefault` 后走 `browse.select`（RouterLink 保留——非 pane 整页模式零行为变化，Ctrl/中键新开标签也不受影响）。
 - **样式要点**：`.reader-pane` 必须 `position:relative`——`.composer/.composer-open` 是 absolute，不锚定右栏就会盖住左栏；右栏 `overflow:hidden`（TopicView 自有 scroller）；`--reading-width` 限宽在窄右栏里由 max-width 自动收缩，无需特判。列表无限滚动 sentinel 的 IntersectionObserver（root=null）会被 overflow 容器裁剪，双栏左栏内滚照常工作。
 - **待人工验收**：AC1（连续切换+列表状态保持）、AC2（队列/通知双栏直达）、AC3（缩放阈值往返）、AC4（离线列表→右栏离线阅读）。
+
+### 评论树形展示（楼中楼视图，P2，2026-10-16）
+
+- **树构建**（`stores/topic.ts` getter `treePosts`）：在 `visiblePosts`（只看楼主过滤后集合）之上重建，勿动过滤逻辑本身。children 表以 `post_number` 为键——`reply_to_post_number` 指向的是 post_number 不是 id（踩坑点）；根 = 无 reply 目标或父楼未加载（`byNumber.has` 判定，父楼随后懒加载补齐时 computed 自动重算归位）；同层按 post_number 升序 DFS 输出 `{post, depth}`，渲染深度 `Math.min(depth, 3)` 钳制（真实链深保留用于递归）。自引用防御：`reply_to === 自身 post_number` 归为根，否则 DFS 成环。
+- **渲染**：缩进用平铺容器 `margin-left: depth*16px` + `.thread-line`（border-left 2px + padding-left 12px，仅 depth>0），不嵌套 DOM——cooked 宽度变量与 PostItem 复用零改动；PostItem 自带「↩ 回复 #N」徽标即 AC2 的父楼缺失标记；`scrollIntoView` 按 `post-<post_number>` id 查找，DOM 顺序≠楼层序无需特判。
+- **偏好**：`viewMode: 'stream'|'tree'` 入 `ldd-reading`（prefs.ts 枚举归一仿 theme）；TopicView 用 `:checked`+`@change` 而非 v-model（union 类型 DOM 字符串化坑，同前），写回走 `savePrefs({...loadPrefs(), viewMode})` 读-改-写防覆盖其他字段。
+- **待人工验收**：AC1（切换重启保留、链式缩进）、AC2（父楼补齐自动归位）、AC3（只看楼主+树形组合、时间流零行为变化）。

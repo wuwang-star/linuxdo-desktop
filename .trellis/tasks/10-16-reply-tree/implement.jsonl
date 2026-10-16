@@ -1,0 +1,2 @@
+{"file": ".trellis/tasks/10-16-reply-tree/design.md", "reason": "children 表+DFS+根判定设计"}
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "分块加载边界（父楼可能未加载）"}

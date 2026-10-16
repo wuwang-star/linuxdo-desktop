@@ -9,6 +9,8 @@
 export type FontFamilyPref = 'system' | 'serif' | 'sans' | 'mono'
 export type WidthPref = 'full' | 960 | 1120 | 1280
 export type ThemePref = 'system' | 'light' | 'dark'
+/** 阅读页楼层视图：时间流 / 树形（楼中楼） */
+export type ViewModePref = 'stream' | 'tree'
 
 export interface ReadingPrefs {
   /** 正文字号 px（14–20） */
@@ -21,6 +23,8 @@ export interface ReadingPrefs {
   width: WidthPref
   /** 主题模式（system = 跟随系统实时切换） */
   theme: ThemePref
+  /** 楼层视图模式（默认时间流 = 现状） */
+  viewMode: ViewModePref
 }
 
 export const DEFAULT_PREFS: ReadingPrefs = {
@@ -28,7 +32,8 @@ export const DEFAULT_PREFS: ReadingPrefs = {
   lineHeight: 1.7,
   fontFamily: 'system',
   width: 1120,
-  theme: 'system'
+  theme: 'system',
+  viewMode: 'stream'
 }
 
 const STORAGE_KEY = 'ldd-reading'
@@ -70,8 +75,11 @@ export function normalizePrefs(raw: unknown): ReadingPrefs {
   const theme = (['system', 'light', 'dark'] as const).includes(r.theme as ThemePref)
     ? (r.theme as ThemePref)
     : d.theme
+  const viewMode = (['stream', 'tree'] as const).includes(r.viewMode as ViewModePref)
+    ? (r.viewMode as ViewModePref)
+    : d.viewMode
 
-  return { fontSize, lineHeight, fontFamily, width, theme }
+  return { fontSize, lineHeight, fontFamily, width, theme, viewMode }
 }
 
 export function loadPrefs(): ReadingPrefs {
