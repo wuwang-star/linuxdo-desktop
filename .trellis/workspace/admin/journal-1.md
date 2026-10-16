@@ -563,3 +563,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 
 - 真机验收 doh-real（重点：secure 模式 + 默认自建模板 edge.1molchuan.top）
 - 设置页 bug：用户提了「修复设置页面bug」但未描述现象，等用户补充后立轻量任务
+
+### Session 19 追记：设置页 UI bug 排查与修复
+
+用户只给「设置页面的bug」「页面UI」两短语不补现象 → 自查。全量提取 SettingsView 类名对照 11 样式文件，定位三组问题：① 044c0bb 拆分把旧 styles.css:55 的 `button{font:inherit;cursor:pointer}` 缩水成 `font-family:inherit`，cursor 全应用丢失，且裸 button/input 从未有过形态（`.act` 才有）——设置页大量裸控件呈浏览器原生灰；② `.accel`（快捷键徽标，journal Session 10 称已交付）/`.card-badge.reco`/`.diag-row.bad`/`.settings-nav button` 规则断链；③ 死类 doh-radios/doh-toggle。修复 f167017：base.css 尾部 @scope 段统一裸控件 tokens 皮肤（类选择器特异性更高，.act/.primary/.ico 不受影响，radio/checkbox 排除防破坏 seg/switch）+ settings.css 补导航激活态/徽标/红行 + 删死类。事故注意：commit f167017 裹挟阅读体感会话刚追加的认领行（追加式无破坏，已留档）；下次提交前先 `git status` 复查 coordination.md 是否被并写。设置页 bug 立项为内联轻量修复未单独立任务（用户两短语即指令，PRD-only 不适用——缺陷清单已入 journal 与 commit message）。

@@ -37,6 +37,7 @@
 | 10-16 16:2x | 搜索UI会话 | 端点核实（page 翻页上限10页/空页即尽/blurb 300字）+ IPC 四点布线契约入 backend spec + PRD 补核实结论 | 已提交 e6d542e |
 | 10-16 17:0x | 主会话（doh-real） | 新文件 main/api/dohProxy.ts（分区A）；公用文件 ipc.ts（settings:setDoh 段追加 applyDohRuntime）、main/index.ts（ready 段追加接线）；SettingsView 仅 DoH 卡片文案 | 已提交 00302f5（待真机验收） |
 | 10-16 17:4x | 阅读体感会话 | 分区 B topic.css cooked 段全量重设计（标题层级/引用楼/onebox/折叠/表格/mention/emoji，用户拍板折进 10-16-reading-feel），不碰公用 tokens/base | 在途 |
+| 10-16 17:5x | 主会话（settings-ui-fix） | base.css 尾部 @scope 段（裸 button/input 兜底+card h2+card-badge.reco）；settings.css（nav 按钮/.accel/.diag-row.bad、删死类） | 已提交 f167017 |
 
 ## 待用户决策
 
