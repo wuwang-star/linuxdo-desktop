@@ -10,7 +10,7 @@ import { loadDohEarly } from './api/settings'
 import { applyDohRuntime, dohSelfCheck } from './api/dohProxy'
 import { initBridge } from './api/bridge'
 import { initShortcuts } from './api/shortcuts'
-import { focusMainWindow, initThemeOverlay, titleBarOverlay } from './win'
+import { focusMainWindow } from './win'
 import { initUpdater } from './updater'
 
 const AUTH_PROTOCOL = 'linuxdo-desktop'
@@ -78,9 +78,6 @@ app.whenReady().then(() => {
   // 全局快捷键：按持久化开关注册 Alt+Shift+L 呼出主窗（默认开）/ Alt+Shift+N 队列下一贴（默认关）
   initShortcuts()
 
-  // 窗口观感：nativeTheme 'updated' → 各窗口 titleBarOverlay 跟随亮暗（见 win.ts）
-  initThemeOverlay()
-
   const win = new BrowserWindow({
     width: 1280,
     height: 860,
@@ -88,10 +85,9 @@ app.whenReady().then(() => {
     minHeight: 640,
     title: 'LinuxDo Desktop',
     autoHideMenuBar: true,
-    // 隐藏原生标题栏，系统窗口按钮以 overlay 叠加到顶栏右端（配色/高度见 win.ts 常量）；
-    // 初始色按当前系统亮暗取值，renderer 启动后经 window:setTheme（prefs）校正。
+    // 隐藏原生标题栏，无原生窗口钮（用户 2026-10-16 拍板移除 titleBarOverlay）：本应用托盘常驻，
+    // 点 × 隐藏到托盘、任务栏可最小化、拖拽区双击最大化（系统行为），顶栏整条即拖拽区。
     titleBarStyle: 'hidden',
-    titleBarOverlay: titleBarOverlay(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

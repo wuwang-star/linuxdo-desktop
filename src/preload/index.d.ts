@@ -111,7 +111,7 @@ export interface ApiBridge {
   ): () => void
   /** 应答主进程的同步数据请求（token 原样带回） */
   syncReply(token: string, data: unknown): void
-  /** 主题模式镜像到主进程：nativeTheme.themeSource + titleBarOverlay 联动 */
+  /** 主题模式镜像到主进程：nativeTheme.themeSource，亮暗全局跟随 */
   setTheme(theme: 'system' | 'light' | 'dark'): Promise<boolean>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void

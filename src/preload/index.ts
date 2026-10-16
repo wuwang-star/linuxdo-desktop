@@ -99,7 +99,7 @@ const api = {
     }
   },
   syncReply: (token: string, data: unknown) => ipcRenderer.send('syncdata:reply', token, data),
-  // 窗口观感：主题模式镜像到主进程（nativeTheme.themeSource + titleBarOverlay 联动）
+  // 窗口观感：主题模式镜像到主进程（nativeTheme.themeSource，亮暗全局跟随）
   setTheme: (theme: 'system' | 'light' | 'dark') => ipcRenderer.invoke('window:setTheme', theme),
   // 主进程推送订阅：返回解绑函数
   onNotificationPush: (cb: (payload: unknown) => void) => {
