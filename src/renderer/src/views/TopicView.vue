@@ -230,6 +230,10 @@ function readOffline(): void {
       <div v-if="store.loading" class="loading">加载中…</div>
       <div v-else-if="store.error && !store.topic" class="error">
         {{ store.error }}
+        <!-- 重试入口（含「请求超时」）；离线回落提示保留在其旁 -->
+        <div class="err-ops">
+          <button class="act" @click="store.retry()">重试</button>
+        </div>
         <!-- 在线打开失败且本地有离线存档：透出离线阅读入口（AC3） -->
         <div v-if="store.hasOffline" class="offline-tip">
           <span>网络异常，该主题有离线存档</span>

@@ -56,6 +56,8 @@ export interface TopicState {
   offlineSavedAt: string
   /** 在线打开失败且本地有离线存档（TopicView 据此渲染离线入口提示条） */
   hasOffline: boolean
+  /** 最近一次 open 的主题 id（retry 用：open 失败时 topic 为 null，不能从 topic 读） */
+  lastOpenedId: number | null
 }
 
 export const useTopicStore = defineStore('topic', {
@@ -74,7 +76,8 @@ export const useTopicStore = defineStore('topic', {
     error: '',
     offline: false,
     offlineSavedAt: '',
-    hasOffline: false
+    hasOffline: false,
+    lastOpenedId: null
   }),
   getters: {
     opUsername(state): string | null {
@@ -179,6 +182,7 @@ export const useTopicStore = defineStore('topic', {
     },
     async open(topicId: number, opts?: { offline?: boolean }) {
       this.reset()
+      this.lastOpenedId = topicId
       this.offline = opts?.offline === true
       this.loading = true
       try {
@@ -209,7 +213,8 @@ export const useTopicStore = defineStore('topic', {
           await this.loadChunk(0, CHUNK)
         }
       } catch (e) {
-        this.error = e instanceof Error ? e.message : String(e)
+        // 统一「加载失败：」前缀（含「请求超时」），错误态透出重试入口
+        this.error = `加载失败：${e instanceof Error ? e.message : String(e)}`
         // 在线打开失败：查本地 index 是否有离线存档，有则透出离线阅读入口
         if (!this.offline) {
           try {
@@ -222,6 +227,11 @@ export const useTopicStore = defineStore('topic', {
       } finally {
         this.loading = false
       }
+    },
+    /** 重试当前主题：清错误按最近一次 open 的 id/离线态重开（错误态时 topic 为 null，id 存在 lastOpenedId） */
+    async retry(): Promise<void> {
+      if (this.lastOpenedId === null || this.loading) return
+      await this.open(this.lastOpenedId, { offline: this.offline })
     },
     async loadChunk(startIdx: number, count: number): Promise<void> {
       if (!this.stream.length || !this.topic) return

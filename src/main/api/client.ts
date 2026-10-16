@@ -46,6 +46,8 @@ export interface RequestOptions {
   body?: unknown
   /** 429/网络错误重试次数上限（默认 3） */
   retries?: number
+  /** 请求超时毫秒（AbortSignal.timeout；设置后超时不参与重试——避免长超时×退避叠加，仅限显式传入的调用点） */
+  timeoutMs?: number
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
@@ -78,11 +80,14 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
 
   for (;;) {
     const started = Date.now()
+    // 每次尝试新建 signal（429 退避重试时拿到完整超时窗口）
+    const signal = opts.timeoutMs !== undefined ? AbortSignal.timeout(opts.timeoutMs) : undefined
     try {
       const res = await net.fetch(url, {
         method: opts.method ?? 'GET',
         // 关键：主进程无 origin，same-origin 默认值不会带 cookie，必须显式 include
         credentials: 'include',
+        signal,
         headers: {
           Accept: 'application/json',
           'User-Agent': USER_AGENT,
@@ -108,6 +113,11 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
       return (await res.json()) as T
     } catch (err) {
       const ms = Date.now() - started
+      // AbortSignal.timeout 超时：固定文案且不重试（20s×重试×退避叠加只会更久）
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        pushDiag({ time: new Date().toISOString(), method: opts.method ?? 'GET', url, status: 0, ms, error: '请求超时' })
+        throw new Error('请求超时')
+      }
       const message = err instanceof Error ? err.message : String(err)
       pushDiag({ time: new Date().toISOString(), method: opts.method ?? 'GET', url, status: 0, ms, error: message })
       // 网络层错误（DNS/连接中断）同样退避重试
@@ -122,6 +132,9 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
 }
 
 // ---------- 领域端点 ----------
+
+/** 主题打开/分块拉取的超时（网络慢时右栏不能无限「加载中」；离线保存等长循环不传此参，语义不变） */
+const TOPIC_FETCH_TIMEOUT_MS = 20_000
 
 export interface DiscourseUserLite {
   id: number
@@ -254,12 +267,13 @@ export function fetchCategories(): Promise<CategoryListResponse> {
 }
 
 export function fetchTopic(id: number): Promise<DiscourseTopic> {
-  return discourseRequest<DiscourseTopic>(`/t/${id}.json`)
+  return discourseRequest<DiscourseTopic>(`/t/${id}.json`, { timeoutMs: TOPIC_FETCH_TIMEOUT_MS })
 }
 
 export function fetchPostsByIds(topicId: number, postIds: number[]): Promise<PostStreamPostsResponse> {
   return discourseRequest<PostStreamPostsResponse>(`/t/${topicId}/posts.json`, {
-    query: { post_ids: postIds }
+    query: { post_ids: postIds },
+    timeoutMs: TOPIC_FETCH_TIMEOUT_MS
   })
 }
 
