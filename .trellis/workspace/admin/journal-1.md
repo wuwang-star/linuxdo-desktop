@@ -579,3 +579,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 19 追记 4：自绘窗口钮落地
 
 用户问「项目有自己的关闭最小化按钮吗」→ 无 → 拍板「加」。顶栏右端三枚 SVG 线框钮（最小化/最大化切换/关闭）：IPC 三条 send 单向信道 win:minimize/maximize(切换)/close，close 复用 close→tray 拦截；topbar.css .win-btn tokens 皮肤（关闭悬停红 #e5484d）；flex 布局注意 nav 的 margin-left:auto 与 win-btns 相邻即成右对齐组，不再加第二个 auto margin（会平分剩余空间把 nav 拉离右缘）。主进程改动，需重启生效。
+
+### Session 19 追记 5（2026-10-17 凌晨）：DoH 断网事故定位与链式转发修复
+
+用户贴 dev 日志：`ssl_client_socket_impl.cc handshake failed ... net_error -100` 每秒刷屏。同机探测三步定位：① nslookup linux.do → Facebook 段 face:b00c + SoftLayer（系统 DNS 污染实锤）；② 自建模板 edge.1molchuan.top HTTP 200 返回干净 CF IP（172.64.229.x）；③ 对干净 IP 做 SNI=linux.do 的 TLS 握手 → ECONNRESET，同 IP 换 cloudflare.com SNI → TLSv1.3 OK——**纯 SNI 阻断**。结论：该网络下 DoH 直连无解（SPEC 早已排除 ECH），而原实现 setProxy 顶掉 Clash → 全应用断网。修复：applyDohRuntime 接管前 resolveProxy 探测系统代理，有则 chainConnect（发 CONNECT 给上游、等 2xx、leftover unshift），无则 DoH 直连；diag 增 via=upstream；设置横幅文案改链式语义。教训：设计前提「linux.do 直连可达只差 DNS」在这台机器不成立，功能上线前应先探测目标网络形态（污染 only vs 污染+SNI）。过程 chainConnect 首版写出 arguments[0]/不存在 API 的废代码，整函数重写——先想清 handler 生命周期再落键。
