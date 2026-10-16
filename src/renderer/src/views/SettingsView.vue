@@ -25,6 +25,7 @@ const sections = [
   { key: 'network', label: '网络' },
   { key: 'translate', label: '翻译' },
   { key: 'sync', label: '同步' },
+  { key: 'shortcuts', label: '快捷键' },
   { key: 'logs', label: '日志' },
   { key: 'about', label: '关于' }
 ] as const
@@ -328,6 +329,34 @@ async function pullWebdav(): Promise<void> {
   }
 }
 
+// ---- 全局快捷键（主进程注册；切换即时生效，注册失败逐项透出不互相影响） ----
+type ShortcutKind = 'callWindow' | 'nextTopic'
+const scCallWindow = ref(true)
+const scNextTopic = ref(false)
+const scSaving = ref(false)
+const scMessage = ref('')
+const scErrors = ref<{ callWindow: string | null; nextTopic: string | null }>({ callWindow: null, nextTopic: null })
+
+async function saveShortcut(kind: ShortcutKind): Promise<void> {
+  if (scSaving.value) return
+  scSaving.value = true
+  scMessage.value = ''
+  try {
+    const enabled = kind === 'callWindow' ? scCallWindow.value : scNextTopic.value
+    const st = await window.api.setShortcutEnabled(kind, enabled)
+    scCallWindow.value = st.callWindow.enabled
+    scNextTopic.value = st.nextTopic.enabled
+    scErrors.value = { callWindow: st.callWindow.error, nextTopic: st.nextTopic.error }
+  } catch (e) {
+    // 失败回滚 UI 态，避免显示与实际不符
+    if (kind === 'callWindow') scCallWindow.value = !scCallWindow.value
+    else scNextTopic.value = !scNextTopic.value
+    scMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    scSaving.value = false
+  }
+}
+
 // ---- 日志：请求诊断 ----
 const diag = ref<DiagEntry[]>([])
 
@@ -380,6 +409,10 @@ onMounted(async () => {
   }
   const notif = await window.api.getNotificationConfig()
   notifEnabled.value = notif.enabled
+  const sc = await window.api.getShortcutsStatus()
+  scCallWindow.value = sc.callWindow.enabled
+  scNextTopic.value = sc.nextTopic.enabled
+  scErrors.value = { callWindow: sc.callWindow.error, nextTopic: sc.nextTopic.error }
   diag.value = await window.api.diagnostics()
   await refreshThemes()
 })
@@ -686,6 +719,44 @@ onMounted(async () => {
             <span class="tip">推送=本地覆盖云端；拉取=云端覆盖本地</span>
           </div>
           <p v-if="wdOpMessage" class="message">{{ wdOpMessage }}</p>
+        </section>
+      </template>
+
+      <!-- 全局快捷键（应用最小化/失焦时仍可触发） -->
+      <template v-else-if="active === 'shortcuts'">
+        <section class="card">
+          <h2>全局快捷键</h2>
+          <p class="tip">
+            应用最小化、隐藏到托盘或失焦时仍可触发，切换即时生效（无需重启）。全局组合键可能与系统 / 其他应用冲突，
+            默认仅启用呼出主窗；某项注册失败只影响该项，不影响另一项。
+          </p>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">呼出主窗 <code class="accel">Alt+Shift+L</code></div>
+              <div class="field-desc">从最小化 / 托盘 / 失焦状态恢复并聚焦主窗口</div>
+            </div>
+            <label class="switch field-control">
+              <input type="checkbox" v-model="scCallWindow" :disabled="scSaving" @change="saveShortcut('callWindow')" />
+              <span class="switch-track"></span>
+              <span class="switch-thumb"></span>
+            </label>
+          </div>
+          <p v-if="scErrors.callWindow" class="message">⚠️ {{ scErrors.callWindow }}</p>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">队列下一贴 <code class="accel">Alt+Shift+N</code></div>
+              <div class="field-desc">
+                按入队顺序切到阅读队列的下一个主题（需正在阅读队列中的主题，无下一贴不动作；默认关闭）
+              </div>
+            </div>
+            <label class="switch field-control">
+              <input type="checkbox" v-model="scNextTopic" :disabled="scSaving" @change="saveShortcut('nextTopic')" />
+              <span class="switch-track"></span>
+              <span class="switch-thumb"></span>
+            </label>
+          </div>
+          <p v-if="scErrors.nextTopic" class="message">⚠️ {{ scErrors.nextTopic }}</p>
+          <p v-if="scMessage" class="message">{{ scMessage }}</p>
         </section>
       </template>
 

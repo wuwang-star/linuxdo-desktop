@@ -130,3 +130,11 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **方向语义（无自动合并）**：推送=`collectBundle` → PUT（本地覆盖云端）；拉取=GET → 校验 → 进度整体覆盖（先清本应用进度键再写入）+ prefs 经 `normalizePrefs` 归一写 localStorage 并 `applyPrefs`（排版即时生效）+ settings 反向写入（`setTranslateConfig` 不传 key=本机翻译密钥不动；DoH 改动仍受「重启生效」限制）。
 - **坚果云提示**：WebDAV 需用「账户信息 → 安全选项 → 添加应用密码」生成的应用密码，网页登录密码会 401；测试连接 401/403 文案与同步页密码占位符已内置此提示。
 - **待人工验收**：AC1–AC3（真实 WebDAV 实测：正确/错误凭据、目录自动创建、推送后远端可见 bundle、拉取覆盖本地即时生效）。
+
+### 全局快捷键（P2，2026-10-16）
+
+- **组合与默认**：`Alt+Shift+L` 呼出主窗（默认**开**，复用 win.ts focusMainWindow——托盘点击/通知点击同一恢复语义）；`Alt+Shift+N` 队列下一贴（默认**关**，全局组合键易与系统/其他应用冲突）。固定组合，不做自定义录制（Out of Scope）。
+- **实现**（`src/main/api/shortcuts.ts`）：`globalShortcut` 注册，`syncOne` 先 unregister 清自身残留（幂等）再 register；`register` 返回 false（组合键被占用）→ `registered=false` + `error` 中文文案透出 UI，**两项互不影响**（AC3）。`applyShortcuts()` 按配置对齐注册态；`initShortcuts()` 在 index.ts 的 initBridge 之后调用（whenReady 后），并 `app.once('will-quit', unregisterAll)` 防退出后占用残留。
+- **queue:next 链路**：主进程不驱动 renderer 队列状态（队列 store 在 renderer，`Alt+Shift+N` 回调仅 `webContents.send('queue:next')` 广播）→ preload `onQueueNext` → App.vue `goQueueNext()`：route.name==='topic' 时取 `queue.neighbors(route.params.id).next`，非 null 才 `router.push('/t/<next>')`；不在主题页/无下一贴一律忽略（无副作用，与 TopicView 既有 goNeighbor 同语义）。双栏下 router.push 经 BrowseView 的 route watcher 归一，左栏选中态同步。
+- **settings 字段**（translate-settings.json，仿 bridge 字段模式）：`shortcutCallWindow`/`shortcutNextTopic`，undefined→默认（true/false）+ Boolean 归一防脏数据；**全部既有 setter（translate/DoH/notification/bridge×2）均已补 `...shortcutFieldsOf(cache)` 透传防误抹**；新 `setShortcutEnabled(kind, enabled)` 单项切换。IPC `shortcuts:getStatus`/`shortcuts:setEnabled`（preload 两件），UI 在设置中心新「快捷键」分类（同步之后）：两 switch + 等宽组合键徽标（`.accel`）+ 逐项错误行。
+- **待人工验收**：AC1（最小化按 Alt+Shift+L 恢复聚焦）、AC2（队列下一贴开关生效/无下一贴无副作用）、AC3（真实占用场景错误透出且另一项不受影响）。

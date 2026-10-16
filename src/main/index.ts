@@ -8,6 +8,7 @@ import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
 import { initBridge } from './api/bridge'
+import { initShortcuts } from './api/shortcuts'
 import { focusMainWindow, initThemeOverlay, titleBarOverlay } from './win'
 import { initUpdater } from './updater'
 
@@ -70,6 +71,9 @@ app.whenReady().then(() => {
 
   // 伴生扩展桥接：按持久化开关决定是否监听 127.0.0.1:17366（默认关闭，零痕）
   initBridge()
+
+  // 全局快捷键：按持久化开关注册 Alt+Shift+L 呼出主窗（默认开）/ Alt+Shift+N 队列下一贴（默认关）
+  initShortcuts()
 
   // 窗口观感：nativeTheme 'updated' → 各窗口 titleBarOverlay 跟随亮暗（见 win.ts）
   initThemeOverlay()

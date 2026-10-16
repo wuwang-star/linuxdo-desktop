@@ -29,6 +29,15 @@ export interface BridgeConfig {
 }
 
 /**
+ * 全局快捷键开关（注册/注销由 shortcuts.ts 负责）：
+ * 呼出主窗默认开（PRD R1）；队列下一贴默认关——全局组合键易与系统/其他应用冲突（PRD R2）。
+ */
+export interface ShortcutsConfig {
+  callWindow: boolean
+  nextTopic: boolean
+}
+
+/**
  * DoH 默认值：关闭 + secure + 自建模板（用户指定自建端点 edge.1molchuan.top，2026-10-16）。
  * enabled 默认 false：Electron 44 网络服务不消费 DoH 命令行开关（源码核实，见 SPEC），
  * 默认开启只是「假装生效」；待真实现（本地 DoH 代理等）落地后再放开。
@@ -44,6 +53,8 @@ interface StoredConfig {
   notificationEnabled: boolean
   bridgeEnabled: boolean
   bridgePairCode: string
+  shortcutCallWindow: boolean
+  shortcutNextTopic: boolean
 }
 
 const cfgFile = (): string => join(app.getPath('userData'), 'translate-settings.json')
@@ -89,6 +100,14 @@ function bridgeFieldsOf(c: StoredConfig | null): { bridgeEnabled: boolean; bridg
   }
 }
 
+/** 快捷键两字段提取（旧配置文件无字段时取默认值：呼出开 / 下一贴关；Boolean 归一防脏数据） */
+function shortcutFieldsOf(c: Partial<StoredConfig> | null): { shortcutCallWindow: boolean; shortcutNextTopic: boolean } {
+  return {
+    shortcutCallWindow: c?.shortcutCallWindow === undefined ? true : Boolean(c.shortcutCallWindow),
+    shortcutNextTopic: c?.shortcutNextTopic === undefined ? false : Boolean(c.shortcutNextTopic)
+  }
+}
+
 /** 6 位数字配对码（密码学随机，前导零保留） */
 function genPairCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, '0')
@@ -114,7 +133,8 @@ function loadOnce(): void {
         // 旧配置文件无此字段（p2a 之前）→ 默认开启；其余值 Boolean 强转防脏数据
         notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled),
         bridgeEnabled: raw.bridgeEnabled === undefined ? false : Boolean(raw.bridgeEnabled),
-        bridgePairCode: typeof raw.bridgePairCode === 'string' ? raw.bridgePairCode : ''
+        bridgePairCode: typeof raw.bridgePairCode === 'string' ? raw.bridgePairCode : '',
+        ...shortcutFieldsOf(raw)
       }
     }
   } catch {
@@ -147,7 +167,8 @@ export function setTranslateConfig(baseUrl: string, model: string, key?: string)
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
     notificationEnabled: cache?.notificationEnabled ?? true,
-    ...bridgeFieldsOf(cache)
+    ...bridgeFieldsOf(cache),
+    ...shortcutFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -217,7 +238,8 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     dohMode: mode === 'auto' ? 'auto' : 'secure',
     dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template,
     notificationEnabled: cache?.notificationEnabled ?? true,
-    ...bridgeFieldsOf(cache)
+    ...bridgeFieldsOf(cache),
+    ...shortcutFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -245,7 +267,8 @@ export function setNotificationConfig(enabled: boolean): NotificationConfig {
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
     notificationEnabled: Boolean(enabled),
-    ...bridgeFieldsOf(cache)
+    ...bridgeFieldsOf(cache),
+    ...shortcutFieldsOf(cache)
   }
   try {
     writeConfigFile(cache)
@@ -287,7 +310,8 @@ export function setBridgeEnabled(enabled: boolean): BridgeConfig {
     dohTemplate: DOH_DEFAULT.template,
     notificationEnabled: true,
     bridgeEnabled: false,
-    bridgePairCode: ''
+    bridgePairCode: '',
+    ...shortcutFieldsOf(null)
   }
   const next = Boolean(enabled)
   let code = bridgeFieldsOf(cache).bridgePairCode
@@ -312,7 +336,8 @@ export function regenBridgePair(): BridgeConfig {
     dohTemplate: DOH_DEFAULT.template,
     notificationEnabled: true,
     bridgeEnabled: false,
-    bridgePairCode: ''
+    bridgePairCode: '',
+    ...shortcutFieldsOf(null)
   }
   const code = genPairCode()
   cache = { ...base, bridgePairCode: code }
@@ -322,4 +347,37 @@ export function regenBridgePair(): BridgeConfig {
     /* 写失败不阻塞，内存态仍生效 */
   }
   return { enabled: cache.bridgeEnabled, pairCode: code }
+}
+
+// ---------- 全局快捷键（呼出主窗 / 队列下一贴，shortcuts.ts 消费） ----------
+
+/** 读取快捷键开关（注册/注销由 shortcuts.ts 负责） */
+export function getShortcutsConfig(): ShortcutsConfig {
+  loadOnce()
+  const f = shortcutFieldsOf(cache)
+  return { callWindow: f.shortcutCallWindow, nextTopic: f.shortcutNextTopic }
+}
+
+/** 切换单个快捷键开关（持久化）。两项互不影响；即时注册/注销由 shortcuts.ts 负责 */
+export function setShortcutEnabled(kind: 'callWindow' | 'nextTopic', enabled: boolean): ShortcutsConfig {
+  loadOnce()
+  const base = cache ?? {
+    baseUrl: '',
+    model: '',
+    dohEnabled: DOH_DEFAULT.enabled,
+    dohMode: DOH_DEFAULT.mode,
+    dohTemplate: DOH_DEFAULT.template,
+    notificationEnabled: true,
+    bridgeEnabled: false,
+    bridgePairCode: '',
+    ...shortcutFieldsOf(null)
+  }
+  const next = Boolean(enabled)
+  cache = kind === 'callWindow' ? { ...base, shortcutCallWindow: next } : { ...base, shortcutNextTopic: next }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 写失败不阻塞，内存态仍生效 */
+  }
+  return getShortcutsConfig()
 }

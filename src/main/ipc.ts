@@ -53,6 +53,7 @@ import {
   openSystemLogin
 } from './api/bridge'
 import { showPushNotification } from './notify'
+import { getShortcutsStatus, setShortcutsEnabled, type ShortcutKind } from './api/shortcuts'
 import { saveTopic, listTopics, getTopic, removeTopic } from './api/offline'
 import { listThemes, getTheme, importTheme, exportThemeData, removeTheme } from './themes'
 import {
@@ -203,6 +204,12 @@ export function registerIpc(): void {
   ipcMain.handle('webdav:testConn', () => testWebdavConn())
   ipcMain.handle('webdav:push', (e) => pushBundle(e.sender))
   ipcMain.handle('webdav:pull', (e) => pullBundle(e.sender))
+
+  // ---------- 全局快捷键（呼出主窗 / 队列下一贴；切换即时注册/注销，无需重启） ----------
+  ipcMain.handle('shortcuts:getStatus', () => getShortcutsStatus())
+  ipcMain.handle('shortcuts:setEnabled', (_e, kind: ShortcutKind, enabled: boolean) =>
+    setShortcutsEnabled(kind, Boolean(enabled))
+  )
 
   // ---------- 窗口观感：主题模式（renderer prefs 是单源，此处只做镜像） ----------
   // 设 nativeTheme.themeSource：overlay 配色经 win.ts 的 'updated' 监听统一跟随；

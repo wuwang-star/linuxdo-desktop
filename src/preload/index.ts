@@ -67,6 +67,18 @@ const api = {
   webdavTestConn: () => ipcRenderer.invoke('webdav:testConn'),
   webdavPush: () => ipcRenderer.invoke('webdav:push'),
   webdavPull: () => ipcRenderer.invoke('webdav:pull'),
+  // 全局快捷键（呼出主窗 / 队列下一贴；切换即时生效）
+  getShortcutsStatus: () => ipcRenderer.invoke('shortcuts:getStatus'),
+  setShortcutEnabled: (kind: 'callWindow' | 'nextTopic', enabled: boolean) =>
+    ipcRenderer.invoke('shortcuts:setEnabled', kind, enabled),
+  // 主进程 Alt+Shift+N 广播 → renderer 执行队列下一贴跳转（App.vue），返回解绑函数
+  onQueueNext: (cb: () => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('queue:next', listener)
+    return () => {
+      ipcRenderer.removeListener('queue:next', listener)
+    }
+  },
   // 同步数据交换：主进程发起 progress/prefs 请求（token 匹配），renderer 注册响应器并经 syncReply 应答
   onSyncRequest: (
     cb: (channel: 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll', token: string, payload: unknown) => void

@@ -16,6 +16,7 @@ import type { BridgeStatus, WizardResult } from '../main/api/bridge'
 import type { OfflineTopic, OfflineIndexEntry, SaveResult } from '../main/api/offline'
 import type { ThemePackage, ThemeMeta, ImportResult, ExportResult } from '../main/themes'
 import type { WebdavConfig, WebdavTestResult } from '../main/api/webdav'
+import type { ShortcutsStatus, ShortcutKind } from '../main/api/shortcuts'
 
 export interface LoginStatus {
   cookie: boolean
@@ -83,6 +84,11 @@ export interface ApiBridge {
   webdavTestConn(): Promise<WebdavTestResult>
   webdavPush(): Promise<{ ok: boolean; error?: string }>
   webdavPull(): Promise<{ ok: boolean; exportedAt?: string; error?: string }>
+  /** 全局快捷键：状态（含注册失败原因）与单项开关切换（即时生效） */
+  getShortcutsStatus(): Promise<ShortcutsStatus>
+  setShortcutEnabled(kind: ShortcutKind, enabled: boolean): Promise<ShortcutsStatus>
+  /** 主进程 Alt+Shift+N 广播 → renderer 执行队列下一贴跳转，返回解绑函数 */
+  onQueueNext(cb: () => void): () => void
   /** 同步数据交换：主进程向 renderer 请求 progress/prefs（token 匹配），返回解绑函数 */
   onSyncRequest(
     cb: (

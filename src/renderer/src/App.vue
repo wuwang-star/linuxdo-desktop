@@ -47,6 +47,16 @@ function onFocus(): void {
 // ---- MessageBus 实时通知：cookie 登录态就绪后启动；未登录/回退时仅靠 60s 手动轮询 ----
 let offPush: (() => void) | null = null
 let offOpen: (() => void) | null = null
+let offQueueNext: (() => void) | null = null
+
+// 全局快捷键 Alt+Shift+N 队列下一贴：主进程广播 → 复用 TopicView 同款 neighbors().next 跳转；
+// 不在主题页或无下一贴时按 PRD 忽略（无副作用）
+function goQueueNext(): void {
+  const route = router.currentRoute.value
+  const cur = route.name === 'topic' ? Number(route.params.id) : NaN
+  const next = Number.isFinite(cur) ? queue.neighbors(cur).next : null
+  if (next !== null) void router.push(`/t/${next}`)
+}
 
 onMounted(() => {
   void auth.refresh().then(() => {
@@ -62,6 +72,7 @@ onMounted(() => {
   offOpen = window.api.onNotificationOpen((p) => {
     void router.push(`/t/${p.topicId}${p.postNumber ? `?pn=${p.postNumber}` : ''}`)
   })
+  offQueueNext = window.api.onQueueNext(goQueueNext)
   // 仅在登录态/用户变化时启停实时通道（主进程侧重复 start 为 no-op，失败达上限进入回退）
   watch(
     () => (auth.status?.cookie ? (auth.status.user?.id ?? null) : null),
@@ -77,6 +88,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', onFocus)
   offPush?.()
   offOpen?.()
+  offQueueNext?.()
   disposeThemeWatcher()
 })
 </script>
