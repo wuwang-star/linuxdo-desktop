@@ -245,8 +245,8 @@ export function fetchLatest(page = 0): Promise<TopicListResponse> {
   return discourseRequest<TopicListResponse>('/latest.json', { query: { page, no_definitions: true } })
 }
 
-/** Top 榜周期（Discourse 核心端点全支持 daily/quarterly/yearly，本应用 UI 仅开放以下三档） */
-export type TopPeriod = 'weekly' | 'monthly' | 'all'
+/** Top 榜周期（Discourse 核心端点全六档支持，2026-10-16 抓包核实） */
+export type TopPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'all'
 
 /** 最热列表（2026-10-16 抓包核实：与 latest.json 同构，more_topics_url 为 "/hot?page=1" 即 page 参数分页） */
 export function fetchHot(page = 0): Promise<TopicListResponse> {

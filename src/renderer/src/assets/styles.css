@@ -85,6 +85,10 @@ button { font: inherit; cursor: pointer; }
 .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; color: var(--muted); }
 .chip.active { color: var(--brand); border-color: var(--brand); }
 .chip.sub { padding: 2px 9px; font-size: 12px; }
+/* Top 榜周期下拉：锚定 chip 的相对包裹 + 单列窄浮层（复用 cat-panel） */
+.chip-wrap { position: relative; }
+.chip-wrap .cat-panel { top: 34px; }
+.cat-panel.top-panel { width: auto; min-width: 128px; grid-template-columns: 1fr; }
 .cat-panel { position: absolute; z-index: 5; top: 40px; left: 0; width: 420px; max-height: 320px; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .cat-item { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 6px 8px; border-radius: 8px; text-align: left; color: var(--text); }
 .cat-item:hover { background: var(--brand-weak); }
@@ -139,6 +143,18 @@ button { font: inherit; cursor: pointer; }
 .cooked td, .cooked th { border: 1px solid var(--line); padding: 4px 8px; }
 .cooked a { color: var(--brand); }
 
+/* ---------- 正文排版规整（R4）：段/列表/楼间距按阅读惯例收紧，图片只留本体 ---------- */
+.cooked p { margin: 0 0 0.75em; }
+.cooked p:last-child { margin-bottom: 0; }
+.cooked ul, .cooked ol { margin: 0 0 0.75em; padding-left: 1.6em; }
+.cooked li { margin: 0.25em 0; }
+.cooked h1, .cooked h2, .cooked h3, .cooked h4, .cooked h5, .cooked h6 { margin: 1.2em 0 0.4em; line-height: 1.35; }
+.cooked hr { border: 0; border-top: 1px solid var(--line); margin: 1.2em 0; }
+/* Discourse 图片 = <a.lightbox> 包 img + .meta（文件名/尺寸）块；不引入原站样式时 meta 裸渲染占位巨大，隐藏 */
+.cooked .lightbox { display: inline-block; max-width: 100%; }
+.cooked .lightbox img { display: block; }
+.cooked .lightbox .meta { display: none; }
+
 .timeline { flex: none; width: 68px; border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 10px 6px; display: flex; flex-direction: column; gap: 2px; font-family: var(--reading-font-family); }
 .tl-head { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px; }
 .tl-tick { border: 0; background: transparent; color: var(--muted); font-size: 11px; padding: 2px 0; border-radius: 6px; text-align: right; }
@@ -153,11 +169,14 @@ button { font: inherit; cursor: pointer; }
 .wiz-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-weak); color: var(--brand); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; transition: background-color 0.2s, color 0.2s; }
 .card h2 { margin: 0 0 8px; font-size: 15px; }
-.card input { width: 100%; margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+.card input { width: 100%; margin: 6px 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; }
 .row { display: flex; gap: 8px; margin-top: 8px; }
-button.primary { background: var(--brand); border: 0; color: #fff; border-radius: 8px; padding: 8px 14px; }
+/* 控件统一规格：32px 高带 / --radius-sm / 13px；普通按钮 hover 走 accent 描边 */
+button.primary { background: var(--brand); border: 0; color: #fff; border-radius: var(--radius-sm); padding: 6px 14px; font-size: 13px; }
+button.primary:hover:not(:disabled) { filter: brightness(1.1); }
 button.primary:disabled { opacity: .5; }
-.card button:not(.primary) { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; color: var(--text); }
+.card button:not(.primary) { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px 14px; font-size: 13px; color: var(--text); }
+.card button:not(.primary):hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .status-list { list-style: none; padding: 0; margin: 8px 0; color: var(--muted); }
 .tip { color: var(--muted); font-size: 12px; }
 .message { color: var(--brand); font-size: 13px; }
@@ -224,7 +243,7 @@ button.primary:disabled { opacity: .5; }
 .err-ops { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); font-size: 13px; }
 
 /* ---------- P2：DoH 加密 DNS ---------- */
-.card select { width: 100%; margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+.card select { width: 100%; margin: 6px 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; }
 .doh-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; margin-top: 6px; }
 .doh-toggle input, .doh-radios input { width: auto; margin: 0; }
 .doh-radios { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
@@ -232,7 +251,7 @@ button.primary:disabled { opacity: .5; }
 .dns-result { font-family: Consolas, monospace; word-break: break-all; }
 
 /* ---------- 设置中心：布局 ---------- */
-.settings-page { max-width: 860px; margin: 0 auto; padding: var(--space-5) var(--space-4) 60px; display: flex; gap: var(--space-4); align-items: flex-start; }
+.settings-page { max-width: 1040px; min-height: 100%; margin: 0 auto; padding: var(--space-5) var(--space-4) 60px; display: flex; gap: var(--space-5); align-items: flex-start; }
 .settings-nav { flex: none; width: 132px; display: flex; flex-direction: column; gap: var(--space-1); position: sticky; top: var(--space-3); }
 .settings-nav button { text-align: left; padding: var(--space-2) 14px; border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 10px; }
 .settings-nav button:hover { background: var(--panel); color: var(--text); }
@@ -296,7 +315,18 @@ details.adv section.card { margin-top: 12px; }
 
 /* ---------- 主题工坊：行内操作按钮组 + 危险操作 ---------- */
 .theme-actions { flex-direction: row; align-items: center; }
-.theme-actions button { padding: 4px 12px; font-size: 12px; }
+.theme-actions button { padding: 5px 12px; font-size: 13px; }
 button.danger { color: var(--bad); border-color: var(--bad); }
 
 
+
+/* 固定顶栏：标题+操作行不随正文滚动 */
+.topic-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topic-head { flex: none; padding: 10px 16px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.topic-head > * { max-width: var(--reading-width); margin-left: auto; margin-right: auto; }
+.topic-head .topic-title-h1 {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.35; margin-bottom: 8px;
+}
+.topic-head .topic-sub { margin-bottom: 0; }
+.topic-scroller { flex: 1; min-height: 0; }

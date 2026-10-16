@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
             队列{{ queue.count > 0 ? ` ${queue.count}` : '' }}
           </button>
           <div v-if="queueOpen" class="queue-panel">
-            <div v-if="queue.count === 0" class="queue-empty">队列为空：在列表或主题页点「＋ 入队」</div>
+            <div v-if="queue.count === 0" class="queue-empty">队列为空：在列表或主题页点「＋」入队（悬停看提示）</div>
             <div v-for="item in queue.items" :key="item.id" class="queue-item">
               <RouterLink :to="`/t/${item.id}`" @click="queueOpen = false">{{ item.title }}</RouterLink>
               <button class="act" @click="queue.remove(item.id)">移除</button>

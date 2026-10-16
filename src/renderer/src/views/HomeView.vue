@@ -28,13 +28,32 @@ function toggleQueue(t: DiscourseTopicLite): void {
 
 const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '分类'))
 
-/** Top 榜周期子选项；Top 激活时显示，切换即重置列表 */
+/** Top 榜周期（Discourse top.json 全六档）；下拉浮层选择，不插入 crumb 行 */
 const topPeriods: Array<{ value: TopPeriod; label: string }> = [
-  { value: 'weekly', label: '周' },
-  { value: 'monthly', label: '月' },
-  { value: 'all', label: '全部' }
+  { value: 'daily', label: '日榜' },
+  { value: 'weekly', label: '周榜' },
+  { value: 'monthly', label: '月榜' },
+  { value: 'quarterly', label: '季榜' },
+  { value: 'yearly', label: '年榜' },
+  { value: 'all', label: '总榜' }
 ]
 const activePeriod = computed(() => (store.mode.type === 'top' ? store.mode.period : null))
+const showTopPanel = ref(false)
+
+/** Top/分类两浮层互斥：开一个关另一个 */
+function toggleTopPanel(): void {
+  showTopPanel.value = !showTopPanel.value
+  showCats.value = false
+}
+
+function pickPeriod(p: TopPeriod): void {
+  showTopPanel.value = false
+  void store.switchMode({ type: 'top', period: p })
+}
+
+const topLabel = computed(
+  () => topPeriods.find((p) => p.value === activePeriod.value)?.label ?? '周榜'
+)
 
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
@@ -74,28 +93,30 @@ onMounted(() => {
         <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="store.switchMode({ type: 'hot' })">
           最热
         </button>
-        <button
-          class="chip"
-          :class="{ active: store.mode.type === 'top' }"
-          @click="store.switchMode({ type: 'top', period: 'weekly' })"
-        >
-          Top
-        </button>
-        <template v-if="activePeriod">
+        <div class="chip-wrap">
           <button
-            v-for="p in topPeriods"
-            :key="p.value"
-            class="chip sub"
-            :class="{ active: activePeriod === p.value }"
-            @click="store.switchMode({ type: 'top', period: p.value })"
+            class="chip"
+            :class="{ active: store.mode.type === 'top' }"
+            @click="toggleTopPanel"
           >
-            {{ p.label }}
+            {{ store.mode.type === 'top' ? `Top · ${topLabel}` : 'Top' }} ▾
           </button>
-        </template>
-        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' })">
+          <div v-if="showTopPanel" class="cat-panel top-panel">
+            <button
+              v-for="p in topPeriods"
+              :key="p.value"
+              class="cat-item"
+              @click="pickPeriod(p.value)"
+            >
+              {{ p.label }}
+              <small v-if="activePeriod === p.value">✓</small>
+            </button>
+          </div>
+        </div>
+        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' }); showTopPanel = false">
           离线
         </button>
-        <button class="chip" @click="showCats = !showCats; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
+        <button class="chip" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
       </div>
       <div v-if="showCats" class="cat-panel">
         <button
@@ -148,8 +169,14 @@ onMounted(() => {
             alt=""
             loading="lazy"
           />
-          <button class="act" :class="{ acted: queue.has(t.id) }" @click="toggleQueue(t)">
-            {{ queue.has(t.id) ? '✓ 已入队' : '＋ 入队' }}
+          <button
+            class="act"
+            :class="{ acted: queue.has(t.id) }"
+            :title="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
+            :aria-label="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
+            @click="toggleQueue(t)"
+          >
+            {{ queue.has(t.id) ? '✓' : '＋' }}
           </button>
         </div>
       </div>
