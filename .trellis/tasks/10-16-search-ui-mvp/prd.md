@@ -9,6 +9,7 @@
 - 出处：roadmap 功能清单（`.thinkrail/context/TASK-linuxdo-desktop.md:19`）对标 FluxDO，搜索在列；两参考项目均有搜索模块——FluxDO 独立搜索页 + 过滤面板 + 帖子卡片（`lib/widgets/search/`，`_SearchMixin` 走 `/search.json`），ALDR 有 `search/` 界面模块。本任务只抄「输入 → 结果列表」主干。
 - 现状：HomeView 列表工具栏（`.list-toolbar`）有 latest/hot/Top/分类/离线 chips，无搜索入口；全应用无任何搜索。
 - 端点：Discourse `/search.json?q=`，返回 `topics`（id/title）+ `posts`（topic_id/blurb/username）+ users/categories/tags，支持 `?page=` 翻页；操作符 `@user` `#分类` `order:latest` `in:title` 等服务端解析，客户端透传即用。
+- 端点核实（2026-10-16，Discourse 上游文档 + 匿名探针）：full_page 模式 `?page=` 翻页上限 10 页，第 11 页起空页——UI 侧空页即判 exhausted，非错误；blurb 300 字符；响应 posts/topics/users/categories 旁加载，客户端按 `posts[].topic_id → topics[].id` 关联；linux.do 匿名请求 403，AC2/AC3/AC4 需登录态真机验收。
 
 ## Requirements
 

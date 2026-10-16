@@ -40,3 +40,4 @@
 - GitHub 仓库（owner/repo）→ 接通自动更新 AC5
 - DoH 真实现立项（本地 DoH 代理方案）
 - 主题工坊并行会话的收尾归属
+| 10-16 16:2x | 搜索UI会话 | 端点核实（上游文档：page 翻页上限10页/空页即尽/blurb 300字）+ IPC 四点布线契约入 backend spec + PRD 补核实结论 | 待提交 |
