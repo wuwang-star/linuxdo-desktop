@@ -381,3 +381,38 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 - 用户真机：桥接全链路（Edge 登录自动同步）+ 阅读体感目测 + Connect 复验 + P1/P2a 验收
 - 排队：webdav-sync（依赖 offline 数据层）、global-shortcuts
 - 积压决策：GitHub repo（AC5）、DoH 真实现立项
+
+
+## Session 13: 双栏/树形/最热Top/窗口融合 + WebDAV + 全局快捷键
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-dual-pane、10-16-reply-tree、10-16-hot-top、10-16-window-chrome、10-16-webdav-sync、10-16-global-shortcuts
+**Branch**: `master`
+
+### Summary
+
+连续交付六项：① 双栏主从布局（BrowseView 统一 / 与 /t/:id，≥1200px 左列表右阅读，selectSeq+route watcher 归一选择态，窄屏回退跨阈值保持右栏，composer 定位修正）；② 评论树形楼中楼（时间流/树形双视图偏好持久化，children 表+DFS 深度钳 3，父楼未加载成根带标记懒加载归位，只看楼主在过滤集重建树）；③ 列表通道最热/Top（/hot.json 经用户 Edge 实测抓包核实与 latest 同构；/leaderboard.json 实测 not_found——用户所见排行榜为 LDStatus Pro 第三方服务，排除并记 SPEC；HomeView chips 最新/最热/Top(周期)/离线）；④ 窗口观感（隐藏原生标题栏+titleBarOverlay 与顶栏同色融合，nativeTheme.themeSource 单轨同步，顶栏 drag/no-drag）；⑤ WebDAV 手动同步（最小动词集客户端 net.fetch PROPFIND/MKCOL/PUT/GET 实测支持、bundle v1=进度/阅读偏好/非凭据设置、凭据零包含、推拉单向覆盖、设置中心同步分类）；⑥ 全局快捷键（Alt+Shift+L 呼出默认开/Alt+Shift+N 队列下一贴默认关，注册失败透出，will-quit 清理）。另：工作区发现并行会话的「主题工坊」产物（themes.ts 主题包机制+飞书风样例），随树验证绿后一并快照提交，来源待用户确认。过程记录：Edge 探测端点经 computer-use 驱动用户浏览器完成（hot.json 曾过 CF 挑战 __cf_chl_rt_tk 后成功）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `23b3f40` | feat: 双栏浏览主从布局 |
+| `bc50e17` | feat: 评论树形展示（楼中楼视图） |
+| `0df5260` | feat: 列表通道最热/Top 榜 + 窗口观感融合 |
+| `ea8bb7c` | feat: WebDAV 手动同步 + 主题工坊快照（并行会话） |
+| `d16f841` | feat: 全局快捷键（P2b-3） |
+
+### Testing
+
+- [OK] typecheck 0 错（每任务收尾复跑）；smoke SMOKE_OK；hot.json/leaderboard.json Edge 实测抓包
+- [待人工] 双栏四 AC、树形 AC1–3、hot/top 拉取、窗口融合目测、WebDAV AC1–3（需真实 WebDAV）、快捷键 AC1–3、桥接 AC1、Connect 复验、P1/P2a 全项
+
+### Status
+
+[进行中] roadmap P0–P2b 全部功能面代码交付完毕；六任务 in_progress 待验收归档；theme-workshop 待来源确认
+
+### Next Steps
+
+- 用户真机总验收（含新登录页/双栏/树形/体感/离线/桥接）
+- 决策：GitHub repo（AC5）、DoH 真实现立项、主题工坊归属与续作（飞书风样例已有）
