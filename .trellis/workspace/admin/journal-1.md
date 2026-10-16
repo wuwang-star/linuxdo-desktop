@@ -416,3 +416,46 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 
 - 用户真机总验收（含新登录页/双栏/树形/体感/离线/桥接）
 - 决策：GitHub repo（AC5）、DoH 真实现立项、主题工坊归属与续作（飞书风样例已有）
+
+
+## Session 14: 窗口融合/最热Top/WebDAV/快捷键/时间轴 + 多会话碰撞事故与恢复
+
+**Date**: 2026-10-16
+**Task**: 10-16-hot-top、10-16-window-chrome、10-16-webdav-sync、10-16-global-shortcuts、10-16-dual-pane、10-16-reply-tree、10-16-login-ux
+**Branch**: `master`
+
+### Summary
+
+连续交付：双栏主从（23b3f40）、评论树形楼中楼（bc50e17）、最热/Top 榜+窗口观感融合（0df5260）、WebDAV 手动同步+主题工坊快照（ea8bb7c）、全局快捷键（d16f841）、登录页重排（616c4d6）、主题加载超时重试（395aba1）、阅读固定顶栏（0cbdaca）、单行紧凑顶栏+正文媒体自适应（200d36c）、时间轴瘦身悬停展开（776bde4）。窗口融合用 titleBarStyle hidden+titleBarOverlay（nativeTheme.themeSource 单轨同步色）；WebDAV 客户端实测 net.fetch 支持 PROPFIND/MKCOL；探针脚本存 webdav-sync/research/。用户实测反馈迭代：配对码复制、Edge 拉起 ProcessSingleton 丢 edge:// URL（改 tasklist 分流+粘贴兜底）、主题加载 20s 超时+重试（395aba1）、固定顶栏改单行紧凑、正文媒体自适应防横向滚动条。
+
+**事故与恢复**：并行会话（另一 AI 会话，list-ui-redesign/主题工坊）与本会话同时写同一工作树。本会话对 styles.css 做 [时间轴块→.topic-scroller] 区间替换时，误删了并行会话彼时未提交的一段规则（.card/.chip/.seg 等大量）。恢复：styles.css 回滚至 776bde4 快照重套新时间轴（dde19e1）；并行会话在快照之后的 styles 增量可能丢失需其重做。**教训：多会话禁止同时写同一工作树；每个会话完成即提交。**
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `23b3f40` | feat: 双栏浏览主从布局 |
+| `bc50e17` | feat: 评论树形展示（楼中楼视图） |
+| `0df5260` | feat: 最热/Top 榜 + 窗口观感融合 |
+| `ea8bb7c` | feat: WebDAV 手动同步 + 主题工坊快照 |
+| `d16f841` | feat: 全局快捷键（P2b-3） |
+| `616c4d6` | feat: 登录页信息架构重排 |
+| `395aba1` | fix: 主题加载超时与失败重试 |
+| `0cbdaca` | feat: 阅读页固定顶栏 |
+| `200d36c` | feat: 单行紧凑顶栏 + 正文媒体自适应 |
+| `776bde4` | feat: 时间轴瘦身+悬停展开 |
+| `dde19e1` | fix: 恢复并行会话误删的 styles 规则并重套时间轴新设计 |
+
+### Testing
+
+- [OK] typecheck 0 错（各任务收尾复跑）；smoke SMOKE_OK；实机目测：双栏/列表 chips/登录态/最热Top 正常
+- [待人工] 全量功能验收清单同前；时间轴悬停展开新交互目测
+
+### Status
+
+[进行中] 并行会话（list-ui-redesign 等）的未提交改动仍留在工作区，归属其会话处理
+
+### Next Steps
+
+- 用户：确认并行会话（主题工坊/list-ui-redesign）状态；错峰使用会话或令其及时提交
+- 全量真机验收后归档 in_progress 任务链
