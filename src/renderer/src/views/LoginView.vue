@@ -176,20 +176,12 @@ onUnmounted(() => {
       <p v-if="auth.message" class="message">{{ auth.message }}</p>
     </section>
 
-    <section class="card">
-      <h2>方式一（推荐）：浏览器窗口登录</h2>
+    <!-- ② 方式一：浏览器窗口登录（推荐，放大置顶；Edge 扩展桥接并入此卡） -->
+    <section class="card card-hero">
+      <h2>方式一：浏览器窗口登录<span class="card-badge reco">推荐</span></h2>
       <p class="tip">弹出的窗口就是真实浏览器，支持 Connect / OAuth / 账密 / 2FA；检测到登录态后自动关闭并落盘 cookie（重启保留）。</p>
       <div class="row">
         <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>方式二：粘贴 _t cookie（测试用，秒切会话）</h2>
-      <p class="tip">浏览器 F12 → Application → Cookies → linux.do → 复制 <code>_t</code> 的值粘贴到这里。</p>
-      <div class="row">
-        <input v-model="tCookie" placeholder="_t cookie 值" style="flex:1" />
-        <button class="primary" :disabled="auth.loading || !tCookie.trim()" @click="pasteCookie">注入</button>
       </div>
 
       <!-- Edge 扩展桥接：浏览器登录一次，应用自动跟随 -->
@@ -225,33 +217,7 @@ onUnmounted(() => {
       <p v-else class="tip">桥接当前关闭；开启后立即开始监听，关闭即停止（端口不占用）。</p>
     </section>
 
-    <section class="card">
-      <h2>方式三：User API Key 授权（linux.do 当前未开放 ⚠️）</h2>
-      <p class="tip">
-        实测 linux.do 管理员已关闭自助申请（授权页报「页面不存在或是不公开页面」），普通用户无法使用；
-        若日后开放或用于其他 Discourse 站点，此通道可直接复用浏览器登录态。
-      </p>
-      <div class="row">
-        <button :disabled="auth.loading" @click="auth.startUserApiKey('system-browser')">系统浏览器授权</button>
-        <button :disabled="auth.loading" @click="auth.startUserApiKey('embedded')">应用内窗口授权</button>
-        <button v-if="auth.loading" @click="auth.cancelUserApiKey()">取消等待</button>
-      </div>
-      <p class="tip">浏览器授权后应用会自动收到回调并保存；若浏览器弹出「打开 LinuxDo Desktop?」请选择允许。</p>
-    </section>
-
-    <section class="card">
-      <h2>方式四：手动填 Api-Key（持有现成 Key 时）</h2>
-      <p class="tip">若你持有 linux.do 的 User API Key，可在此填入；凭据将以系统加密存储在本机。</p>
-      <input v-model="apiUsername" placeholder="用户名（如 neo）" />
-      <input v-model="apiKey" placeholder="API Key" type="password" />
-      <div class="row">
-        <button class="primary" :disabled="auth.loading || !apiKey || !apiUsername" @click="auth.saveApiKey(apiKey, apiUsername)">
-          保存
-        </button>
-        <button v-if="auth.status?.apiKey" @click="auth.clearApiKey()">清除</button>
-      </div>
-    </section>
-
+    <!-- ③ LINUX DO Connect 身份（次级入口） -->
     <section class="card">
       <h2>LINUX DO Connect 身份（OAuth2，实验）</h2>
       <p class="tip">
@@ -285,6 +251,47 @@ onUnmounted(() => {
       </div>
       <p v-if="connMessage" class="message">{{ connMessage }}</p>
     </section>
+
+    <!-- ④ 高级 / 其他方式：原生 details 默认折叠，展开态仅存于本页（不持久化） -->
+    <details class="card adv">
+      <summary>高级 / 其他方式<span class="sum-hint">_t 注入 · User API Key（已禁用） · 手动 Api-Key</span></summary>
+
+      <section class="card">
+        <h2>方式二：粘贴 _t cookie（测试用，秒切会话）</h2>
+        <p class="tip">浏览器 F12 → Application → Cookies → linux.do → 复制 <code>_t</code> 的值粘贴到这里。</p>
+        <div class="row">
+          <input v-model="tCookie" placeholder="_t cookie 值" style="flex:1" />
+          <button class="primary" :disabled="auth.loading || !tCookie.trim()" @click="pasteCookie">注入</button>
+        </div>
+      </section>
+
+    <section class="card">
+      <h2>方式三：User API Key 授权<span class="card-badge off">已禁用</span></h2>
+      <p class="tip">
+        实测 linux.do 管理员已关闭自助申请（授权页报「页面不存在或是不公开页面」），普通用户无法使用；
+        若日后开放或用于其他 Discourse 站点，此通道可直接复用浏览器登录态。
+      </p>
+      <div class="row">
+        <button :disabled="auth.loading" @click="auth.startUserApiKey('system-browser')">系统浏览器授权</button>
+        <button :disabled="auth.loading" @click="auth.startUserApiKey('embedded')">应用内窗口授权</button>
+        <button v-if="auth.loading" @click="auth.cancelUserApiKey()">取消等待</button>
+      </div>
+      <p class="tip">浏览器授权后应用会自动收到回调并保存；若浏览器弹出「打开 LinuxDo Desktop?」请选择允许。</p>
+    </section>
+
+    <section class="card">
+      <h2>方式四：手动填 Api-Key（持有现成 Key 时）</h2>
+      <p class="tip">若你持有 linux.do 的 User API Key，可在此填入；凭据将以系统加密存储在本机。</p>
+      <input v-model="apiUsername" placeholder="用户名（如 neo）" />
+      <input v-model="apiKey" placeholder="API Key" type="password" />
+      <div class="row">
+        <button class="primary" :disabled="auth.loading || !apiKey || !apiUsername" @click="auth.saveApiKey(apiKey, apiUsername)">
+          保存
+        </button>
+        <button v-if="auth.status?.apiKey" @click="auth.clearApiKey()">清除</button>
+      </div>
+    </section>
+    </details>
 
     <section class="card">
       <h2>设置</h2>
