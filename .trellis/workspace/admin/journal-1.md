@@ -575,3 +575,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 19 追记 3：移除原生窗口钮（用户拍板）
 
 顶栏对齐修复后用户再反馈「右上的按钮还在啊」——诉求是根本不要原生 −□×，不是对齐。移除 titleBarOverlay（index.ts 选项、win.ts 配色/跟随全套、topbar.css WCO 媒体查询、preload 注释），保留 titleBarStyle:'hidden'。窗口操作路径靠既有托盘常驻模型：× 隐藏到托盘、任务栏最小化、拖拽区双击最大化、托盘退出。过程事故一次：Edit new_string 误混入一行伪代码，读回检查发现并清除——多文件结构改动后必须 git diff 复查再提交。
+
+### Session 19 追记 4：自绘窗口钮落地
+
+用户问「项目有自己的关闭最小化按钮吗」→ 无 → 拍板「加」。顶栏右端三枚 SVG 线框钮（最小化/最大化切换/关闭）：IPC 三条 send 单向信道 win:minimize/maximize(切换)/close，close 复用 close→tray 拦截；topbar.css .win-btn tokens 皮肤（关闭悬停红 #e5484d）；flex 布局注意 nav 的 margin-left:auto 与 win-btns 相邻即成右对齐组，不再加第二个 auto margin（会平分剩余空间把 nav 拉离右缘）。主进程改动，需重启生效。

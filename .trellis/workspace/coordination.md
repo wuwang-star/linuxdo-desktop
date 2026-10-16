@@ -40,6 +40,7 @@
 | 10-16 17:5x | 主会话（settings-ui-fix） | base.css 尾部 @scope 段（裸 button/input 兜底+card h2+card-badge.reco）；settings.css（nav 按钮/.accel/.diag-row.bad、删死类） | 已提交 f167017 |
 | 10-16 18:0x | 主会话（topbar-fix，用户截图反馈） | 分区 B topbar.css：topbar-inner 去 1060 居中改全宽 + WCO 预留原生窗口钮区（App 顶栏属全应用壳，借 B 区文件，已同步内链跳转会话） | 已提交（见 git log） |
 | 10-16 18:2x | 主会话（window-btns-remove，用户拍板） | main/index.ts 窗口选项段、main/win.ts 删 overlay 段、topbar.css 去回 WCO 块、preload 注释 | 已提交（见 git log） |
+| 10-16 18:4x | 主会话（win-btns，用户拍板「加」） | 公用 App.vue 顶栏尾段追加 win-btns 组；ipc.ts/preload 两件/topbar.css 追加 | 已提交（见 git log） |
 
 ## 待用户决策
 
