@@ -459,3 +459,37 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 
 - 用户：确认并行会话（主题工坊/list-ui-redesign）状态；错峰使用会话或令其及时提交
 - 全量真机验收后归档 in_progress 任务链
+
+
+## Session 15: 全弧线总结 + 多会话协同公告板
+
+**Date**: 2026-10-16
+**Task**: 全项目（自 分析项目 起）
+**Branch**: `master`
+
+### Summary
+
+本会话自「分析项目」起完成：项目分析→P2a 打包分发→WebDAV 同步→全局快捷键→双栏主从→评论树形→阅读体感→离线 Topic→最热/Top 榜→窗口观感融合→扩展桥接+安装向导→Connect 代理根因修复→登录页重排→固定顶栏+媒体自适应→时间轴重做→多会话协同公告板。加载全部并行会话内容（搜索UI MVP/内链跳转/主题工坊，经 ZCode 会话库直接取证）：内链跳转已交付（fa05630）、搜索 MVP 已交付（666e07d）、主题工坊在途。事故：多会话并发写 styles.css 致规则误删，已回滚恢复并立「公用文件五条铁律」（coordination.md）。SPEC 增多会话协同节。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e09da49` | docs: 多会话协同公告板（分区/铁律/认领登记） |
+
+（今日功能提交见 Session 12-14 及 git log）
+
+### Testing
+
+- [OK] typecheck 0 错；smoke SMOKE_OK（每任务收尾）
+- [待人工] 各任务 AC（见各 prd.md 勾选状态）；扩展桥接/Connect/WebDAV 需登录态与真实服务
+
+### Status
+
+[进行中] roadmap P0–P2b 功能面全交付；多任务待人工验收归档；主题工坊并行在途
+
+### Next Steps
+
+- 用户全量真机验收后归档任务链
+- 三决策：GitHub repo（AC5）/ DoH 真实现立项 / 主题工坊收尾归属
+- 排队池：搜索深化、浏览历史、划词引用、Reactions 抓包、设置导入导出

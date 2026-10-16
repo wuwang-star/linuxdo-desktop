@@ -138,3 +138,7 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **queue:next 链路**：主进程不驱动 renderer 队列状态（队列 store 在 renderer，`Alt+Shift+N` 回调仅 `webContents.send('queue:next')` 广播）→ preload `onQueueNext` → App.vue `goQueueNext()`：route.name==='topic' 时取 `queue.neighbors(route.params.id).next`，非 null 才 `router.push('/t/<next>')`；不在主题页/无下一贴一律忽略（无副作用，与 TopicView 既有 goNeighbor 同语义）。双栏下 router.push 经 BrowseView 的 route watcher 归一，左栏选中态同步。
 - **settings 字段**（translate-settings.json，仿 bridge 字段模式）：`shortcutCallWindow`/`shortcutNextTopic`，undefined→默认（true/false）+ Boolean 归一防脏数据；**全部既有 setter（translate/DoH/notification/bridge×2）均已补 `...shortcutFieldsOf(cache)` 透传防误抹**；新 `setShortcutEnabled(kind, enabled)` 单项切换。IPC `shortcuts:getStatus`/`shortcuts:setEnabled`（preload 两件），UI 在设置中心新「快捷键」分类（同步之后）：两 switch + 等宽组合键徽标（`.accel`）+ 逐项错误行。
 - **待人工验收**：AC1（最小化按 Alt+Shift+L 恢复聚焦）、AC2（队列下一贴开关生效/无下一贴无副作用）、AC3（真实占用场景错误透出且另一项不受影响）。
+
+## 多会话协同（2026-10-16）
+
+开发采用多 AI 会话并行，责任分区与公用文件铁律见 `.trellis/workspace/coordination.md`（开工前必读、认领登记）。要点：公用文件（ipc/preload/styles.css/App.vue/router/client/settings）只追加不重排；styles.css 各会话独立 @scope 段；原子功能完成立即提交；styles 误删事故教训见 journal Session 13-14。
