@@ -166,6 +166,16 @@ export function registerIpc(): void {
   )
   ipcMain.handle('connect:login', () => connectLogin())
 
+  // ---------- 窗口控制（自绘窗口钮：最小化/最大化切换/关闭；close 经 index.ts 拦截=隐藏到托盘） ----------
+  ipcMain.on('win:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize())
+  ipcMain.on('win:maximize', (e) => {
+    const w = BrowserWindow.fromWebContents(e.sender)
+    if (!w) return
+    if (w.isMaximized()) w.unmaximize()
+    else w.maximize()
+  })
+  ipcMain.on('win:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close())
+
   // ---------- MessageBus 实时通知（cookie 登录态由 renderer 在就绪后调用 start） ----------
   ipcMain.handle('messagebus:start', (_e, userId: number) =>
     messageBusStart(userId, (msgs: MessageBusMessage[]) => {

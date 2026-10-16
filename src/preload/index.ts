@@ -99,6 +99,10 @@ const api = {
     }
   },
   syncReply: (token: string, data: unknown) => ipcRenderer.send('syncdata:reply', token, data),
+  // 自绘窗口钮（单向 send，无回执）：关闭在主进程被拦截为隐藏到托盘
+  winMinimize: () => ipcRenderer.send('win:minimize'),
+  winToggleMaximize: () => ipcRenderer.send('win:maximize'),
+  winClose: () => ipcRenderer.send('win:close'),
   // 窗口观感：主题模式镜像到主进程（nativeTheme.themeSource，亮暗全局跟随）
   setTheme: (theme: 'system' | 'light' | 'dark') => ipcRenderer.invoke('window:setTheme', theme),
   // 主进程推送订阅：返回解绑函数

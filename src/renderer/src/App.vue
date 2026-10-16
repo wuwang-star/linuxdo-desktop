@@ -22,6 +22,7 @@ const disposeThemeWatcher = watchSystemTheme()
 void applyThemeById(loadSelectedThemeId()).catch(() => {})
 const queueOpen = ref(false)
 const who = computed(() => auth.status?.user?.username ?? null)
+const api = window.api
 const unread = computed(() => {
   const u = auth.status?.user
   if (!u) return 0
@@ -123,6 +124,20 @@ onBeforeUnmount(() => {
           <template v-else>登录</template>
         </RouterLink>
       </nav>
+      <!-- 自绘窗口钮（原生 overlay 已移除）：关闭=隐藏到托盘；双击拖拽区同样可最大化 -->
+      <div class="win-btns" data-nodrag>
+        <button class="win-btn" aria-label="最小化" @click="api.winMinimize()">
+          <svg viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
+        </button>
+        <button class="win-btn" aria-label="最大化/还原" @click="api.winToggleMaximize()">
+          <svg viewBox="0 0 12 12">
+            <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.2" fill="none" />
+          </svg>
+        </button>
+        <button class="win-btn close" aria-label="关闭" @click="api.winClose()">
+          <svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
+        </button>
+      </div>
     </div>
   </header>
   <main class="page">

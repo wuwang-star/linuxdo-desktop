@@ -111,6 +111,10 @@ export interface ApiBridge {
   ): () => void
   /** 应答主进程的同步数据请求（token 原样带回） */
   syncReply(token: string, data: unknown): void
+  /** 自绘窗口钮（单向 send）：最小化 / 最大化切换 / 关闭（=隐藏到托盘） */
+  winMinimize(): void
+  winToggleMaximize(): void
+  winClose(): void
   /** 主题模式镜像到主进程：nativeTheme.themeSource，亮暗全局跟随 */
   setTheme(theme: 'system' | 'light' | 'dark'): Promise<boolean>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void

@@ -37,3 +37,15 @@
 .queue-item a:hover { color: var(--accent); }
 .queue-empty { color: var(--muted); font-size: 12px; padding: 8px; }
 .queue-clear { width: 100%; margin-top: 6px; }
+
+/* 自绘窗口钮（titleBarOverlay 已移除，用户拍板自绘）：tokens 同源配色，关闭悬停红 */
+.win-btns { display: flex; align-items: center; gap: 2px; margin-left: 12px; }
+.win-btn {
+  width: 34px; height: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted);
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.win-btn:hover { background: var(--accent-weak); color: var(--text); }
+.win-btn.close:hover { background: #e5484d; color: #fff; }
+.win-btn svg { width: 11px; height: 11px; display: block; }
