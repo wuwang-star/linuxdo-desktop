@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
+import { relTime } from '../utils/format'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
@@ -141,7 +142,7 @@ async function doBookmark(): Promise<void> {
 }
 
 onMounted(() => {
-  void store.open(topicId.value).then(() => {
+  void store.open(topicId.value, { offline: route.query.offline === '1' }).then(() => {
     // 通知跳转：?pn=直达楼层
     const pn = Number(route.query.pn ?? 0)
     if (pn > 0) void store.jumpTo(pn)
@@ -173,22 +174,70 @@ function goNeighbor(dir: 'prev' | 'next'): void {
   const id = queueNav.value[dir]
   if (id !== null) void router.push(`/t/${id}`)
 }
+
+// ---- 离线保存/阅读 ----
+const saving = ref(false)
+const saveProgress = ref<{ loaded: number; total: number } | null>(null)
+const saveResult = ref<{ ok: boolean; text: string } | null>(null)
+
+const saveLabel = computed(() => {
+  if (!saving.value) return '离线保存'
+  return saveProgress.value ? `保存中 ${saveProgress.value.loaded}/${saveProgress.value.total}` : '保存中…'
+})
+
+async function doSaveOffline(): Promise<void> {
+  if (saving.value) return
+  saving.value = true
+  saveProgress.value = null
+  saveResult.value = null
+  // 进度经 webContents 事件回传（offline:save:progress），主进程分块循环中逐批上报
+  const unsub = window.api.onSaveProgress((p) => {
+    if (p.id === topicId.value) saveProgress.value = { loaded: p.loaded, total: p.total }
+  })
+  try {
+    const res = await window.api.saveOffline(topicId.value)
+    saveResult.value = res.ok
+      ? { ok: true, text: `已保存 ${res.count ?? 0} 楼` }
+      : { ok: false, text: res.error ?? '保存失败' }
+  } finally {
+    unsub()
+    saving.value = false
+  }
+}
+
+/** 从失败回落提示条进入离线阅读（不改路由，直接以快照重开） */
+function readOffline(): void {
+  void store.open(topicId.value, { offline: true })
+}
 </script>
 
 <template>
   <div class="topic-page">
     <div ref="scroller" class="topic-scroller">
       <div v-if="store.loading" class="loading">加载中…</div>
-      <div v-else-if="store.error && !store.topic" class="error">{{ store.error }}</div>
+      <div v-else-if="store.error && !store.topic" class="error">
+        {{ store.error }}
+        <!-- 在线打开失败且本地有离线存档：透出离线阅读入口（AC3） -->
+        <div v-if="store.hasOffline" class="offline-tip">
+          <span>网络异常，该主题有离线存档</span>
+          <button class="act" @click="readOffline">阅读离线存档</button>
+        </div>
+      </div>
       <template v-else-if="store.topic">
         <h1 class="topic-title-h1">{{ store.topic.title }}</h1>
         <div class="topic-sub">
           <span>共 {{ store.topic.posts_count }} 楼 · 已读至 #{{ store.readProgress(topicId) || 1 }}</span>
+          <!-- 离线快照阅读：徽标标注快照时间（R4），并隐藏全部网络互动 -->
+          <span v-if="store.offline" class="offline-badge">离线 · 保存于 {{ relTime(store.offlineSavedAt) }}</span>
           <label class="only-op">
             <input type="checkbox" v-model="store.onlyOp" />
             只看楼主
           </label>
-          <button class="act" :class="{ acted: store.topic.bookmarked }" :disabled="bookmarking || store.topic.bookmarked" @click="doBookmark">
+          <button v-if="!store.offline" class="act" :disabled="saving" @click="doSaveOffline">
+            {{ saveLabel }}
+          </button>
+          <span v-if="saveResult" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
+          <button v-if="!store.offline" class="act" :class="{ acted: store.topic.bookmarked }" :disabled="bookmarking || store.topic.bookmarked" @click="doBookmark">
             {{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}
           </button>
           <button class="act" :class="{ acted: queue.has(topicId) }" @click="toggleQueue">
@@ -209,6 +258,7 @@ function goNeighbor(dir: 'prev' | 'next'): void {
           v-for="p in store.visiblePosts"
           :key="p.id"
           :post="p"
+          :offline="store.offline"
           @jump="go"
           @like="(id) => store.toggleLike(id)"
           @reply="openComposer"
@@ -254,6 +304,7 @@ function goNeighbor(dir: 'prev' | 'next'): void {
         </button>
       </div>
     </div>
-    <button v-else class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
+    <!-- 离线快照模式下不渲染回复入口（无网络写操作） -->
+    <button v-else-if="!store.offline" class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
   </div>
 </template>

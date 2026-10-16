@@ -50,6 +50,7 @@ import {
   openSystemLogin
 } from './api/bridge'
 import { showPushNotification } from './notify'
+import { saveTopic, listTopics, getTopic, removeTopic } from './api/offline'
 
 /** 推送广播给所有窗口的 renderer */
 function broadcast(channel: string, payload: unknown): void {
@@ -159,4 +160,15 @@ export function registerIpc(): void {
   ipcMain.handle('bridge:regenPair', () => regenBridgePair())
   ipcMain.handle('bridge:installWizard', () => installWizard())
   ipcMain.handle('bridge:openSystemLogin', () => openSystemLogin())
+
+  // ---------- 离线 Topic（保存/列表/读取/删除） ----------
+  // 全量拉取进度经同一 webContents 事件通道回传（按钮内文字 n/N 用，非进度条事件）
+  ipcMain.handle('offline:save', (e, id: number) =>
+    saveTopic(id, (loaded, total) => {
+      if (!e.sender.isDestroyed()) e.sender.send('offline:save:progress', { id, loaded, total })
+    })
+  )
+  ipcMain.handle('offline:list', () => listTopics())
+  ipcMain.handle('offline:get', (_e, id: number) => getTopic(id))
+  ipcMain.handle('offline:remove', (_e, id: number) => removeTopic(id))
 }

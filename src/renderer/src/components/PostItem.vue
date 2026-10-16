@@ -4,7 +4,7 @@ import type { DiscoursePost } from '../../../main/api/client'
 import { avatarUrl, relTime } from '../utils/format'
 import { likeInfo } from '../stores/topic'
 
-const props = defineProps<{ post: DiscoursePost }>()
+const props = defineProps<{ post: DiscoursePost; offline?: boolean }>()
 const emit = defineEmits<{
   (e: 'jump', postNumber: number): void
   (e: 'like', postId: number): void
@@ -67,7 +67,8 @@ async function translate(): Promise<void> {
         <div class="tr-text">{{ translation }}</div>
       </div>
 
-      <footer class="post-actions">
+      <!-- 离线快照：点赞/回复/编辑/翻译均需网络，整体隐藏（楼内跳转回复 # 仍可用） -->
+      <footer v-if="!offline" class="post-actions">
         <button class="act" :class="{ acted: like.acted }" @click="emit('like', post.id)">
           {{ like.acted ? '❤' : '🤍' }} {{ like.count || '' }}
         </button>

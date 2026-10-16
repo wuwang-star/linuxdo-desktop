@@ -47,6 +47,10 @@ const api = {
   regenBridgePair: () => ipcRenderer.invoke('bridge:regenPair'),
   installWizard: () => ipcRenderer.invoke('bridge:installWizard'),
   openSystemLogin: () => ipcRenderer.invoke('bridge:openSystemLogin'),
+  saveOffline: (id: number) => ipcRenderer.invoke('offline:save', id),
+  offlineList: () => ipcRenderer.invoke('offline:list'),
+  offlineGet: (id: number) => ipcRenderer.invoke('offline:get', id),
+  offlineRemove: (id: number) => ipcRenderer.invoke('offline:remove', id),
   // 主进程推送订阅：返回解绑函数
   onNotificationPush: (cb: (payload: unknown) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, payload: unknown): void => cb(payload)
@@ -64,6 +68,17 @@ const api = {
     ipcRenderer.on('notification:open', listener)
     return () => {
       ipcRenderer.removeListener('notification:open', listener)
+    }
+  },
+  // 离线保存进度（offline:save 进行中回传 n/N），返回解绑函数
+  onSaveProgress: (cb: (payload: { id: number; loaded: number; total: number }) => void) => {
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      payload: { id: number; loaded: number; total: number }
+    ): void => cb(payload)
+    ipcRenderer.on('offline:save:progress', listener)
+    return () => {
+      ipcRenderer.removeListener('offline:save:progress', listener)
     }
   }
 }

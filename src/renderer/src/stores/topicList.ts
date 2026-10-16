@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import type { DiscourseTopicLite, DiscourseUserLite, TopicListResponse } from '../../../main/api/client'
+import type { OfflineIndexEntry } from '../../../main/api/offline'
 
 export type ListMode =
   | { type: 'latest' }
   | { type: 'category'; slug: string; id: number; name: string }
+  | { type: 'offline' }
 
 interface CategoryItem {
   id: number
@@ -23,7 +25,9 @@ export const useTopicListStore = defineStore('topicList', {
     page: 0,
     exhausted: false,
     loading: false,
-    error: '' as string
+    error: '' as string,
+    /** 离线模式：index 列表（本地 IPC，不发网络请求） */
+    offlineEntries: [] as OfflineIndexEntry[]
   }),
   actions: {
     absorb(res: TopicListResponse): DiscourseTopicLite[] {
@@ -46,6 +50,19 @@ export const useTopicListStore = defineStore('topicList', {
     },
     async loadMore() {
       if (this.loading || this.exhausted) return
+      // 离线模式：读本地 index，一次取完即 exhausted（无分页）
+      if (this.mode.type === 'offline') {
+        this.loading = true
+        try {
+          this.offlineEntries = await window.api.offlineList()
+          this.exhausted = true
+        } catch (e) {
+          this.error = e instanceof Error ? e.message : String(e)
+        } finally {
+          this.loading = false
+        }
+        return
+      }
       this.loading = true
       try {
         const page = this.page

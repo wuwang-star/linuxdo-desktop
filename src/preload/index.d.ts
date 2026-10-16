@@ -12,6 +12,7 @@ import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
 import type { BridgeStatus, WizardResult } from '../main/api/bridge'
+import type { OfflineTopic, OfflineIndexEntry, SaveResult } from '../main/api/offline'
 
 export interface LoginStatus {
   cookie: boolean
@@ -61,8 +62,13 @@ export interface ApiBridge {
   regenBridgePair(): Promise<BridgeStatus>
   installWizard(): Promise<WizardResult>
   openSystemLogin(): Promise<void>
+  saveOffline(id: number): Promise<SaveResult>
+  offlineList(): Promise<OfflineIndexEntry[]>
+  offlineGet(id: number): Promise<OfflineTopic | null>
+  offlineRemove(id: number): Promise<boolean>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
+  onSaveProgress(cb: (payload: { id: number; loaded: number; total: number }) => void): () => void
 }
 
 declare global {

@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "不变量：网络主进程出口、429 退避在离线全量拉取中适用"}
+{"file": ".trellis/tasks/10-16-offline-topic/design.md", "reason": "JSON 存储选型与原子写/快照语义"}

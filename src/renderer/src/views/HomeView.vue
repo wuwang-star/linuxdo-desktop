@@ -27,6 +27,12 @@ function lastOf(topic: DiscourseTopicLite) {
   return last !== undefined ? store.usersById.get(last) : undefined
 }
 
+/** 删除离线存档后重读 index */
+async function removeOffline(id: number): Promise<void> {
+  await window.api.offlineRemove(id)
+  if (store.mode.type === 'offline') await store.switchMode({ type: 'offline' })
+}
+
 onMounted(() => {
   if (store.topics.length === 0) void store.switchMode({ type: 'latest' })
   const io = new IntersectionObserver(
@@ -46,6 +52,9 @@ onMounted(() => {
         <button class="chip" :class="{ active: store.mode.type === 'latest' }" @click="store.switchMode({ type: 'latest' })">
           最新
         </button>
+        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' })">
+          离线
+        </button>
         <button class="chip" @click="showCats = !showCats; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
       </div>
       <div v-if="showCats" class="cat-panel">
@@ -64,7 +73,22 @@ onMounted(() => {
 
     <div v-if="store.error" class="error">{{ store.error }}</div>
 
-    <article v-for="t in store.topics" :key="t.id" class="topic-row">
+    <!-- 离线模式：渲染本地 index（快照列表，行内进入/删除） -->
+    <template v-if="store.mode.type === 'offline'">
+      <article v-for="t in store.offlineEntries" :key="t.id" class="topic-row">
+        <div class="topic-main">
+          <RouterLink :to="`/t/${t.id}?offline=1`" class="topic-title">{{ t.title }}</RouterLink>
+          <div class="topic-meta">
+            <span>📄 {{ t.posts_count }} 楼</span>
+            <span>保存于 {{ relTime(t.savedAt) }}</span>
+            <button class="act" @click="removeOffline(t.id)">删除</button>
+          </div>
+        </div>
+      </article>
+      <div v-if="store.offlineEntries.length === 0 && !store.loading" class="sentinel">还没有离线存档，打开主题后点「离线保存」</div>
+    </template>
+    <template v-else>
+      <article v-for="t in store.topics" :key="t.id" class="topic-row">
       <img class="avatar" :src="avatarUrl(opOf(t)?.avatar_template ?? '')" alt="" loading="lazy" />
       <div class="topic-main">
         <RouterLink :to="`/t/${t.id}`" class="topic-title">
@@ -89,11 +113,14 @@ onMounted(() => {
           </button>
         </div>
       </div>
-    </article>
+      </article>
+    </template>
 
     <div ref="sentinel" class="sentinel">
-      <span v-if="store.loading">加载中…</span>
-      <span v-else-if="store.exhausted">没有更多了</span>
+      <span v-if="store.mode.type !== 'offline'">
+        <span v-if="store.loading">加载中…</span>
+        <span v-else-if="store.exhausted">没有更多了</span>
+      </span>
     </div>
   </div>
 </template>

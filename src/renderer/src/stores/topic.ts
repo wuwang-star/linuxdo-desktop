@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { DiscoursePost, DiscourseTopic } from '../../../main/api/client'
+import type { OfflineTopic } from '../../../main/api/offline'
 
 const CHUNK = 20
 const progressKey = (topicId: number): string => `ldd:progress:${topicId}`
@@ -41,6 +42,12 @@ export interface TopicState {
   /** 视图待消费的跳转目标楼层（消费后置 0） */
   pendingJump: number
   error: string
+  /** 当前是否以离线快照阅读（隐藏互动操作） */
+  offline: boolean
+  /** 离线快照的保存时间（R4「保存于 X 前」展示用） */
+  offlineSavedAt: string
+  /** 在线打开失败且本地有离线存档（TopicView 据此渲染离线入口提示条） */
+  hasOffline: boolean
 }
 
 export const useTopicStore = defineStore('topic', {
@@ -56,7 +63,10 @@ export const useTopicStore = defineStore('topic', {
     onlyOp: false,
     currentPostNumber: 1,
     pendingJump: 0,
-    error: ''
+    error: '',
+    offline: false,
+    offlineSavedAt: '',
+    hasOffline: false
   }),
   getters: {
     opUsername(state): string | null {
@@ -93,6 +103,9 @@ export const useTopicStore = defineStore('topic', {
       this.currentPostNumber = 1
       this.pendingJump = 0
       this.error = ''
+      this.offline = false
+      this.offlineSavedAt = ''
+      this.hasOffline = false
     },
     ingestPosts(posts: DiscoursePost[]) {
       for (const p of posts) {
@@ -100,23 +113,46 @@ export const useTopicStore = defineStore('topic', {
         this.postNumberToId.set(p.post_number, p.id)
       }
     },
-    async open(topicId: number) {
+    /** 离线快照 → store 状态（posts 已全量，无需网络加载流程） */
+    ingestOffline(snap: OfflineTopic) {
+      this.topic = {
+        id: snap.id,
+        title: snap.title,
+        created_at: snap.created_at,
+        posts_count: snap.posts_count,
+        post_stream: { posts: snap.posts, stream: snap.posts.map((p) => p.id) }
+      }
+      this.stream = snap.posts.map((p) => p.id)
+      this.ingestPosts(snap.posts)
+      this.minLoadedIdx = 0
+      this.maxLoadedIdx = Math.max(0, this.stream.length - 1)
+      this.offlineSavedAt = snap.savedAt
+    },
+    async open(topicId: number, opts?: { offline?: boolean }) {
       this.reset()
+      this.offline = opts?.offline === true
       this.loading = true
       try {
-        const topic = await window.api.fetchTopic(topicId)
-        this.topic = topic
-        this.stream = topic.post_stream?.stream ?? []
-        this.ingestPosts(topic.post_stream?.posts ?? [])
-        // 标记初始已加载区间（按 stream 索引）
-        for (const p of topic.post_stream?.posts ?? []) {
-          const idx = this.stream.indexOf(p.id)
-          if (idx >= 0) {
-            this.minLoadedIdx = Math.min(this.minLoadedIdx, idx)
-            this.maxLoadedIdx = Math.max(this.maxLoadedIdx, idx)
+        if (this.offline) {
+          // 离线阅读：纯本地 IPC，不发起任何网络请求
+          const snap = await window.api.offlineGet(topicId)
+          if (!snap) throw new Error('离线存档不存在或已损坏')
+          this.ingestOffline(snap)
+        } else {
+          const topic = await window.api.fetchTopic(topicId)
+          this.topic = topic
+          this.stream = topic.post_stream?.stream ?? []
+          this.ingestPosts(topic.post_stream?.posts ?? [])
+          // 标记初始已加载区间（按 stream 索引）
+          for (const p of topic.post_stream?.posts ?? []) {
+            const idx = this.stream.indexOf(p.id)
+            if (idx >= 0) {
+              this.minLoadedIdx = Math.min(this.minLoadedIdx, idx)
+              this.maxLoadedIdx = Math.max(this.maxLoadedIdx, idx)
+            }
           }
         }
-        // 恢复进度：无进度则从 1 楼开始读
+        // 恢复进度：无进度则从 1 楼开始读（离线快照全量已加载，jumpTo 不会再触发网络）
         const saved = Number(localStorage.getItem(progressKey(topicId)) ?? '0')
         if (saved > 1) {
           await this.jumpTo(saved)
@@ -125,6 +161,15 @@ export const useTopicStore = defineStore('topic', {
         }
       } catch (e) {
         this.error = e instanceof Error ? e.message : String(e)
+        // 在线打开失败：查本地 index 是否有离线存档，有则透出离线阅读入口
+        if (!this.offline) {
+          try {
+            const entries = await window.api.offlineList()
+            this.hasOffline = entries.some((t) => t.id === topicId)
+          } catch {
+            this.hasOffline = false
+          }
+        }
       } finally {
         this.loading = false
       }

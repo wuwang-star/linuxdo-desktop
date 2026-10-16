@@ -79,3 +79,13 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **R7 实测反馈迭代（2026-10-16 真机）**：① `cmd /c start msedge` 静默不跳转 → `locateMsEdge()` 定位直呼：%ProgramFiles(x86)%/%ProgramFiles% 常见路径 → `reg query …App Paths\msedge.exe /ve`（HKCU→HKLM，execSync 3s 超时，正则取 REG_SZ 值），全失败透出「未找到 Edge」；② 扩展握手：background.js 在 `runtime.onInstalled` + SW 每次启动（顶层）POST `/ingest-hello {pairCode}`（有码才发，无 cookie），bridge 码对记 `extConnectedAt`（仅内存，regenPair 时清零；码错 401），`BridgeStatus.extConnectedAt` 随 status 返回——向导步骤②实时「✅ 已检测到扩展」、桥接行「扩展已连接」、方式一系统浏览器按钮的就绪条件；步骤①开发人员模式无接口保持纯指引；③ 配对码一键复制（renderer `navigator.clipboard`，桥接行 + 向导浮层共用）；④ 方式一卡片「在系统浏览器登录（需扩展桥接）」：`bridge:openSystemLogin` IPC → `shell.openExternal('https://linux.do/login')`，桥接未开启或扩展未连接时置灰——与扩展桥接联动完成「系统浏览器登录 → onChanged 自动推 → 应用同步」的 AC1 链路。
 - **踩坑：edge:// 命令行 URL 仅冷启动有效（真机实测，2026-10-16）**：Edge 已运行时，对 msedge.exe 带参二次拉起会经 Chromium ProcessSingleton 转发到既有进程，而转发通道对 `edge://` 内部页有安全加固（M57 起直接丢弃），表现为只弹新标签页不跳转。installWizard 据此分流：`tasklist /FI "IMAGENAME eq msedge.exe"`（无匹配非零退出，execSync 抛错即未运行）→ 未运行 `spawn(msedge, ['edge://extensions'])` 冷启动直进（`WizardResult.mode='direct'`）；已运行则剪贴板换成 `edge://extensions`、无参拉起聚焦新标签（`mode='paste'`），浮层步骤②改「地址栏粘贴 → 回车」兜底，两条路径共用 extConnectedAt 实时成功检测。
 - **待人工验收**：AC1 全链路（真实 Edge + linux.do 登录态，加载扩展 → 自动同步 10s 内可见）；端口占用场景与打包态行为；向导在真实 Edge 的拉起与成功态切换。
+
+### 离线 Topic 保存与离线阅读（P2b，2026-10-16）
+
+- **存储选型**：JSON 文件（`userData/offline/<id>.json` + `index.json`），不引入 better-sqlite3——原生模块构建/打包风险大，查询场景只有 index 列表，JSON 足够；升级路径：条目过千或需索引查询时迁 sqlite，只改 `src/main/api/offline.ts` 读写层（升级路径注释在文件头部）。
+- **saveTopic 流程**（offline.ts）：fetchTopic → 按 stream 顺序循环 fetchPostsByIds（每批 20，fetchTopic 已返回的首屏帖自动跳过）→ 内存组装 `{id,title,created_at,posts_count,posts,savedAt}` → 最后一次性 tmp+rename 原子写。分块中途失败即中止返回 `{ok:false,error}`，绝不写半截快照；index 最后写（崩溃最坏=有文件无索引条目，重存即恢复）。
+- **进度通道**：`offline:save` handler 内经 `event.sender.send('offline:save:progress', {id,loaded,total})` 回传（复用单条 webContents 事件通道），renderer 按钮内文字「保存中 n/N」；设计稿权衡「不搞进度事件」与「按钮内 n/N」矛盾，取 n/N 实时显示（更贴 PRD 体验），未做进度条。
+- **离线阅读**：topic store `open(id, {offline})`，route query `?offline=1` 触发 → `offline:get` 纯本地 IPC 渲染，posts 全量已加载（minLoadedIdx=0），jumpTo/已读进度/只看楼主/时间轴零网络可用；快照语义（保存时点，新回复不含），TopicView 显示「离线 · 保存于 X 前」徽标，offline 模式隐藏收藏按钮、回复入口、PostItem 操作栏（点赞/回复/编辑/翻译全需网络），PostItem 加 `offline` prop。
+- **失败回落（AC3）**：在线 fetchTopic 抛错且 `offline:list` index 有档 → store.hasOffline → TopicView 错误区渲染 `.offline-tip`「网络异常，该主题有离线存档」+「阅读离线存档」按钮（直接 store.open offline 重开，不改路由）。
+- **列表**：HomeView「离线」chip → ListMode 扩展 `{type:'offline'}`，topicList store loadMore 分支读本地 index 一次取完即 exhausted；行渲染标题/楼层数/savedAt 相对时间/行内删除（删除后重读 index），行点击 `/t/<id>?offline=1`。
+- **边界**：不缓存图片/附件（离线图片显示浏览器默认占位）；无敏感凭据入快照（纯公开 cooked 内容），不入 safeStorage。
