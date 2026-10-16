@@ -14,6 +14,8 @@ import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
 import type { BridgeStatus, WizardResult } from '../main/api/bridge'
 import type { OfflineTopic, OfflineIndexEntry, SaveResult } from '../main/api/offline'
+import type { ThemePackage, ThemeMeta, ImportResult, ExportResult } from '../main/themes'
+import type { WebdavConfig, WebdavTestResult } from '../main/api/webdav'
 
 export interface LoginStatus {
   cookie: boolean
@@ -69,6 +71,28 @@ export interface ApiBridge {
   offlineList(): Promise<OfflineIndexEntry[]>
   offlineGet(id: number): Promise<OfflineTopic | null>
   offlineRemove(id: number): Promise<boolean>
+  /** 主题工坊：list=已导入元信息，get=整包，exportData 内置/导入主题通用另存 */
+  themesList(): Promise<ThemeMeta[]>
+  themesGet(id: string): Promise<ThemePackage | null>
+  themesImport(): Promise<ImportResult>
+  themesExportData(theme: ThemePackage): Promise<ExportResult>
+  themesRemove(id: string): Promise<boolean>
+  /** WebDAV 手动同步：配置（password 留空=不修改）、测试连接（needMkCol=目录不存在可自动创建）、推送/拉取 */
+  getWebdavConfig(): Promise<WebdavConfig>
+  setWebdavConfig(server: string, username: string, remoteDir: string, password?: string): Promise<WebdavConfig>
+  webdavTestConn(): Promise<WebdavTestResult>
+  webdavPush(): Promise<{ ok: boolean; error?: string }>
+  webdavPull(): Promise<{ ok: boolean; exportedAt?: string; error?: string }>
+  /** 同步数据交换：主进程向 renderer 请求 progress/prefs（token 匹配），返回解绑函数 */
+  onSyncRequest(
+    cb: (
+      channel: 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll',
+      token: string,
+      payload: unknown
+    ) => void
+  ): () => void
+  /** 应答主进程的同步数据请求（token 原样带回） */
+  syncReply(token: string, data: unknown): void
   /** 主题模式镜像到主进程：nativeTheme.themeSource + titleBarOverlay 联动 */
   setTheme(theme: 'system' | 'light' | 'dark'): Promise<boolean>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void

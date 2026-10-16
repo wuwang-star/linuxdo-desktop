@@ -4,6 +4,7 @@ import { useQueueStore } from './stores/queue'
 import { useRouter } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { applyPrefs, loadPrefs, watchSystemTheme } from './utils/prefs'
+import { applyThemeById, loadSelectedThemeId } from './utils/themes'
 
 const auth = useAuthStore()
 const queue = useQueueStore()
@@ -16,6 +17,8 @@ applyPrefs(startPrefs)
 // （system 模式下 themeSource='system' 后 OS 亮暗切换主进程自行跟随，无需再通知；失败静默）
 void window.api.setTheme(startPrefs.theme).catch(() => {})
 const disposeThemeWatcher = watchSystemTheme()
+// 主题工坊：启动应用已选皮肤（异步读盘，切换瞬间允许短暂默认色——见 PRD Out of Scope）
+void applyThemeById(loadSelectedThemeId()).catch(() => {})
 const queueOpen = ref(false)
 const who = computed(() => auth.status?.user?.username ?? null)
 const unread = computed(() => {

@@ -54,6 +54,13 @@ import {
 } from './api/bridge'
 import { showPushNotification } from './notify'
 import { saveTopic, listTopics, getTopic, removeTopic } from './api/offline'
+import { listThemes, getTheme, importTheme, exportThemeData, removeTheme } from './themes'
+import {
+  getWebdavConfig,
+  setWebdavConfig,
+  testWebdavConn
+} from './api/webdav'
+import { pushBundle, pullBundle, initSyncReply } from './api/syncdata'
 
 /** 推送广播给所有窗口的 renderer */
 function broadcast(channel: string, payload: unknown): void {
@@ -176,6 +183,26 @@ export function registerIpc(): void {
   ipcMain.handle('offline:list', () => listTopics())
   ipcMain.handle('offline:get', (_e, id: number) => getTopic(id))
   ipcMain.handle('offline:remove', (_e, id: number) => removeTopic(id))
+
+  // ---------- 主题工坊（导入/导出/列表/读取/删除；应用与选择在 renderer utils/themes.ts） ----------
+  ipcMain.handle('themes:list', () => listThemes())
+  ipcMain.handle('themes:get', (_e, id: string) => getTheme(id))
+  ipcMain.handle('themes:import', () => importTheme())
+  ipcMain.handle('themes:exportData', (_e, theme: unknown) => exportThemeData(theme))
+  ipcMain.handle('themes:remove', (_e, id: string) => removeTheme(id))
+
+  // ---------- WebDAV 手动同步（推送/拉取 + 进度/偏好的 main↔renderer 交换） ----------
+  // renderer 应答通道一次性注册（progress/prefs 请求经 token 匹配，见 syncdata.ts askRenderer）
+  initSyncReply()
+  ipcMain.handle('webdav:getConfig', () => getWebdavConfig())
+  ipcMain.handle(
+    'webdav:setConfig',
+    (_e, server: string, username: string, remoteDir: string, password?: string) =>
+      setWebdavConfig(server, username, remoteDir, password)
+  )
+  ipcMain.handle('webdav:testConn', () => testWebdavConn())
+  ipcMain.handle('webdav:push', (e) => pushBundle(e.sender))
+  ipcMain.handle('webdav:pull', (e) => pullBundle(e.sender))
 
   // ---------- 窗口观感：主题模式（renderer prefs 是单源，此处只做镜像） ----------
   // 设 nativeTheme.themeSource：overlay 配色经 win.ts 的 'updated' 监听统一跟随；

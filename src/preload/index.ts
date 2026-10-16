@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { TopPeriod } from '../main/api/client'
+import type { ThemePackage } from '../main/themes'
 
 const api = {
   fetchLatest: (page: number) => ipcRenderer.invoke('discourse:latest', page),
@@ -54,6 +55,35 @@ const api = {
   offlineList: () => ipcRenderer.invoke('offline:list'),
   offlineGet: (id: number) => ipcRenderer.invoke('offline:get', id),
   offlineRemove: (id: number) => ipcRenderer.invoke('offline:remove', id),
+  themesList: () => ipcRenderer.invoke('themes:list'),
+  themesGet: (id: string) => ipcRenderer.invoke('themes:get', id),
+  themesImport: () => ipcRenderer.invoke('themes:import'),
+  themesExportData: (theme: ThemePackage) => ipcRenderer.invoke('themes:exportData', theme),
+  themesRemove: (id: string) => ipcRenderer.invoke('themes:remove', id),
+  // WebDAV 手动同步（配置/测试/推送/拉取）
+  getWebdavConfig: () => ipcRenderer.invoke('webdav:getConfig'),
+  setWebdavConfig: (server: string, username: string, remoteDir: string, password?: string) =>
+    ipcRenderer.invoke('webdav:setConfig', server, username, remoteDir, password),
+  webdavTestConn: () => ipcRenderer.invoke('webdav:testConn'),
+  webdavPush: () => ipcRenderer.invoke('webdav:push'),
+  webdavPull: () => ipcRenderer.invoke('webdav:pull'),
+  // 同步数据交换：主进程发起 progress/prefs 请求（token 匹配），renderer 注册响应器并经 syncReply 应答
+  onSyncRequest: (
+    cb: (channel: 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll', token: string, payload: unknown) => void
+  ) => {
+    const channels = ['prefs:getAll', 'prefs:applyAll', 'progress:getAll', 'progress:applyAll'] as const
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      channel: (typeof channels)[number],
+      token: string,
+      payload: unknown
+    ): void => cb(channel, token, payload)
+    for (const ch of channels) ipcRenderer.on(ch, listener)
+    return () => {
+      for (const ch of channels) ipcRenderer.removeListener(ch, listener)
+    }
+  },
+  syncReply: (token: string, data: unknown) => ipcRenderer.send('syncdata:reply', token, data),
   // 窗口观感：主题模式镜像到主进程（nativeTheme.themeSource + titleBarOverlay 联动）
   setTheme: (theme: 'system' | 'light' | 'dark') => ipcRenderer.invoke('window:setTheme', theme),
   // 主进程推送订阅：返回解绑函数

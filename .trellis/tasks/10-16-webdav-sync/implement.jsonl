@@ -1,0 +1,2 @@
+{"file": ".trellis/tasks/10-16-webdav-sync/design.md", "reason": "最小动词集 WebDAV 客户端与凭据边界设计"}
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "凭据 safeStorage 不变量与同步边界"}

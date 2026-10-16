@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, session, Tray, nativeImage, shell } from 'electron'
 import { join, resolve } from 'node:path'
 import { registerIpc } from './ipc'
+import { validateTheme } from './themes'
 import { USER_AGENT, fetchLatest } from './api/client'
 import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
@@ -106,12 +107,21 @@ app.whenReady().then(() => {
 
   // 冒烟模式：窗口可见后输出 SMOKE_OK 并自动退出（CI/验收用）
   if (process.argv.includes('--smoke')) {
-    win.once('ready-to-show', () => {
+    // 主题包校验（信任边界）自检：合法包放行，坏 format/坏 id/超限 css 拒绝
+    const ok = validateTheme({ format: 1, id: 'a-1', name: 'x', version: '1', css: ':root{}' })
+    const badFormat = validateTheme({ format: 2, id: 'a', name: 'x', css: '' })
+    const badId = validateTheme({ format: 1, id: '../evil', name: 'x', css: '' })
+    const badCss = validateTheme({ format: 1, id: 'a', name: 'x', css: 'x'.repeat(300 * 1024) })
+    if (!(ok.ok && !badFormat.ok && !badId.ok && !badCss.ok)) {
+      console.error('SMOKE_FAIL: validateTheme')
+      app.quit()
+    } else {
       console.log('SMOKE_OK')
       setTimeout(() => {
         app.quit()
       }, 2000)
-    })
+    }
+    win.once('ready-to-show', () => undefined)
   }
 
   // 托盘常驻：图标 dev 态取 build/，打包态取资源目录（electron-builder extraResources 复制）

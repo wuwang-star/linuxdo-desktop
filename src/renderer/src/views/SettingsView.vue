@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { DiagEntry } from '../../../main/api/client'
 import type { TranslateConfig } from '../../../main/api/settings'
+import type { ThemeMeta } from '../../../main/themes'
 import {
   DEFAULT_PREFS,
   applyPrefs,
   loadPrefs,
+  normalizePrefs,
   savePrefs,
   type FontFamilyPref,
   type ReadingPrefs,
   type ThemePref,
   type WidthPref
 } from '../utils/prefs'
+import { applyAllProgress, collectAllProgress } from '../utils/progress'
+import { applyThemeById, BUILTIN_THEMES, loadSelectedThemeId } from '../utils/themes'
 
 // ---- 分类导航（顺序对齐参考项目：FluxDO 外观/偏好/网络/通知/日志/关于） ----
 const sections = [
@@ -20,6 +24,7 @@ const sections = [
   { key: 'notifications', label: '通知' },
   { key: 'network', label: '网络' },
   { key: 'translate', label: '翻译' },
+  { key: 'sync', label: '同步' },
   { key: 'logs', label: '日志' },
   { key: 'about', label: '关于' }
 ] as const
@@ -41,6 +46,78 @@ function applyThemePref(): void {
   applyPrefs(p)
   // 主题镜像到主进程：nativeTheme.themeSource + titleBarOverlay 跟随（失败静默）
   void window.api.setTheme(themePref.value).catch(() => {})
+}
+
+// ---- 外观：主题工坊（皮肤=声明式 CSS；应用机制见 utils/themes.ts） ----
+interface ThemeRow {
+  id: string
+  name: string
+  author?: string
+  version: string
+  builtin: boolean
+}
+const currentThemeId = ref(loadSelectedThemeId())
+const importedThemes = ref<ThemeMeta[]>([])
+const themeMessage = ref('')
+
+const themeRows = computed<ThemeRow[]>(() => [
+  { id: '', name: '默认', author: '内置', version: '-', builtin: true },
+  ...BUILTIN_THEMES.map((t) => ({
+    id: t.id,
+    name: t.name,
+    author: t.author,
+    version: t.version,
+    builtin: true
+  })),
+  ...importedThemes.value
+    .filter((t) => !BUILTIN_THEMES.some((b) => b.id === t.id))
+    .map((t) => ({ id: t.id, name: t.name, author: t.author, version: t.version, builtin: false }))
+])
+
+async function refreshThemes(): Promise<void> {
+  importedThemes.value = await window.api.themesList().catch(() => [])
+}
+
+async function selectTheme(id: string): Promise<void> {
+  const ok = await applyThemeById(id)
+  if (ok) {
+    currentThemeId.value = id
+    themeMessage.value = ''
+  } else {
+    themeMessage.value = '主题加载失败（文件缺失或已损坏）'
+  }
+}
+
+async function importTheme(): Promise<void> {
+  themeMessage.value = ''
+  const res = await window.api.themesImport()
+  if (res.canceled) return
+  if (!res.ok || !res.theme) {
+    themeMessage.value = res.error ?? '导入失败'
+    return
+  }
+  await refreshThemes()
+  await selectTheme(res.theme.id)
+  themeMessage.value = `已导入并应用：${res.theme.name}`
+}
+
+async function exportTheme(row: ThemeRow): Promise<void> {
+  themeMessage.value = ''
+  const pkg = row.builtin ? BUILTIN_THEMES.find((t) => t.id === row.id) : await window.api.themesGet(row.id)
+  if (!pkg) {
+    themeMessage.value = '主题读取失败'
+    return
+  }
+  const res = await window.api.themesExportData(pkg)
+  if (res.canceled) return
+  themeMessage.value = res.ok ? `已导出：${res.path}` : (res.error ?? '导出失败')
+}
+
+async function removeTheme(row: ThemeRow): Promise<void> {
+  themeMessage.value = ''
+  await window.api.themesRemove(row.id)
+  if (currentThemeId.value === row.id) await selectTheme('')
+  await refreshThemes()
 }
 
 // ---- 阅读：排版偏好（字号/行距/字体/宽度，即时生效 + localStorage 持久化） ----
@@ -177,13 +254,117 @@ async function testDns(): Promise<void> {
   }
 }
 
+// ---- 同步：WebDAV 手动推送/拉取 ----
+const wdServer = ref('')
+const wdUsername = ref('')
+const wdPassword = ref('')
+const wdRemoteDir = ref('')
+const wdHasPassword = ref(false)
+const wdTesting = ref(false)
+const wdBusy = ref(false)
+const wdTestMessage = ref('')
+const wdOpMessage = ref('')
+
+/** 落盘当前表单（密码留空 = 不修改已存密码）；密码只在主进程，后续操作都读取已存配置 */
+async function saveWebdav(): Promise<void> {
+  const cfg = await window.api.setWebdavConfig(
+    wdServer.value,
+    wdUsername.value,
+    wdRemoteDir.value,
+    wdPassword.value ? wdPassword.value : undefined
+  )
+  wdServer.value = cfg.server
+  wdUsername.value = cfg.username
+  wdRemoteDir.value = cfg.remoteDir
+  wdHasPassword.value = cfg.hasPassword
+  wdPassword.value = ''
+}
+
+async function testWebdav(): Promise<void> {
+  if (wdTesting.value) return
+  wdTesting.value = true
+  wdTestMessage.value = ''
+  try {
+    await saveWebdav()
+    const res = await window.api.webdavTestConn()
+    if (res.ok) wdTestMessage.value = '✅ 连接成功'
+    else wdTestMessage.value = `${res.needMkCol ? '⚠️' : '❌'} ${res.error ?? '连接失败'}`
+  } catch (e) {
+    wdTestMessage.value = `❌ ${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    wdTesting.value = false
+  }
+}
+
+async function pushWebdav(): Promise<void> {
+  if (wdBusy.value) return
+  wdBusy.value = true
+  wdOpMessage.value = ''
+  try {
+    await saveWebdav()
+    const res = await window.api.webdavPush()
+    wdOpMessage.value = res.ok ? '✅ 已推送到云端（本地覆盖云端）' : `❌ 推送失败：${res.error ?? '未知错误'}`
+  } catch (e) {
+    wdOpMessage.value = `❌ 推送失败：${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    wdBusy.value = false
+  }
+}
+
+async function pullWebdav(): Promise<void> {
+  if (wdBusy.value) return
+  wdBusy.value = true
+  wdOpMessage.value = ''
+  try {
+    await saveWebdav()
+    const res = await window.api.webdavPull()
+    wdOpMessage.value = res.ok
+      ? `✅ 已拉取并应用（云端覆盖本地${res.exportedAt ? `，数据时间 ${res.exportedAt}` : ''}）`
+      : `❌ 拉取失败：${res.error ?? '未知错误'}`
+  } catch (e) {
+    wdOpMessage.value = `❌ 拉取失败：${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    wdBusy.value = false
+  }
+}
+
 // ---- 日志：请求诊断 ----
 const diag = ref<DiagEntry[]>([])
 
 // ---- 关于 ----
 const appVersion = __APP_VERSION__
 
+// ---- 同步数据交换响应器：应答主进程的 progress/prefs 请求（WebDAV 推送/拉取时） ----
+const offSyncRequest = window.api.onSyncRequest((channel, token, payload) => {
+  switch (channel) {
+    case 'progress:getAll':
+      window.api.syncReply(token, collectAllProgress())
+      break
+    case 'progress:applyAll':
+      applyAllProgress(payload)
+      window.api.syncReply(token, true)
+      break
+    case 'prefs:getAll':
+      window.api.syncReply(token, loadPrefs())
+      break
+    case 'prefs:applyAll': {
+      // 远端偏好经 normalizePrefs 归一（脏数据回退默认），写入后即时应用（排版变化立即可见）
+      const p = normalizePrefs(payload)
+      savePrefs(p)
+      applyPrefs(p)
+      window.api.syncReply(token, true)
+      break
+    }
+  }
+})
+onBeforeUnmount(() => offSyncRequest())
+
 onMounted(async () => {
+  const wd = await window.api.getWebdavConfig()
+  wdServer.value = wd.server
+  wdUsername.value = wd.username
+  wdRemoteDir.value = wd.remoteDir
+  wdHasPassword.value = wd.hasPassword
   const cfg = await window.api.getTranslateConfig()
   trBaseUrl.value = cfg.baseUrl
   trModel.value = cfg.model
@@ -200,6 +381,7 @@ onMounted(async () => {
   const notif = await window.api.getNotificationConfig()
   notifEnabled.value = notif.enabled
   diag.value = await window.api.diagnostics()
+  await refreshThemes()
 })
 </script>
 
@@ -235,6 +417,39 @@ onMounted(async () => {
               </label>
             </div>
           </div>
+        </section>
+
+        <!-- 主题工坊：皮肤导入/导出/管理 -->
+        <section class="card">
+          <h2>主题工坊</h2>
+          <div class="settings-banner">
+            <span class="banner-icon">🎨</span>
+            <span>
+              主题包 = 声明式 CSS（配色 token 覆盖 + 样式），<strong>不执行任何脚本</strong>。文件可导入/导出分享；
+              主题面向应用内部样式约定编写，应用大版本更新可能使第三方主题错位。
+            </span>
+          </div>
+          <div v-for="row in themeRows" :key="row.id || 'default'" class="field-row">
+            <div class="field-main">
+              <div class="field-label">
+                {{ row.name }}
+                <span v-if="currentThemeId === row.id" class="card-badge reco">当前</span>
+              </div>
+              <div class="field-desc">
+                {{ row.author ? `${row.author} · ` : '' }}v{{ row.version }} ·
+                {{ row.builtin ? '内置' : '已导入' }}
+              </div>
+            </div>
+            <div class="field-control theme-actions">
+              <button v-if="currentThemeId !== row.id" @click="selectTheme(row.id)">应用</button>
+              <button @click="exportTheme(row)">导出</button>
+              <button v-if="!row.builtin" class="danger" @click="removeTheme(row)">删除</button>
+            </div>
+          </div>
+          <div class="row">
+            <button class="primary" @click="importTheme">导入主题…</button>
+          </div>
+          <p v-if="themeMessage" class="message">{{ themeMessage }}</p>
         </section>
       </template>
 
@@ -435,6 +650,42 @@ onMounted(async () => {
             </button>
           </div>
           <p v-if="trMessage" class="message">{{ trMessage }}</p>
+        </section>
+      </template>
+
+      <!-- 同步（WebDAV 手动推送/拉取） -->
+      <template v-else-if="active === 'sync'">
+        <section class="card">
+          <h2>WebDAV 同步（手动）</h2>
+          <p class="tip">
+            把阅读进度、阅读偏好与非凭据设置（网络/通知/翻译端点）推送/拉取到你自备的 WebDAV
+            （坚果云 / InfiniCloud / 自建等）。同步数据不含任何密码或登录凭据；无自动合并，冲突时自行选择方向。
+          </p>
+          <input v-model="wdServer" placeholder="服务器地址，如 https://dav.jianguoyun.com/dav/" />
+          <input v-model="wdUsername" placeholder="用户名" />
+          <input
+            v-model="wdPassword"
+            type="password"
+            autocomplete="new-password"
+            :placeholder="wdHasPassword ? '密码已保存（留空表示不修改）' : '密码（坚果云请用「应用密码」）'"
+          />
+          <input v-model="wdRemoteDir" placeholder="远端目录（默认 /linuxdo-desktop/）" />
+          <div class="row">
+            <button class="primary" :disabled="wdTesting || !wdServer" @click="testWebdav">
+              {{ wdTesting ? '测试中…' : '测试连接' }}
+            </button>
+          </div>
+          <p v-if="wdTestMessage" class="message">{{ wdTestMessage }}</p>
+          <div class="row">
+            <button :disabled="wdBusy || !wdServer" @click="pushWebdav">
+              {{ wdBusy ? '处理中…' : '推送到云端' }}
+            </button>
+            <button :disabled="wdBusy || !wdServer" @click="pullWebdav">
+              {{ wdBusy ? '处理中…' : '从云端拉取' }}
+            </button>
+            <span class="tip">推送=本地覆盖云端；拉取=云端覆盖本地</span>
+          </div>
+          <p v-if="wdOpMessage" class="message">{{ wdOpMessage }}</p>
         </section>
       </template>
 
