@@ -251,10 +251,16 @@ async function testDns(): Promise<void> {
   dnsResult.value = ''
   try {
     const res = await window.api.resolveDns()
+    const label =
+      res.via === 'doh'
+        ? 'DoH 加密'
+        : res.via === 'fallback'
+          ? 'DoH 失败回退系统'
+          : res.via === 'upstream'
+            ? `经系统代理转发（测试连接上游 ${res.addresses?.[0] ?? ''}）`
+            : '系统 DNS'
     dnsResult.value = res.ok
-      ? `解析成功（${res.via === 'doh' ? 'DoH 加密' : res.via === 'fallback' ? 'DoH 失败回退系统' : '系统 DNS'}）：${
-          res.addresses?.join(', ') || '（无地址）'
-        }`
+      ? `链路正常 · ${label}${res.via === 'upstream' ? '' : `：${res.addresses?.join(', ') || '（无地址）'}`}`
       : `解析失败：${res.error ?? '未知错误'}`
   } catch (e) {
     dnsResult.value = `解析失败：${e instanceof Error ? e.message : String(e)}`
@@ -623,8 +629,9 @@ onMounted(async () => {
           <div class="settings-banner">
             <span class="banner-icon">🔒</span>
             <span>
-              <strong>本地代理解析已生效</strong>：开启后应用流量经本机 DoH 代理解析域名并直连（保存即时生效，无需重启）。
-              注意：开启期间应用不再走系统代理（Clash 等）。
+              <strong>本地代理解析已生效</strong>：开启后应用流量统一经本机代理出站（保存即时生效，无需重启）。
+              检测到系统代理（Clash 等）时自动经其转发；无系统代理才用 DoH 解析直连。
+              系统代理开关变更后，重新保存本开关以重新探测。
             </span>
           </div>
           <div class="field-row">

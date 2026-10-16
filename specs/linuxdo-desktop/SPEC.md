@@ -60,7 +60,8 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **解析链**：CONNECT 目标手工构 RFC 1035 报文经 DoH 上游查询（GET `?dns=<base64url>`，5s 超时；A 失败回退 AAAA）；DoH 查询走 Node 全局 fetch（undici）不经 defaultSession，防递归，模板域名由 dns.lookup 隐式 bootstrap；缓存 TTL 取 answer（钳 60s–10min），auto 回退短 TTL 2min（仿 FluxDO）。secure=DoH 失败 502 断开；auto=回退 `dns.lookup`。
 - **生效语义**：保存即时生效（`settings:setDoh` 后 `applyDohRuntime()` 启停代理并切 setProxy；ready 时同样调用），「重启生效」限制与「实验·暂未生效」横幅删除。禁用还原 `setProxy({mode:'system'})`。bypassList `localhost;127.0.0.1;<local>`（bridge/OAuth 回环口不走代理）。默认仍 enabled=false（待真机验收放开）。
 - **诊断**：`diag:resolveDns` 按运行态分流——代理启用走 `diagResolve`（返回 `via: doh|fallback|literal`），未启用走 `resolveHost`（`via: 'system'`）；契约加可选 `via` 字段向后兼容。
-- **已知天花板**（ponytail）：不串联系统代理（Clash 等与 DoH 直连互斥，UI 文案明示）；不做分域名规则/PAC/SOCKS 上游；IDN 域名不支持（现用域名全 ASCII）。
+- **已知天花板**（ponytail）：无分域名规则/PAC/SOCKS 上游；IDN 域名不支持（现用域名全 ASCII）。
+- **系统代理链式转发（2026-10-17 实测追加）**：用户网络 DNS 污染（linux.do 解到 Facebook 段）+ **SNI 阻断**（同 CF IP 换 SNI 即 TLS_OK，linux.do SNI 即 RST）——DoH 直连在该网络必死，且原实现顶掉系统代理致全应用断网。修复：`applyDohRuntime` 接管前 `resolveProxy` 探测系统代理，有则 CONNECT 链式转发（上游远程解析，本地 DoH 不参与），无则 DoH 直连；`diag:resolveDns` 增 `via: 'upstream'` 形态；系统代理变更需重新保存开关重新探测。DoH 的价值场景=无系统代理的纯 DNS 污染网络；SNI 阻断需上游代理（ECH 需 MITM 架构，仍 Out of Scope）。
 
 ### P2a 打包分发（2026-10-16）
 

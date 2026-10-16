@@ -64,7 +64,7 @@ export interface ApiBridge {
     ok: boolean
     addresses?: string[]
     error?: string
-    via?: 'doh' | 'fallback' | 'literal' | 'system'
+    via?: 'doh' | 'fallback' | 'literal' | 'system' | 'upstream'
   }>
   getConnectStatus(): Promise<ConnectStatus>
   saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>

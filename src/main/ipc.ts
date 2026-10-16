@@ -39,7 +39,7 @@ import {
   type DohMode
 } from './api/settings'
 import { translatePostText } from './api/translate'
-import { applyDohRuntime, diagResolve, isDohProxyActive } from './api/dohProxy'
+import { applyDohRuntime, diagResolve, hasUpstreamProxy, isDohProxyActive, upstreamProxyLabel } from './api/dohProxy'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
   messageBusStart,
@@ -142,11 +142,14 @@ export function registerIpc(): void {
   // ---------- 原生通知开关（内存即时生效，notify.ts 发送前读取） ----------
   ipcMain.handle('settings:getNotification', () => getNotificationConfig())
   ipcMain.handle('settings:setNotification', (_e, enabled: boolean) => setNotificationConfig(enabled))
-  // 诊断按钮按运行态实测：DoH 代理启用走代理解析链路（via=doh/fallback），否则走
-  // Chromium host resolver（即系统解析，via=system）。结果仅作诊断展示。
+  // 诊断按钮按运行态实测：DoH 代理启用且链到系统代理 → 上游转发（via=upstream）；
+  // 启用但直连 → 代理解析链路（via=doh/fallback）；未启用走 Chromium host resolver（via=system）。
   // 注：设计稿写的 resolveDNS 在 Electron 44 已移除，系统路径用替代 API resolveHost。
   ipcMain.handle('diag:resolveDns', async () => {
     try {
+      if (isDohProxyActive() && hasUpstreamProxy()) {
+        return { ok: true, addresses: [upstreamProxyLabel()], via: 'upstream' as const }
+      }
       if (isDohProxyActive()) {
         const r = await diagResolve('linux.do')
         return { ok: true, addresses: r.addresses, via: r.via }

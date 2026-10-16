@@ -26,6 +26,9 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>()
 let server: http.Server | null = null
 let active = false
+let ownPort = 0
+/** 捕获到的系统代理（Clash 等，applyDohRuntime 接管前探测）；有值时 CONNECT 链式转发给它 */
+let upstream: { host: string; port: number } | null = null
 
 const DOH_TIMEOUT_MS = 5000
 const UPSTREAM_TIMEOUT_MS = 8000
@@ -184,6 +187,44 @@ async function resolveHost(cfg: DohConfig, host: string): Promise<{ ips: string[
 
 // ---------- CONNECT 隧道 ----------
 
+/** 经系统代理建立隧道：CONNECT 发给上游（远程解析，本地 DoH 不参与），等 2xx 后交出 socket。 */
+function chainConnect(authority: string): Promise<net.Socket> {
+  return new Promise((resolve, reject) => {
+    if (!upstream) {
+      reject(new Error('无上游代理'))
+      return
+    }
+    const s = net.connect({ host: upstream.host, port: upstream.port })
+    let buf = ''
+    const fail = (e: Error): void => {
+      clearTimeout(timer)
+      s.destroy()
+      reject(e)
+    }
+    const timer = setTimeout(() => fail(new Error('上游代理连接超时')), UPSTREAM_TIMEOUT_MS)
+    const onData = (d: Buffer): void => {
+      buf += d.toString('latin1')
+      const end = buf.indexOf('\r\n\r\n')
+      if (end === -1) return
+      s.removeListener('data', onData)
+      const m = /^HTTP\/1\.[01] (\d{3})/.exec(buf)
+      const code = m ? Number(m[1]) : 0
+      if (code < 200 || code >= 300) {
+        fail(new Error(`上游代理拒绝 CONNECT（HTTP ${code}）`))
+        return
+      }
+      clearTimeout(timer)
+      // 上游若在响应头后附带字节（CONNECT 正常不会），推回流里交给 pipe
+      const leftover = buf.slice(end + 4)
+      if (leftover) s.unshift(Buffer.from(leftover, 'latin1'))
+      resolve(s)
+    }
+    s.on('data', onData)
+    s.once('connect', () => s.write(`CONNECT ${authority} HTTP/1.1\r\nHost: ${authority}\r\n\r\n`))
+    s.once('error', fail)
+  })
+}
+
 /** 逐 IP 尝试上游 TCP（简化 happy-eyeballs：单个 8s 超时后换下一个）。 */
 function connectAny(ips: string[], port: number): Promise<net.Socket> {
   return new Promise((resolve, reject) => {
@@ -218,20 +259,20 @@ async function handleConnect(cfg: DohConfig, req: http.IncomingMessage, client: 
     const host = m?.[1] ?? ''
     const port = m?.[2] ? Number(m[2]) : 443
     if (!host) throw new Error(`非法 CONNECT 目标：${authority}`)
-    const { ips } = await resolveHost(cfg, host)
-    const upstream = await connectAny(ips, port)
+    // 有系统代理 → 链式转发（上游远程解析，SNI 阻断网络下 DoH 直连无解）；无 → DoH 解析直连
+    const sock = upstream ? await chainConnect(`${host}:${port}`) : await connectAny((await resolveHost(cfg, host)).ips, port)
     client.write('HTTP/1.1 200 Connection Established\r\n\r\n')
-    if (head.length) upstream.write(head)
+    if (head.length) sock.write(head)
     const cleanup = (): void => {
       client.destroy()
-      upstream.destroy()
+      sock.destroy()
     }
-    upstream.pipe(client)
-    client.pipe(upstream)
+    sock.pipe(client)
+    client.pipe(sock)
     client.on('error', cleanup)
-    upstream.on('error', cleanup)
+    sock.on('error', cleanup)
     client.on('close', cleanup)
-    upstream.on('close', cleanup)
+    sock.on('close', cleanup)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     if (client.writable) client.end(`HTTP/1.1 502 Bad Gateway\r\n\r\n${msg}`)
@@ -260,7 +301,8 @@ function startServer(cfg: DohConfig): Promise<number> {
       const addr = s.address()
       server = s
       active = true
-      resolvePort(typeof addr === 'object' && addr ? addr.port : 0)
+      ownPort = typeof addr === 'object' && addr ? addr.port : 0
+      resolvePort(ownPort)
     })
     s.once('error', reject) // listen 阶段失败（理论上随机端口不会冲突）
   })
@@ -286,19 +328,44 @@ export function isDohProxyActive(): boolean {
   return active
 }
 
+/** 解析 "host:port"（PROXY xxx 提取物）；host 含 IPv6 字面量时按最后一个冒号切分。 */
+function parseUpstream(s: string): { host: string; port: number } | null {
+  const i = s.lastIndexOf(':')
+  if (i <= 0) return null
+  const port = Number(s.slice(i + 1))
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) return null
+  return { host: s.slice(0, i), port }
+}
+
+export function hasUpstreamProxy(): boolean {
+  return upstream !== null
+}
+
+export function upstreamProxyLabel(): string {
+  return upstream ? `${upstream.host}:${upstream.port}` : ''
+}
+
 /**
  * 读配置启停代理并接管/还原 defaultSession 代理（app ready 与设置保存两处共用）。
- * enabled=false 时还原系统代理，与禁用前行为一致。
+ * 接管前先 resolveProxy 探测系统代理（Clash 等）：有则 CONNECT 链式转发（上游远程解析，
+ * SNI 阻断网络下 DoH 直连必死，2026-10-17 实测），无则 DoH 解析直连。
+ * 已接管状态下 resolveProxy 只返回自身端口，此时沿用上次捕获值；系统代理变更后需重新保存开关。
  */
 export async function applyDohRuntime(): Promise<void> {
   const cfg = getDohConfig()
   if (cfg.enabled) {
+    const via = await session.defaultSession.resolveProxy('https://linux.do').catch(() => 'DIRECT')
+    const m = /PROXY\s+([^\s;]+)/i.exec(via)
+    const cand = m ? parseUpstream(m[1]) : null
+    if (cand && !(cand.host === '127.0.0.1' && cand.port === ownPort)) upstream = cand
+    else if (!m) upstream = null
     const port = await startDohProxy(cfg)
     await session.defaultSession.setProxy({
       proxyRules: `127.0.0.1:${port}`,
       proxyBypassRules: 'localhost;127.0.0.1;<local>'
     })
   } else {
+    upstream = null
     await stopDohProxy()
     await session.defaultSession.setProxy({ mode: 'system' })
   }
