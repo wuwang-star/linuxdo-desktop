@@ -60,34 +60,126 @@
 .post-actions .act { border: none; background: transparent; padding: 2px 4px; }
 .clickable { cursor: pointer; }
 
-/* cooked 正文排版（阅读体感变量驱动） */
+/* cooked 正文排版（阅读体感变量驱动；Discourse 结构全覆盖） */
 .cooked {
   font-size: var(--reading-font-size); line-height: var(--reading-line-height);
   font-family: var(--reading-font-family); overflow-wrap: break-word;
 }
-.cooked p { margin: 0 0 0.75em; }
-.cooked p:last-child { margin-bottom: 0; }
-.cooked ul, .cooked ol { margin: 0 0 0.75em; padding-left: 1.6em; }
-.cooked li { margin: 0.25em 0; }
-.cooked h1, .cooked h2, .cooked h3, .cooked h4, .cooked h5, .cooked h6 { margin: 1.2em 0 0.4em; line-height: 1.35; }
-.cooked hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
-.cooked table { border-collapse: collapse; }
-.cooked td, .cooked th { border: 1px solid var(--border); padding: 4px 8px; }
-.cooked a { color: var(--accent); }
+.cooked > :first-child { margin-top: 0; }
+.cooked > :last-child { margin-bottom: 0; }
+.cooked p { margin: 0 0 0.9em; }
+.cooked ul, .cooked ol { margin: 0 0 0.9em; padding-left: 1.6em; }
+.cooked li { margin: 0.3em 0; }
+.cooked li > p { margin: 0.3em 0; }
+
+/* 标题层级梯度 */
+.cooked h1, .cooked h2, .cooked h3, .cooked h4, .cooked h5, .cooked h6 {
+  margin: 1.4em 0 0.5em; line-height: 1.35; font-weight: 650;
+}
+.cooked h1 { font-size: 1.45em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+.cooked h2 { font-size: 1.25em; }
+.cooked h3 { font-size: 1.1em; }
+.cooked h4, .cooked h5, .cooked h6 { font-size: 1em; }
+
+.cooked hr { border: 0; height: 2px; width: 96px; margin: 1.8em auto; background: var(--border); border-radius: 1px; }
+
+.cooked a {
+  color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.cooked a:hover { text-decoration-color: var(--accent); }
+.cooked a.mention {
+  background: var(--accent-weak); color: var(--accent);
+  border-radius: var(--radius-pill); padding: 0 7px; text-decoration: none;
+}
+
+/* 表格：块级容器横向滚动 + 表头/斑马纹 */
+.cooked table {
+  display: block; max-width: 100%; overflow-x: auto;
+  border-collapse: collapse; margin: 0.9em 0; font-size: 0.95em;
+}
+.cooked th, .cooked td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; vertical-align: top; }
+.cooked th { background: var(--panel); font-weight: 600; white-space: nowrap; }
+.cooked tbody tr:nth-child(even) { background: color-mix(in srgb, var(--muted) 7%, transparent); }
+
+/* 行内代码 / 代码块 */
 .cooked code {
-  font-family: var(--font-mono); font-size: calc(var(--reading-font-size) - 3px);
-  background: var(--bg); border-radius: 4px; padding: 1px 5px;
+  font-family: var(--font-mono); font-size: 0.86em;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px;
 }
 .cooked pre {
-  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 10px; overflow-x: auto; max-width: 100%;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; overflow-x: auto; max-width: 100%;
+  line-height: 1.55; font-size: 0.9em;
 }
-.cooked pre code { background: transparent; padding: 0; }
+.cooked pre code { background: transparent; border: 0; padding: 0; font-size: 1em; }
+
+/* 原生引用块（bare blockquote） */
 .cooked blockquote {
-  border-left: 3px solid var(--accent); margin: 6px 0; padding: 2px 12px;
-  color: var(--muted); background: var(--bg); border-radius: 0 8px 8px 0;
+  border-left: 3px solid var(--accent); margin: 0.9em 0; padding: 6px 14px;
+  color: var(--muted); background: var(--panel); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
+.cooked blockquote p:last-child { margin-bottom: 0; }
+
+/* 引用楼（Discourse aside.quote） */
+.cooked aside.quote {
+  margin: 0.9em 0; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm); background: var(--panel); overflow: hidden;
+}
+.cooked aside.quote .title {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--muted);
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.cooked aside.quote .title .avatar { width: 16px; height: 16px; border-radius: 4px; }
+.cooked aside.quote .title a { color: inherit; text-decoration: none; }
+.cooked aside.quote .title a:hover { color: var(--accent); }
+.cooked aside.quote blockquote {
+  margin: 0; border: 0; border-radius: 0; padding: 10px 14px;
+  background: transparent; color: var(--text);
+}
+.cooked aside.quote blockquote p:last-child { margin-bottom: 0; }
+
+/* onebox 链接卡片 */
+.cooked aside.onebox {
+  margin: 0.9em 0; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--panel); overflow: hidden;
+}
+.cooked aside.onebox .source {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 11px; color: var(--muted);
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.cooked aside.onebox .source img { width: 14px; height: 14px; border-radius: 3px; }
+.cooked aside.onebox .onebox-body { padding: 10px 12px; }
+.cooked aside.onebox .onebox-body h3, .cooked aside.onebox .onebox-body h4 { margin: 0 0 4px; font-size: 1em; }
+.cooked aside.onebox .onebox-body h3 a { color: var(--text); text-decoration: none; }
+.cooked aside.onebox .onebox-body h3 a:hover { color: var(--accent); }
+.cooked aside.onebox .onebox-body p { margin: 0; font-size: 0.9em; color: var(--muted); }
+.cooked aside.onebox .onebox-body img { max-width: 100%; height: auto; }
+
+/* 折叠块（details/summary） */
+.cooked details {
+  margin: 0.9em 0; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--panel); overflow: hidden;
+}
+.cooked summary {
+  cursor: pointer; user-select: none; padding: 6px 12px;
+  font-weight: 600; background: var(--bg);
+}
+.cooked details[open] summary { border-bottom: 1px solid var(--border); }
+.cooked details > :not(summary) { margin: 8px 14px; }
+
+/* 投票块（最小卡片化） */
+.cooked .poll {
+  margin: 0.9em 0; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--panel); padding: 10px 14px;
+}
+
+/* 媒体 */
 .cooked img, .cooked video { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.cooked img.emoji { width: 1.15em; height: 1.15em; vertical-align: -0.18em; border-radius: 0; }
 .cooked .lightbox { display: inline-block; max-width: 100%; }
 .cooked .lightbox img { display: block; }
 .cooked .lightbox .meta { display: none; }

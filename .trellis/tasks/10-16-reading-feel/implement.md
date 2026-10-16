@@ -6,6 +6,7 @@
 4. [ ] SettingsView：外观分类（主题模式分段）+ 阅读分类（字号/行距/字体/宽度四控件 + 恢复默认）替换占位卡。
 5. [ ] README/SPEC 补记（阅读偏好、单轨主题机制）。
 6. [ ] typecheck（每步）+ smoke；prd 勾 AC4，AC1–AC3 留人工。
+7. [x] cooked Discourse 结构排版全量重设计（2026-10-16 用户指令「正文排版 UI 重新设计」，折进本任务 R3）：标题层级梯度/hr 收窄/链接下划线偏移+mention 药丸/表格块级横滚+斑马纹/code-pre 提亮（--panel 底+描边）/aside.quote 引用楼卡片化/onebox 链接卡片/details 折叠/poll 最小卡片/img.emoji 行内尺寸，纯 topic.css 分区 B，不碰公用。（待人工验收）
 
 ## 验证
 
