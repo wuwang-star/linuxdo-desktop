@@ -60,6 +60,7 @@ export interface ApiBridge {
   setBridgeEnabled(enabled: boolean): Promise<BridgeStatus>
   regenBridgePair(): Promise<BridgeStatus>
   installWizard(): Promise<WizardResult>
+  openSystemLogin(): Promise<void>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
 }

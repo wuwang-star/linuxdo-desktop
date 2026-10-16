@@ -1,6 +1,7 @@
-import { app, clipboard } from 'electron'
+import { app, clipboard, shell } from 'electron'
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { setTCookieManually } from './auth'
 import {
@@ -29,6 +30,8 @@ export interface BridgeStatus {
   listening: boolean
   lastPushTime: string | null
   lastPushOk: boolean | null
+  /** 扩展最近一次握手（/ingest-hello）时间；null 表示尚未检测到扩展。仅内存，不落盘 */
+  extConnectedAt: string | null
   /** 端口占用等启动失败原因，透出到 UI */
   lastError: string | null
 }
@@ -38,6 +41,7 @@ let listening = false
 let startError: string | null = null
 let lastPushTime: string | null = null
 let lastPushOk: boolean | null = null
+let extConnectedAt: string | null = null
 
 function status(): BridgeStatus {
   const cfg = getBridgeConfig()
@@ -47,6 +51,7 @@ function status(): BridgeStatus {
     listening,
     lastPushTime,
     lastPushOk,
+    extConnectedAt,
     lastError: startError
   }
 }
@@ -88,17 +93,24 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return
   }
   const u = new URL(req.url ?? '/', `http://127.0.0.1:${BRIDGE_PORT}`)
-  if (req.method !== 'POST' || u.pathname !== '/ingest') {
+  if (req.method !== 'POST' || (u.pathname !== '/ingest' && u.pathname !== '/ingest-hello')) {
     reply(res, 404, { ok: false, error: 'not found' })
     return
   }
-  lastPushTime = new Date().toISOString()
+  const isHello = u.pathname === '/ingest-hello'
+  if (!isHello) lastPushTime = new Date().toISOString() // 推送时间只记 /ingest，握手不算推送
   try {
     const parsed = JSON.parse(await readBody(req)) as { pairCode?: unknown; tCookie?: unknown }
     const cfg = getBridgeConfig()
     if (typeof parsed.pairCode !== 'string' || !cfg.pairCode || parsed.pairCode !== cfg.pairCode) {
-      lastPushOk = false
+      if (!isHello) lastPushOk = false
       reply(res, 401, { ok: false, error: '配对码不正确' })
+      return
+    }
+    // 握手：码对即记时间（仅内存），供 UI 显示「扩展已连接」；不触碰任何 cookie
+    if (isHello) {
+      extConnectedAt = new Date().toISOString()
+      reply(res, 200, { ok: true })
       return
     }
     if (typeof parsed.tCookie !== 'string' || !parsed.tCookie.trim()) {
@@ -111,7 +123,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     // 只回用户名供扩展展示，绝不回显 cookie 本体
     reply(res, 200, { ok: true, username: st.user?.username ?? null })
   } catch (e) {
-    lastPushOk = false
+    if (!isHello) lastPushOk = false
     const msg = e instanceof Error ? e.message : String(e)
     reply(res, msg.includes('请求体超过') ? 413 : 500, { ok: false, error: msg })
   }
@@ -158,6 +170,7 @@ export function setBridgeEnabled(enabled: boolean): BridgeStatus {
 
 export function regenBridgePair(): BridgeStatus {
   regenPairCode()
+  extConnectedAt = null // 新码生效，旧扩展连接视为失效，需重新握手
   return status()
 }
 
@@ -170,17 +183,51 @@ export function initBridge(): void {
   if (getBridgeConfig().enabled) startBridge()
 }
 
-// ---------- 安装向导（R6）：复制扩展路径 + 拉起 Edge 扩展管理页 ----------
+// ---------- 安装向导（R6/R7）：复制扩展路径 + 定位并拉起 Edge 扩展管理页 ----------
 
 export interface WizardResult {
   /** 扩展目录绝对路径（dev=仓库 extension/，打包=resources/extension），已复制进剪贴板 */
   extPath: string
   opened: boolean
-  /** 非致命提示（剪贴板失败 / 非 Windows），浮层仍可用 */
+  /** 非致命提示（剪贴板失败 / 未找到 Edge 等），浮层仍可用 */
   error?: string
 }
 
-/** 打开 Edge 扩展管理页并复制路径。`start` 是 cmd 内建命令，必须经 `cmd /c`；detached+unref 防 Electron 退出拉扯 Edge */
+/**
+ * 定位 msedge.exe（R7：`cmd /c start msedge` 真机实测静默不跳转，改直呼 exe）：
+ * ① %ProgramFiles(x86)% ② %ProgramFiles% 常见路径 → ③ App Paths 注册表（HKCU → HKLM）。
+ * 全部未命中返回 null，由调用方透出「未找到 Edge」。
+ */
+function locateMsEdge(): string | null {
+  const candidates = [
+    join(process.env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    join(process.env.ProgramFiles ?? 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe')
+  ]
+  for (const p of candidates) {
+    try {
+      if (existsSync(p)) return p
+    } catch {
+      /* 继续下一候选 */
+    }
+  }
+  for (const hive of ['HKCU', 'HKLM']) {
+    try {
+      // 输出形如 "    (默认)    REG_SZ    C:\...\msedge.exe"（中文系统键名是「(默认)」，值行结构一致）
+      const out = execSync(
+        `reg query ${hive}\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\msedge.exe /ve`,
+        { encoding: 'utf8', timeout: 3000, windowsHide: true }
+      )
+      const m = out.match(/REG_SZ\s+(.+)/i)
+      const p = m?.[1]?.trim()
+      if (p && existsSync(p)) return p
+    } catch {
+      /* 该 hive 无登记，试下一个 */
+    }
+  }
+  return null
+}
+
+/** 打开 Edge 扩展管理页并复制路径。命中 msedge.exe 后直呼（不经 cmd/start），失败原因透出 UI */
 export function installWizard(): WizardResult {
   const extPath = app.isPackaged
     ? join(process.resourcesPath, 'extension')
@@ -193,23 +240,32 @@ export function installWizard(): WizardResult {
   }
   let opened = false
   if (process.platform === 'win32') {
-    try {
-      const child = spawn('cmd', ['/c', 'start', 'msedge', 'edge://extensions'], {
-        detached: true,
-        shell: false,
-        windowsHide: true,
-        stdio: 'ignore'
-      })
-      child.on('error', () => {
-        /* Edge 未安装等：向导浮层的文字指引仍可用，不阻塞 */
-      })
-      child.unref()
-      opened = true
-    } catch (e) {
-      error = `无法拉起 Edge（可手动打开 edge://extensions）：${e instanceof Error ? e.message : String(e)}`
+    const msedge = locateMsEdge()
+    if (!msedge) {
+      error = '未找到 Edge，请手动打开 edge://extensions'
+    } else {
+      try {
+        const child = spawn(msedge, ['edge://extensions'], {
+          detached: true,
+          shell: false,
+          stdio: 'ignore'
+        })
+        child.on('error', () => {
+          /* 拉起失败：向导浮层的文字指引仍可用，不阻塞 */
+        })
+        child.unref() // 防 Electron 退出拉扯 Edge
+        opened = true
+      } catch (e) {
+        error = `无法拉起 Edge（可手动打开 edge://extensions）：${e instanceof Error ? e.message : String(e)}`
+      }
     }
   } else {
     error = '自动打开仅支持 Windows，请手动打开浏览器的扩展管理页'
   }
   return { extPath, opened, error }
+}
+
+/** 方式一联动（R7）：系统浏览器打开 linux.do 登录页，登录后靠扩展桥接自动同步（AC1 链路） */
+export async function openSystemLogin(): Promise<void> {
+  await shell.openExternal('https://linux.do/login')
 }

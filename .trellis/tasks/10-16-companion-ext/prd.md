@@ -29,6 +29,12 @@
 
 - **R6 安装向导（用户 2026-10-16「做」）**：桥接行加「安装到 Edge（向导）」按钮 → 主进程复制扩展路径到剪贴板 + 拉起 Edge 打开 `edge://extensions`（命令行参数可行，外部协议不行）→ 应用内浮层分步指引（开发人员模式→加载解压缩→粘贴路径）→ 桥接口收到首次推送（既有 5s 轮询）浮层自动变「✅ 安装成功」。打包态扩展目录经 extraResources 进 resources。
 
+- **R7 实测反馈迭代（2026-10-16 用户真机反馈）**：
+  - 配对码一键复制按钮；
+  - 修 Edge 拉起失败：不再走 `cmd /c start msedge`（静默失败无反馈），改为定位 msedge.exe（常见安装路径 → App Paths 注册表回退）后 spawn 直呼 `edge://extensions`，失败原因透出 UI；
+  - 扩展握手：background.js onInstalled/SW 启动时 POST `/ingest-hello {pairCode}`，bridge 记 `extConnectedAt`；向导步骤②「加载解压缩」显示实时「已检测到扩展 ✅」（步骤①开发人员模式无接口，保持指引）；
+  - 方式一卡片加「在系统浏览器登录（需扩展桥接）」：shell.openExternal 打开 linux.do/login，依赖桥接自动同步登录态；桥接未开启时置灰提示。
+
 ## Out of Scope
 
 - Chrome/Firefox 扩展商店分发（本机加载解压缩即可）

@@ -46,6 +46,7 @@ const api = {
   setBridgeEnabled: (enabled: boolean) => ipcRenderer.invoke('bridge:setEnabled', enabled),
   regenBridgePair: () => ipcRenderer.invoke('bridge:regenPair'),
   installWizard: () => ipcRenderer.invoke('bridge:installWizard'),
+  openSystemLogin: () => ipcRenderer.invoke('bridge:openSystemLogin'),
   // 主进程推送订阅：返回解绑函数
   onNotificationPush: (cb: (payload: unknown) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, payload: unknown): void => cb(payload)

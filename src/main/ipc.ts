@@ -46,7 +46,8 @@ import {
   getBridgeStatus,
   setBridgeEnabled,
   regenBridgePair,
-  installWizard
+  installWizard,
+  openSystemLogin
 } from './api/bridge'
 import { showPushNotification } from './notify'
 
@@ -157,4 +158,5 @@ export function registerIpc(): void {
   ipcMain.handle('bridge:setEnabled', (_e, enabled: boolean) => setBridgeEnabled(Boolean(enabled)))
   ipcMain.handle('bridge:regenPair', () => regenBridgePair())
   ipcMain.handle('bridge:installWizard', () => installWizard())
+  ipcMain.handle('bridge:openSystemLogin', () => openSystemLogin())
 }

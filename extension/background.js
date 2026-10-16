@@ -2,6 +2,7 @@
 // 监听 linux.do 的 _t cookie 变化 → 带配对码 POST 到桌面客户端本机回环口。
 // 注意：_t 值只经内存转发到 127.0.0.1:17366，绝不写入 chrome.storage / console。
 const INGEST_URL = 'http://127.0.0.1:17366/ingest'
+const HELLO_URL = 'http://127.0.0.1:17366/ingest-hello'
 const PUSH_DEBOUNCE_MS = 1500 // 登录时 _t 可能连续 set 多次，合并为一次推送
 
 let pushTimer = null
@@ -71,3 +72,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true // 异步应答
   }
 })
+
+/** 握手（R7）：带码 POST /ingest-hello，让应用知道「扩展已连接」；只发配对码，无任何 cookie */
+function sendHello() {
+  getPairCode().then((code) => {
+    if (!code) return // 未配对时不打扰
+    fetch(HELLO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pairCode: code })
+    }).catch(() => {
+      /* 应用未开桥接等，静默 */
+    })
+  })
+}
+
+// SW 每次启动（顶层执行）+ 安装/更新时各握手一次；应用据此在向导/桥接行显示「已连接」
+chrome.runtime.onInstalled.addListener(sendHello)
+sendHello()

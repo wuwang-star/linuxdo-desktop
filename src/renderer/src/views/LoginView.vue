@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import type { BridgeStatus, WizardResult } from '../../../main/api/bridge'
 
@@ -90,6 +90,37 @@ function lastPushText(st: BridgeStatus): string {
   return t
 }
 
+// ---- 配对码一键复制（R7）：桥接行与向导浮层共用 ----
+const pairCopied = ref(false)
+let copyTimer: ReturnType<typeof setTimeout> | undefined
+
+async function copyPair(): Promise<void> {
+  const code = bridgeStatus.value?.pairCode
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    pairCopied.value = true
+    if (copyTimer !== undefined) clearTimeout(copyTimer)
+    copyTimer = setTimeout(() => {
+      pairCopied.value = false
+    }, 1500)
+  } catch {
+    auth.message = '复制失败，请手动选择配对码复制'
+  }
+}
+
+// ---- 方式一联动（R7）：系统浏览器登录，靠扩展桥接自动同步 ----
+const sysLoginReady = computed(() => Boolean(bridgeStatus.value?.enabled && bridgeStatus.value?.extConnectedAt))
+
+async function openSystemLogin(): Promise<void> {
+  try {
+    await window.api.openSystemLogin()
+    auth.message = '已在系统浏览器打开 linux.do 登录页，登录成功会自动同步到应用'
+  } catch (e) {
+    auth.message = e instanceof Error ? e.message : String(e)
+  }
+}
+
 // ---- Connect 身份登录 ----
 const connClientId = ref('')
 const connClientSecret = ref('')
@@ -158,6 +189,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (bridgeTimer !== undefined) clearInterval(bridgeTimer)
+  if (copyTimer !== undefined) clearTimeout(copyTimer)
 })
 </script>
 
@@ -182,7 +214,10 @@ onUnmounted(() => {
       <p class="tip">弹出的窗口就是真实浏览器，支持 Connect / OAuth / 账密 / 2FA；检测到登录态后自动关闭并落盘 cookie（重启保留）。</p>
       <div class="row">
         <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口</button>
+        <button :disabled="auth.loading || !sysLoginReady" @click="openSystemLogin">在系统浏览器登录（需扩展桥接）</button>
       </div>
+      <p v-if="!sysLoginReady" class="tip">系统浏览器登录需先在下方开启「Edge 扩展桥接」并完成扩展安装（未就绪时按钮置灰）。</p>
+      <p v-else class="tip">已在系统浏览器登录过？点上方按钮打开 linux.do 登录页，登录成功会自动同步到应用。</p>
 
       <!-- Edge 扩展桥接：浏览器登录一次，应用自动跟随 -->
       <div class="field-row" style="margin-top:8px">
@@ -207,9 +242,12 @@ onUnmounted(() => {
           <code style="font-family:Consolas,monospace; font-size:20px; letter-spacing:6px">
             {{ bridgeStatus.pairCode || '……' }}
           </code>
+          <button :disabled="!bridgeStatus.pairCode || pairCopied" @click="copyPair">{{ pairCopied ? '已复制' : '复制' }}</button>
           <button :disabled="bridgeBusy" @click="regenPair">重新生成</button>
           <span class="tip" style="margin:0">
-            {{ bridgeStatus.listening ? '监听中' : '未监听' }}{{ bridgeStatus.lastError ? ` · ${bridgeStatus.lastError}` : '' }}
+            {{ bridgeStatus.listening ? '监听中' : '未监听' }}
+            · {{ bridgeStatus.extConnectedAt ? '扩展已连接' : '扩展未连接' }}
+            {{ bridgeStatus.lastError ? ` · ${bridgeStatus.lastError}` : '' }}
           </span>
         </div>
         <p class="tip">最近推送：{{ lastPushText(bridgeStatus) }}</p>
@@ -308,19 +346,32 @@ onUnmounted(() => {
           <h2>安装扩展到 Edge</h2>
           <div class="wiz-step">
             <span class="wiz-num">1</span>
-            <div>已尝试打开 Edge 扩展管理页（<code>edge://extensions</code>，未弹出请手动打开）；在左栏打开<strong>「开发人员模式」</strong>开关。</div>
+            <div>
+              已尝试打开 Edge 扩展管理页（<code>edge://extensions</code>，未弹出请手动打开）；在左栏打开<strong>「开发人员模式」</strong>开关。
+              <span class="tip">（此步无检测接口，请自行确认已开启）</span>
+            </div>
           </div>
           <div class="wiz-step">
             <span class="wiz-num">2</span>
-            <div>点上方<strong>「加载解压缩」</strong>，在路径栏 <strong>Ctrl+V</strong> 粘贴（扩展路径已复制到剪贴板），选中 <code>extension</code> 文件夹后确认。</div>
+            <div>
+              点上方<strong>「加载解压缩」</strong>，在路径栏 <strong>Ctrl+V</strong> 粘贴（扩展路径已复制到剪贴板），选中 <code>extension</code> 文件夹后确认。
+              <br />
+              <strong v-if="bridgeStatus?.extConnectedAt" style="color:var(--accent)">✅ 已检测到扩展</strong>
+              <span v-else class="tip">⏳ 等待扩展安装…（实时检测，每 5s 刷新）</span>
+            </div>
           </div>
           <div class="wiz-step">
             <span class="wiz-num">3</span>
-            <div>完成。在浏览器里登录 linux.do 后，登录态会自动同步进应用（本浮层自动检测推送）。</div>
+            <div>完成。点击 Edge 工具栏的扩展图标，填入下方配对码；之后在浏览器里登录 linux.do，登录态会自动同步进应用。</div>
           </div>
           <p class="tip">扩展路径：<code style="user-select:all">{{ wizard?.extPath }}</code></p>
+          <p v-if="bridgeStatus?.enabled" class="tip" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+            配对码：<code style="font-family:Consolas,monospace; font-size:16px; letter-spacing:3px">{{ bridgeStatus.pairCode }}</code>
+            <button :disabled="!bridgeStatus.pairCode || pairCopied" @click="copyPair">{{ pairCopied ? '已复制' : '复制' }}</button>
+          </p>
+          <p v-else class="tip">桥接未开启：请先关闭本浮层，打开「Edge 扩展桥接」开关生成配对码。</p>
           <p v-if="wizard?.error" class="tip">{{ wizard.error }}</p>
-          <p class="tip">等待扩展首次推送…（每 5s 自动检查）</p>
+          <p class="tip">等待扩展首次推送…（每 5s 自动检查，成功后本浮层自动关闭指引）</p>
           <div class="row">
             <button @click="closeWizard">关闭</button>
           </div>
