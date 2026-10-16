@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/ipc-bridge-guidelines.md", "reason": "IPC 四点布线契约：settings:setDoh 保存后追加 applyDohRuntime 的改动须遵守信道命名与参数归一"}
+{"file": ".trellis/tasks/10-16-p2-doh/design.md", "reason": "DoH 前任务设计：Chromium 开关为何死路（Electron 44 源码核实）+ 配置层既有取舍，真实现不得推翻"}
+{"file": ".trellis/workspace/coordination.md", "reason": "多会话铁律：ipc.ts/index.ts 公用文件只追加、动前登记"}

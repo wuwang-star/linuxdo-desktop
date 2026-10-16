@@ -7,6 +7,7 @@ import { probeP1 } from './api/probe'
 import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
+import { applyDohRuntime, dohSelfCheck } from './api/dohProxy'
 import { initBridge } from './api/bridge'
 import { initShortcuts } from './api/shortcuts'
 import { focusMainWindow, initThemeOverlay, titleBarOverlay } from './win'
@@ -22,9 +23,8 @@ app.on('before-quit', () => {
 
 // DoH 命令行开关接线（保留）。注意：dns-over-https-mode/templates 是 Chrome 浏览器层开关，
 // Electron 44 的网络服务不消费（v44.0.0 源码核实：system_network_context_manager.cc 的
-// OnNetworkServiceCreated 硬编码 SecureDnsMode::kOff），当前实际不生效、DNS 走系统解析；
-// 保留接线以备上游支持，真实现（本地 DoH 代理 / host-resolver-rules）另立任务，见 SPEC。
-// loadDohEarly 只读 JSON 配置、不碰 safeStorage，可在模块顶层安全调用；enabled=false 时零开关。
+// OnNetworkServiceCreated 硬编码 SecureDnsMode::kOff）——真实现走本地 DoH 代理（dohProxy.ts），
+// 此处仅留接线以备上游支持。loadDohEarly 只读 JSON 配置、不碰 safeStorage，可在模块顶层安全调用。
 const doh = loadDohEarly()
 if (doh.enabled) {
   app.commandLine.appendSwitch('enable-features', 'DnsOverHttps')
@@ -68,6 +68,9 @@ app.whenReady().then(() => {
   session.defaultSession.setUserAgent(USER_AGENT)
 
   registerIpc()
+
+  // DoH 真实现：enabled 时起本地 CONNECT 代理并接管 defaultSession 代理，disabled 时零副作用
+  void applyDohRuntime()
 
   // 伴生扩展桥接：按持久化开关决定是否监听 127.0.0.1:17366（默认关闭，零痕）
   initBridge()
@@ -125,7 +128,9 @@ app.whenReady().then(() => {
     const badFormat = validateTheme({ format: 2, id: 'a', name: 'x', css: '' })
     const badId = validateTheme({ format: 1, id: '../evil', name: 'x', css: '' })
     const badCss = validateTheme({ format: 1, id: 'a', name: 'x', css: 'x'.repeat(300 * 1024) })
-    if (!(ok.ok && !badFormat.ok && !badId.ok && !badCss.ok)) {
+    // DoH 报文编解码自检（dohProxy.ts 手写二进制解析器）
+    const okDoh = dohSelfCheck()
+    if (!(ok.ok && !badFormat.ok && !badId.ok && !badCss.ok && okDoh)) {
       console.error('SMOKE_FAIL: validateTheme')
       app.quit()
     } else {

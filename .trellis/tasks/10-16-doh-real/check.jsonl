@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/ipc-bridge-guidelines.md", "reason": "检查 IPC 契约未被破坏：diag:resolveDns/settings:getDoh 契约不变"}
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "DoH 空转结论与 secure/auto 语义出处，实现须与语义一致"}

@@ -39,6 +39,7 @@ import {
   type DohMode
 } from './api/settings'
 import { translatePostText } from './api/translate'
+import { applyDohRuntime, diagResolve, isDohProxyActive } from './api/dohProxy'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
   messageBusStart,
@@ -127,20 +128,31 @@ export function registerIpc(): void {
   ipcMain.handle('settings:setTranslate', (_e, baseUrl: string, model: string, key?: string) => {
     return setTranslateConfig(baseUrl, model, key)
   })
-  // ---------- DoH 加密 DNS（改动重启后生效） ----------
+  // ---------- DoH 加密 DNS（本地代理真实现，保存即时生效；契约见 index.d.ts） ----------
   ipcMain.handle('settings:getDoh', () => getDohConfig())
-  ipcMain.handle('settings:setDoh', (_e, enabled: boolean, mode: DohMode, template: string) =>
-    setDohConfig(enabled, mode, template)
-  )
+  ipcMain.handle('settings:setDoh', async (_e, enabled: boolean, mode: DohMode, template: string) => {
+    const cfg = setDohConfig(enabled, mode, template)
+    try {
+      await applyDohRuntime()
+    } catch {
+      /* 代理启停失败不回滚已保存的配置，下次启动 applyDohRuntime 重试 */
+    }
+    return cfg
+  })
   // ---------- 原生通知开关（内存即时生效，notify.ts 发送前读取） ----------
   ipcMain.handle('settings:getNotification', () => getNotificationConfig())
   ipcMain.handle('settings:setNotification', (_e, enabled: boolean) => setNotificationConfig(enabled))
-  // resolveHost 走 Chromium host resolver（secure 模式下即 DoH 客户端），结果仅作诊断展示。
-  // 注：设计稿写的 resolveDNS 在 Electron 44 已移除，此处用替代 API resolveHost。
+  // 诊断按钮按运行态实测：DoH 代理启用走代理解析链路（via=doh/fallback），否则走
+  // Chromium host resolver（即系统解析，via=system）。结果仅作诊断展示。
+  // 注：设计稿写的 resolveDNS 在 Electron 44 已移除，系统路径用替代 API resolveHost。
   ipcMain.handle('diag:resolveDns', async () => {
     try {
+      if (isDohProxyActive()) {
+        const r = await diagResolve('linux.do')
+        return { ok: true, addresses: r.addresses, via: r.via }
+      }
       const { endpoints } = await session.defaultSession.resolveHost('linux.do')
-      return { ok: true, addresses: endpoints.map((ep) => ep.address) }
+      return { ok: true, addresses: endpoints.map((ep) => ep.address), via: 'system' as const }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }

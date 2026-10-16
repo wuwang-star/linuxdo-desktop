@@ -60,7 +60,12 @@ export interface ApiBridge {
   setDohConfig(enabled: boolean, mode: DohMode, template: string): Promise<DohConfig>
   getNotificationConfig(): Promise<NotificationConfig>
   setNotificationConfig(enabled: boolean): Promise<NotificationConfig>
-  resolveDns(): Promise<{ ok: boolean; addresses?: string[]; error?: string }>
+  resolveDns(): Promise<{
+    ok: boolean
+    addresses?: string[]
+    error?: string
+    via?: 'doh' | 'fallback' | 'literal' | 'system'
+  }>
   getConnectStatus(): Promise<ConnectStatus>
   saveConnectConfig(clientId: string, callbackMode: ConnectCallbackMode, clientSecret?: string): Promise<ConnectStatus>
   connectLogin(): Promise<{ ok: boolean; username?: string; error?: string }>

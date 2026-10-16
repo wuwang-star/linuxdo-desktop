@@ -54,6 +54,14 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - 本任务交付：设置基建（`settings.ts`：默认 enabled=false、mode=secure、template=`https://edge.1molchuan.top/linuxdo`（用户指定自建端点，2026-10-16 起为默认，旧值 Cloudflare 仍为预设之一）；模板必须 `https://` 合法 URL，规范化为 href、含空白拒绝，非法静默回退默认；`dohEnabled` 布尔归一防脏数据；配置原子写盘——临时文件 + rename，防半截 JSON 毁掉同文件 translate 配置）+ `diag:resolveDns` 诊断按钮（`resolveHost('linux.do')`，Electron 44 已移除 resolveDNS，用替代 API）。UI 顶部明示「实验功能：暂未生效」。
 - 真实现路径（另立任务）：本地 DoH 代理 + `host-resolver-rules` 映射，或上游 Electron 消费浏览器层开关后直接复用现有接线。届时 mode 语义：secure=仅加密解析（失败即断）；auto=加密优先、失败回退系统 DNS（DoH 域被墙环境切 auto）。
 
+### DoH 真实现（10-16-doh-real，2026-10-16）
+
+- **方案**：`src/main/api/dohProxy.ts` 本地 HTTP CONNECT 代理（127.0.0.1 随机端口，纯 Node 零依赖）+ `session.defaultSession.setProxy` 接管——renderer 与全部主进程 `net.fetch` 共享 defaultSession，一处覆盖。TLS 由 Chromium 端到端，代理只做「解析 + TCP 隧道」。
+- **解析链**：CONNECT 目标手工构 RFC 1035 报文经 DoH 上游查询（GET `?dns=<base64url>`，5s 超时；A 失败回退 AAAA）；DoH 查询走 Node 全局 fetch（undici）不经 defaultSession，防递归，模板域名由 dns.lookup 隐式 bootstrap；缓存 TTL 取 answer（钳 60s–10min），auto 回退短 TTL 2min（仿 FluxDO）。secure=DoH 失败 502 断开；auto=回退 `dns.lookup`。
+- **生效语义**：保存即时生效（`settings:setDoh` 后 `applyDohRuntime()` 启停代理并切 setProxy；ready 时同样调用），「重启生效」限制与「实验·暂未生效」横幅删除。禁用还原 `setProxy({mode:'system'})`。bypassList `localhost;127.0.0.1;<local>`（bridge/OAuth 回环口不走代理）。默认仍 enabled=false（待真机验收放开）。
+- **诊断**：`diag:resolveDns` 按运行态分流——代理启用走 `diagResolve`（返回 `via: doh|fallback|literal`），未启用走 `resolveHost`（`via: 'system'`）；契约加可选 `via` 字段向后兼容。
+- **已知天花板**（ponytail）：不串联系统代理（Clash 等与 DoH 直连互斥，UI 文案明示）；不做分域名规则/PAC/SOCKS 上游；IDN 域名不支持（现用域名全 ASCII）。
+
 ### P2a 打包分发（2026-10-16）
 
 - **electron-builder 配置**（`electron-builder.yml`）：appId `com.linuxdo.desktop` / productName `LinuxDo Desktop`；`files: out/**`（electron-builder 自动追加 package.json 与生产依赖 node_modules）；asar 开；NSIS oneClick per-user；产物 `dist/LinuxDo Desktop-<ver>-setup.exe` + `win-unpacked/`。
@@ -139,6 +147,11 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **settings 字段**（translate-settings.json，仿 bridge 字段模式）：`shortcutCallWindow`/`shortcutNextTopic`，undefined→默认（true/false）+ Boolean 归一防脏数据；**全部既有 setter（translate/DoH/notification/bridge×2）均已补 `...shortcutFieldsOf(cache)` 透传防误抹**；新 `setShortcutEnabled(kind, enabled)` 单项切换。IPC `shortcuts:getStatus`/`shortcuts:setEnabled`（preload 两件），UI 在设置中心新「快捷键」分类（同步之后）：两 switch + 等宽组合键徽标（`.accel`）+ 逐项错误行。
 - **待人工验收**：AC1（最小化按 Alt+Shift+L 恢复聚焦）、AC2（队列下一贴开关生效/无下一贴无副作用）、AC3（真实占用场景错误透出且另一项不受影响）。
 
+### styles 体系拆分与批 2 组件（2026-10-16，044c0bb）
+
+- **单文件 styles.css 删除**：拆为 `assets/styles/` 按部位 11 文件（tokens/base/topbar/browse/home/topic/login/settings/notifications/user/lightbox），main.ts 按序引入。**tokens.css 单轨主题组**（`data-theme` 属性切换），base.css 公用控件（act/card/field-row/switch/seg/stepper/ico/ic/overlay/tr-*）；部位文件归各会话分区（见 `.trellis/workspace/coordination.md`），新页面新建部位文件而非塞进公用。
+- **批 2 组件同批落地（待人工验收）**：UserCard.vue 挂卡、UserProfileView.vue 用户主页（router 新路由）、灯箱（TopicView + lightbox.css）；列表重设计（悬浮行/工具条吸顶）、排版主题偏好（prefs.ts）、SettingsView 外观段收口、PostItem 改造同批。
+
 ## 多会话协同（2026-10-16）
 
-开发采用多 AI 会话并行，责任分区与公用文件铁律见 `.trellis/workspace/coordination.md`（开工前必读、认领登记）。要点：公用文件（ipc/preload/styles.css/App.vue/router/client/settings）只追加不重排；styles.css 各会话独立 @scope 段；原子功能完成立即提交；styles 误删事故教训见 journal Session 13-14。
+开发采用多 AI 会话并行，责任分区与公用文件铁律见 `.trellis/workspace/coordination.md`（开工前必读、认领登记）。要点：公用文件（ipc/preload/App.vue/router/client/settings/main.ts 与 styles 底座 tokens.css/base.css）只追加不重排；styles 已拆 assets/styles/ 按部位文件（044c0bb），部位文件归各分区，同文件多人改动用 `/* @scope: <会话名> */` 段注释分隔；原子功能完成立即提交；styles 误删事故教训见 journal Session 13-14。

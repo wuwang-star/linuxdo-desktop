@@ -39,8 +39,7 @@ export interface ShortcutsConfig {
 
 /**
  * DoH 默认值：关闭 + secure + 自建模板（用户指定自建端点 edge.1molchuan.top，2026-10-16）。
- * enabled 默认 false：Electron 44 网络服务不消费 DoH 命令行开关（源码核实，见 SPEC），
- * 默认开启只是「假装生效」；待真实现（本地 DoH 代理等）落地后再放开。
+ * enabled 默认 false：真实现（本地 DoH 代理，dohProxy.ts）已落地，默认开启待真机验收后再放开。
  */
 const DOH_DEFAULT: DohConfig = { enabled: false, mode: 'secure', template: 'https://edge.1molchuan.top/linuxdo' }
 
@@ -227,7 +226,7 @@ export function getDohConfig(): DohConfig {
 
 /**
  * 保存 DoH 配置（明文 JSON，与 translate 配置同文件、无敏感数据）。
- * mode 只认 secure/auto；模板非法静默回退默认。改动重启生效（Chromium 开关限制）。
+ * mode 只认 secure/auto；模板非法静默回退默认。代理启停由 ipc 层保存后即时应用（applyDohRuntime）。
  */
 export function setDohConfig(enabled: boolean, mode: DohMode, template: string): DohConfig {
   loadOnce()

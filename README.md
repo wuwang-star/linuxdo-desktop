@@ -21,10 +21,15 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 ## 当前能力（P0）
 
 - 主进程统一 Discourse 客户端：浏览器级 UA、429 指数退避（尊重 Retry-After）、请求诊断（登录页可见）
-- 加密 DNS（DoH，实验）：设置基建 + 测试解析按钮已就绪；**当前 Electron 44 下开关不生效**（源码核实，见下），默认关闭
+- 加密 DNS（DoH）：本地代理解析真实现（设置中心「网络」开启，保存即时生效）；默认关闭
 - 登录：嵌入式真实浏览器登录窗口（过 Cloudflare，cookie 与 API 共享默认 session）+ User API Key（safeStorage 加密存储）
 - 伴生扩展桥接：Edge 里登录 linux.do 后 `_t` 登录态自动同步进应用（见下「扩展桥接」）
 - 最新/最热/Top/分类主题列表，无限滚动（Top 榜支持周/月/全部周期切换；hot 通道 2026-10-16 抓包核实与 latest 同构、`more_topics_url:"/hot?page=1"` 分页）
+- 列表页搜索（`search.json`）：搜索框嵌列表区展示结果（不新建路由），支持 `@用户` / `#分类` / `order:latest` 操作符（服务端解析）；翻页上限 10 页（上游限制，空页即止）
+- 站内导航：正文 `/t/` 内链一律应用内打开（同贴跳楼层、异贴双栏右栏加载），其余链接交系统浏览器；正文图片点击灯箱放大
+- 用户卡片与主页：点击头像/用户名弹出用户卡片，可进入用户主页（UserProfileView 独立路由）
+- 阅读队列：主题页手动入队，按入队顺序上/下一贴（页内按钮或全局键 Alt+Shift+N）
+- 主题皮肤工坊：外观分类可切换皮肤，纯 CSS 主题包格式 v1（token 覆盖单一路径），内置「飞书」样例皮肤
 - 站内 gamification 排行榜已排除：`/leaderboard.json` 实测 not_found，非原站功能（用户所见排行榜来自第三方工具 LDStatus Pro 自有服务）
 - 主题阅读：post_stream 全量 id + 分块懒加载（向上加载更早楼层、滚动锚点保持）、已读进度保存与恢复
 - 讨论上下文：reply_to 父回复跳转（按需加载分块）、只看楼主、右侧楼层时间轴
@@ -38,17 +43,20 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 - **主题模式**：跟随系统（matchMedia 实时切换）/ 亮 / 暗。亮暗两套完整变量组由 `data-theme` 属性单轨切换——JS 按偏好与系统状态写 `documentElement` 属性，CSS 只认 attribute，不再用 `prefers-color-scheme` media query 分叉（消灭双轨竞争）。
 - **排版**：正文字号（14–20px）、行距、字体族（系统/衬线/无衬线/等宽）、阅读宽度（全宽/960/1120/1280px 居中）。作用于正文渲染区（楼层 cooked、主题标题、时间轴字体族），设置中心等控件区不受影响；代码块恒为等宽。
 - **视图模式**：阅读页副标题行「时间流 / 树形」分段切换（存 `ldd-reading` 键 `viewMode`，默认时间流）。树形按 `reply_to_post_number` 把回复聚合到父楼下逐层缩进（每层 16px + 左引导线，深度上限 3 层）；父楼未加载的回复作为根显示（自带「↩ 回复 #N」徽标），向上加载补齐后自动归位；只看楼主在过滤后的集合上重建树。
+- **皮肤工坊**：主题模式之上可叠加皮肤包（设置中心「外观」切换）。包格式 v1 为纯 CSS 单路径——token 覆盖由主题包自己的 `:root{}` / `:root[data-theme='dark']{}` 承载，应用顺序 prefs 基础变量 → 主题包覆盖；内置「飞书」样例（`assets/themes/feishu.ts`），见 `utils/themes.ts`。
 
 ## 双栏浏览（宽屏主从布局）
 
 视口 ≥1200px 时「最新」与主题页渲染为双栏主从（BrowseView）：左栏列表常驻（约 400px，滚动位置与「最新/离线/分类」筛选全程保留），右栏阅读；点击左栏主题右栏即时切换，URL `replace('/t/<id>')` 保持可分享可回跳。窄屏（<1200px）自动回退整页导航，拉宽恢复双栏且右栏保持当前主题。队列上一贴/下一贴、通知 `?pn=` 直达楼层、离线 `?offline=1` 均在双栏下工作；未选主题时右栏显示占位。实现要点：`stores/browse.ts` 持有选中态（`select` 只改状态递增 `selectSeq`，URL 由 BrowseView 统一 replace/push，避免 store ↔ router 循环依赖；外部路由跳转经 `syncFromRoute` 归一进 store），TopicView 参数化 `topicId/offline` props（route 兜底），换主题靠 `:key` 重建组件。
 
 
-## 网络（DoH，实验，当前未生效）
+## 网络（DoH）
 
-应用内建 DoH 设置基建：设置中心（顶栏「设置」→ 网络）可开关/切模式（secure/auto）/选解析器模板（默认为用户指定自建端点 edge.1molchuan.top，另有 Cloudflare/Google/阿里/自定义），并提供 `resolveHost('linux.do')` 测试解析按钮。
+应用内建 DoH 加密解析：设置中心（顶栏「设置」→ 网络）可开关/切模式（secure/auto）/选解析器模板（默认为用户指定自建端点 edge.1molchuan.top，另有 Cloudflare/Google/阿里/自定义），并提供「测试解析 linux.do」按钮（按运行态显示 DoH/系统解析来源）。
 
-**当前 Electron 44 下 DoH 实际不生效**：`dns-over-https-mode` / `dns-over-https-templates` 是 Chrome 浏览器层命令行开关，Electron 的网络服务不消费（源码核实 v44.0.0 `system_network_context_manager.cc` 硬编码 DoH off），DNS 实际走系统解析。默认关闭、不假装生效；设置与诊断按钮保留，待后续采用本地 DoH 代理或 host-resolver-rules 方案时复用（另立任务）。
+**实现方式**：主进程本地 HTTP CONNECT 代理（127.0.0.1 随机端口）+ `session.setProxy` 接管，目标域名经 DoH 上游解析后直连，保存即时生效。模式语义：secure=仅加密解析（失败即断）；auto=加密优先、失败回退系统 DNS。默认关闭。
+
+注意：开启期间应用流量改走本地代理直连，**不再使用系统代理（Clash 等）**；关闭即还原。Chromium 浏览器层的 `dns-over-https-*` 命令行开关在 Electron 44 下不生效（源码核实，见 SPEC），保留接线仅为备上游支持。
 
 ## 扩展桥接（Edge 自动同步登录态）
 

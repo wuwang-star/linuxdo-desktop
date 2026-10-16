@@ -252,7 +252,9 @@ async function testDns(): Promise<void> {
   try {
     const res = await window.api.resolveDns()
     dnsResult.value = res.ok
-      ? `解析成功（当前运行态）：${res.addresses?.join(', ') || '（无地址）'}`
+      ? `解析成功（${res.via === 'doh' ? 'DoH 加密' : res.via === 'fallback' ? 'DoH 失败回退系统' : '系统 DNS'}）：${
+          res.addresses?.join(', ') || '（无地址）'
+        }`
       : `解析失败：${res.error ?? '未知错误'}`
   } catch (e) {
     dnsResult.value = `解析失败：${e instanceof Error ? e.message : String(e)}`
@@ -619,18 +621,17 @@ onMounted(async () => {
         <section class="card">
           <h2>加密 DNS（DoH）</h2>
           <div class="settings-banner">
-            <span class="banner-icon">⚗️</span>
+            <span class="banner-icon">🔒</span>
             <span>
-              <strong>实验功能：当前 Electron 版本下暂未生效</strong>，保留设置以备后续方案，改动需重启应用生效（Chromium
-              启动期开关限制）。
+              <strong>本地代理解析已生效</strong>：开启后应用流量经本机 DoH 代理解析域名并直连（保存即时生效，无需重启）。
+              注意：开启期间应用不再走系统代理（Clash 等）。
             </span>
           </div>
           <div class="field-row">
             <div class="field-main">
               <div class="field-label">启用 DoH</div>
               <div class="field-desc">
-                默认开启。用加密解析绕过 DNS 污染（linux.do 位于 Cloudflare，部分网络直连不稳；Cloudflare 域名另附
-                ECH 加密收益）；关闭则与系统默认行为一致。
+                默认关闭。用加密解析绕过 DNS 污染（linux.do 位于 Cloudflare，部分网络直连不稳）；关闭则与系统默认行为一致。
               </div>
             </div>
             <label class="switch field-control">
