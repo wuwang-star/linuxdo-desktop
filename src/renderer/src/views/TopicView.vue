@@ -227,50 +227,50 @@ function readOffline(): void {
 <template>
   <div class="topic-page">
     <div class="topic-main">
-    <!-- 固定顶栏：标题+操作行不随正文滚动 -->
+    <!-- 固定顶栏（单行紧凑）：标题 + 图标化操作，悬停见提示 -->
     <div v-if="store.topic" class="topic-head">
-      <h1 class="topic-title-h1">{{ store.topic.title }}</h1>
-      <div class="topic-sub">
-        <span>共 {{ store.topic.posts_count }} 楼 · 已读至 #{{ store.readProgress(topicId) || 1 }}</span>
-        <span v-if="store.offline" class="offline-badge">离线 · 保存于 {{ relTime(store.offlineSavedAt) }}</span>
-        <!-- 视图切换：时间流/树形（:checked+@change，避开 v-model 对 union 类型的 DOM 字符串化坑） -->
-        <div class="seg topic-viewmode">
-          <label class="seg-opt">
-            <input type="radio" name="viewmode" value="stream" :checked="viewMode === 'stream'" @change="setViewMode('stream')" />
-            <span>时间流</span>
-          </label>
-          <label class="seg-opt">
-            <input type="radio" name="viewmode" value="tree" :checked="viewMode === 'tree'" @change="setViewMode('tree')" />
-            <span>树形</span>
-          </label>
-        </div>
-        <label class="only-op">
-          <input type="checkbox" v-model="store.onlyOp" />
-          只看楼主
-        </label>
-        <button v-if="!store.offline" class="act" :disabled="saving" @click="doSaveOffline">
-          {{ saveLabel }}
-        </button>
-        <span v-if="saveResult" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
-        <button v-if="!store.offline" class="act" :class="{ acted: store.topic.bookmarked }" :disabled="bookmarking || store.topic.bookmarked" @click="doBookmark">
-          {{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}
-        </button>
+      <span v-if="store.offline" class="offline-badge">离线</span>
+      <div class="th-title" :title="store.topic.title">{{ store.topic.title }}</div>
+      <div class="th-ops">
         <button
-          class="act"
-          :class="{ acted: queue.has(topicId) }"
+          class="ico"
+          :class="{ on: store.onlyOp }"
+          title="只看楼主"
+          @click="store.onlyOp = !store.onlyOp"
+        >👤</button>
+        <button
+          class="ico"
+          :class="{ on: viewMode === 'tree' }"
+          :title="viewMode === 'stream' ? '切换到树形视图' : '切换到时间流视图'"
+          @click="setViewMode(viewMode === 'stream' ? 'tree' : 'stream')"
+        >{{ viewMode === 'stream' ? '≡' : '🌳' }}</button>
+        <button
+          v-if="!store.offline"
+          class="ico"
+          :disabled="saving"
+          :title="saveLabel"
+          @click="doSaveOffline"
+        >⬇</button>
+        <button
+          v-if="!store.offline"
+          class="ico"
+          :class="{ on: store.topic.bookmarked }"
+          :disabled="bookmarking || store.topic.bookmarked"
+          :title="store.topic.bookmarked ? '已收藏' : '收藏'"
+          @click="doBookmark"
+        >{{ store.topic.bookmarked ? '★' : '☆' }}</button>
+        <button
+          class="ico"
+          :class="{ on: queue.has(topicId) }"
           :title="queue.has(topicId) ? '从阅读队列移除' : '加入阅读队列'"
-          :aria-label="queue.has(topicId) ? '从阅读队列移除' : '加入阅读队列'"
           @click="toggleQueue"
-        >
-          {{ queue.has(topicId) ? '✓' : '＋' }}
-        </button>
+        >{{ queue.has(topicId) ? '✓' : '＋' }}</button>
         <template v-if="queue.count > 0">
-          <button class="act" :disabled="!queueNav.prev" @click="goNeighbor('prev')">← 上一贴</button>
-          <button class="act" :disabled="!queueNav.next" @click="goNeighbor('next')">下一贴 →</button>
-          <span class="hint">队列 {{ queue.count }} 个 · 按入队顺序</span>
+          <button class="ico" :disabled="!queueNav.prev" title="上一贴" @click="goNeighbor('prev')">‹</button>
+          <button class="ico" :disabled="!queueNav.next" title="下一贴" @click="goNeighbor('next')">›</button>
         </template>
-        <span v-if="store.minLoadedIdx > 0" class="hint">（向上滚动加载更早楼层）</span>
       </div>
+      <span v-if="saveResult" class="th-toast" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
     </div>
     <div ref="scroller" class="topic-scroller">
       <div v-if="store.loading" class="loading">加载中…</div>
