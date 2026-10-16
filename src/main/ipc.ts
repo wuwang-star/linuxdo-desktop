@@ -1,6 +1,8 @@
-import { ipcMain, BrowserWindow, session } from 'electron'
+import { ipcMain, BrowserWindow, session, nativeTheme } from 'electron'
 import {
   fetchLatest,
+  fetchHot,
+  fetchTop,
   fetchCategories,
   fetchCategoryTopics,
   fetchTopic,
@@ -13,7 +15,8 @@ import {
   updatePost,
   fetchNotifications,
   markNotificationsRead,
-  getDiag
+  getDiag,
+  type TopPeriod
 } from './api/client'
 import {
   initAuth,
@@ -63,6 +66,8 @@ export function registerIpc(): void {
   initAuth()
 
   ipcMain.handle('discourse:latest', (_e, page: number) => fetchLatest(page ?? 0))
+  ipcMain.handle('discourse:hot', (_e, page: number) => fetchHot(page ?? 0))
+  ipcMain.handle('discourse:top', (_e, period: TopPeriod, page: number) => fetchTop(period, page ?? 0))
   ipcMain.handle('discourse:categories', () => fetchCategories())
   ipcMain.handle(
     'discourse:categoryTopics',
@@ -171,4 +176,13 @@ export function registerIpc(): void {
   ipcMain.handle('offline:list', () => listTopics())
   ipcMain.handle('offline:get', (_e, id: number) => getTopic(id))
   ipcMain.handle('offline:remove', (_e, id: number) => removeTopic(id))
+
+  // ---------- 窗口观感：主题模式（renderer prefs 是单源，此处只做镜像） ----------
+  // 设 nativeTheme.themeSource：overlay 配色经 win.ts 的 'updated' 监听统一跟随；
+  // themeSource 同时驱动 renderer prefers-color-scheme，与 prefs 的 matchMedia 单轨一致。
+  ipcMain.handle('window:setTheme', (_e, theme: 'system' | 'light' | 'dark') => {
+    if (theme !== 'system' && theme !== 'light' && theme !== 'dark') return false
+    nativeTheme.themeSource = theme
+    return true
+  })
 }

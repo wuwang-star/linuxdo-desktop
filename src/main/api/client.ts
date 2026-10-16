@@ -232,6 +232,19 @@ export function fetchLatest(page = 0): Promise<TopicListResponse> {
   return discourseRequest<TopicListResponse>('/latest.json', { query: { page, no_definitions: true } })
 }
 
+/** Top 榜周期（Discourse 核心端点全支持 daily/quarterly/yearly，本应用 UI 仅开放以下三档） */
+export type TopPeriod = 'weekly' | 'monthly' | 'all'
+
+/** 最热列表（2026-10-16 抓包核实：与 latest.json 同构，more_topics_url 为 "/hot?page=1" 即 page 参数分页） */
+export function fetchHot(page = 0): Promise<TopicListResponse> {
+  return discourseRequest<TopicListResponse>('/hot.json', { query: { page, no_definitions: true } })
+}
+
+/** Top 榜（Discourse 核心端点，响应与 latest 同构） */
+export function fetchTop(period: TopPeriod, page = 0): Promise<TopicListResponse> {
+  return discourseRequest<TopicListResponse>('/top.json', { query: { period, page } })
+}
+
 export function fetchCategoryTopics(slug: string, id: number, page = 0): Promise<TopicListResponse> {
   return discourseRequest<TopicListResponse>(`/c/${slug}/${id}.json`, { query: { page } })
 }

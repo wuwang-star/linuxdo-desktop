@@ -10,7 +10,11 @@ const queue = useQueueStore()
 const router = useRouter()
 
 // 阅读体感：启动即应用（setup 同步执行早于首帧，避免暗色系统下白闪）；system 模式实时跟随
-applyPrefs(loadPrefs())
+const startPrefs = loadPrefs()
+applyPrefs(startPrefs)
+// 主题镜像到主进程：nativeTheme.themeSource + titleBarOverlay 跟随 prefs
+// （system 模式下 themeSource='system' 后 OS 亮暗切换主进程自行跟随，无需再通知；失败静默）
+void window.api.setTheme(startPrefs.theme).catch(() => {})
 const disposeThemeWatcher = watchSystemTheme()
 const queueOpen = ref(false)
 const who = computed(() => auth.status?.user?.username ?? null)

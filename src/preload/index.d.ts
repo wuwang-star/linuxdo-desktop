@@ -5,6 +5,7 @@ import type {
   NotificationsResponse,
   PostStreamPostsResponse,
   TopicListResponse,
+  TopPeriod,
   DiagEntry
 } from '../main/api/client'
 import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '../main/api/settings'
@@ -23,6 +24,8 @@ export interface LoginStatus {
 
 export interface ApiBridge {
   fetchLatest(page: number): Promise<TopicListResponse>
+  fetchHot(page: number): Promise<TopicListResponse>
+  fetchTop(period: TopPeriod, page: number): Promise<TopicListResponse>
   fetchCategories(): Promise<CategoryListResponse>
   fetchCategoryTopics(slug: string, id: number, page: number): Promise<TopicListResponse>
   fetchTopic(id: number): Promise<DiscourseTopic>
@@ -66,6 +69,8 @@ export interface ApiBridge {
   offlineList(): Promise<OfflineIndexEntry[]>
   offlineGet(id: number): Promise<OfflineTopic | null>
   offlineRemove(id: number): Promise<boolean>
+  /** 主题模式镜像到主进程：nativeTheme.themeSource + titleBarOverlay 联动 */
+  setTheme(theme: 'system' | 'light' | 'dark'): Promise<boolean>
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
   onSaveProgress(cb: (payload: { id: number; loaded: number; total: number }) => void): () => void

@@ -113,3 +113,9 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **渲染**：缩进用平铺容器 `margin-left: depth*16px` + `.thread-line`（border-left 2px + padding-left 12px，仅 depth>0），不嵌套 DOM——cooked 宽度变量与 PostItem 复用零改动；PostItem 自带「↩ 回复 #N」徽标即 AC2 的父楼缺失标记；`scrollIntoView` 按 `post-<post_number>` id 查找，DOM 顺序≠楼层序无需特判。
 - **偏好**：`viewMode: 'stream'|'tree'` 入 `ldd-reading`（prefs.ts 枚举归一仿 theme）；TopicView 用 `:checked`+`@change` 而非 v-model（union 类型 DOM 字符串化坑，同前），写回走 `savePrefs({...loadPrefs(), viewMode})` 读-改-写防覆盖其他字段。
 - **待人工验收**：AC1（切换重启保留、链式缩进）、AC2（父楼补齐自动归位）、AC3（只看楼主+树形组合、时间流零行为变化）。
+
+### 列表通道扩展：最热与 Top 榜（P2，2026-10-16）
+
+- **抓包实测（2026-10-16 Edge）**：`/hot.json?no_definitions=true&page=0` 200，响应与 latest.json 同构（`topic_list.filter:"hot"`、`topics[]`/`users[]`、`more_topics_url:"/hot?page=1"`）；`top_tags` 为 hot 额外字段，不展示。`/top.json?period=...` 为 Discourse 核心端点（period: daily/weekly/monthly/quarterly/yearly/all；本应用 UI 仅开放 weekly/monthly/all，未单独实测，真机验证留人工）。
+- **gamification 排行榜明确排除**：`/leaderboard.json` 实测 `{"errors":["找不到请求的 URL 或资源。"],"error_type":"not_found"}`，非原站功能——用户所见排行榜来自第三方增强工具 LDStatus Pro 的自有服务，本客户端不实现。
+- **实现**：client.ts `fetchHot(page)`/`fetchTop(period, page)` 复用 `TopicListResponse` 解析；分页与 latest 同法用 page 参数递增（more_topics_url 抓包证实即 `/hot?page=1` 形态，无需解析该字段，store 去重由既有 seen 兜底）；ListMode 增 `{type:'hot'}` 与 `{type:'top',period:'weekly'|'monthly'|'all'}`，switchMode 重置逻辑共用；HomeView chips 最新/最热/Top/离线（Top 激活时旁现周/月/全部子段 `.chip.sub`，切换即 switchMode 重置列表；分类下拉 fallback 文案改「分类」防与最新 chip 歧义）；IPC `discourse:hot`/`discourse:top` 两件同步 ipc.ts + preload。双栏左栏/窄屏整页走同一 store，零额外改动（R3）。

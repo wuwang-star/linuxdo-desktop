@@ -39,6 +39,8 @@ function applyThemePref(): void {
   p.theme = themePref.value
   savePrefs(p)
   applyPrefs(p)
+  // 主题镜像到主进程：nativeTheme.themeSource + titleBarOverlay 跟随（失败静默）
+  void window.api.setTheme(themePref.value).catch(() => {})
 }
 
 // ---- 阅读：排版偏好（字号/行距/字体/宽度，即时生效 + localStorage 持久化） ----

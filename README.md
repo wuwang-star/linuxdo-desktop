@@ -24,7 +24,8 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 - 加密 DNS（DoH，实验）：设置基建 + 测试解析按钮已就绪；**当前 Electron 44 下开关不生效**（源码核实，见下），默认关闭
 - 登录：嵌入式真实浏览器登录窗口（过 Cloudflare，cookie 与 API 共享默认 session）+ User API Key（safeStorage 加密存储）
 - 伴生扩展桥接：Edge 里登录 linux.do 后 `_t` 登录态自动同步进应用（见下「扩展桥接」）
-- 最新/分类主题列表，无限滚动
+- 最新/最热/Top/分类主题列表，无限滚动（Top 榜支持周/月/全部周期切换；hot 通道 2026-10-16 抓包核实与 latest 同构、`more_topics_url:"/hot?page=1"` 分页）
+- 站内 gamification 排行榜已排除：`/leaderboard.json` 实测 not_found，非原站功能（用户所见排行榜来自第三方工具 LDStatus Pro 自有服务）
 - 主题阅读：post_stream 全量 id + 分块懒加载（向上加载更早楼层、滚动锚点保持）、已读进度保存与恢复
 - 讨论上下文：reply_to 父回复跳转（按需加载分块）、只看楼主、右侧楼层时间轴
 - 离线阅读：主题页「离线保存」全量快照到本地，断网可完整阅读（首页「离线」列表进入/删除；在线打开失败时自动提示离线入口）

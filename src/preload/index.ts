@@ -1,7 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { TopPeriod } from '../main/api/client'
 
 const api = {
   fetchLatest: (page: number) => ipcRenderer.invoke('discourse:latest', page),
+  fetchHot: (page: number) => ipcRenderer.invoke('discourse:hot', page),
+  fetchTop: (period: TopPeriod, page: number) => ipcRenderer.invoke('discourse:top', period, page),
   fetchCategories: () => ipcRenderer.invoke('discourse:categories'),
   fetchCategoryTopics: (slug: string, id: number, page: number) =>
     ipcRenderer.invoke('discourse:categoryTopics', slug, id, page),
@@ -51,6 +54,8 @@ const api = {
   offlineList: () => ipcRenderer.invoke('offline:list'),
   offlineGet: (id: number) => ipcRenderer.invoke('offline:get', id),
   offlineRemove: (id: number) => ipcRenderer.invoke('offline:remove', id),
+  // 窗口观感：主题模式镜像到主进程（nativeTheme.themeSource + titleBarOverlay 联动）
+  setTheme: (theme: 'system' | 'light' | 'dark') => ipcRenderer.invoke('window:setTheme', theme),
   // 主进程推送订阅：返回解绑函数
   onNotificationPush: (cb: (payload: unknown) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, payload: unknown): void => cb(payload)

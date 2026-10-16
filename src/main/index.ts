@@ -7,7 +7,7 @@ import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
 import { initBridge } from './api/bridge'
-import { focusMainWindow } from './win'
+import { focusMainWindow, initThemeOverlay, titleBarOverlay } from './win'
 import { initUpdater } from './updater'
 
 const AUTH_PROTOCOL = 'linuxdo-desktop'
@@ -70,6 +70,9 @@ app.whenReady().then(() => {
   // 伴生扩展桥接：按持久化开关决定是否监听 127.0.0.1:17366（默认关闭，零痕）
   initBridge()
 
+  // 窗口观感：nativeTheme 'updated' → 各窗口 titleBarOverlay 跟随亮暗（见 win.ts）
+  initThemeOverlay()
+
   const win = new BrowserWindow({
     width: 1280,
     height: 860,
@@ -77,6 +80,10 @@ app.whenReady().then(() => {
     minHeight: 640,
     title: 'LinuxDo Desktop',
     autoHideMenuBar: true,
+    // 隐藏原生标题栏，系统窗口按钮以 overlay 叠加到顶栏右端（配色/高度见 win.ts 常量）；
+    // 初始色按当前系统亮暗取值，renderer 启动后经 window:setTheme（prefs）校正。
+    titleBarStyle: 'hidden',
+    titleBarOverlay: titleBarOverlay(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

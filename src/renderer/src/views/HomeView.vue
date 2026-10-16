@@ -4,7 +4,7 @@ import { useTopicListStore } from '../stores/topicList'
 import { useQueueStore } from '../stores/queue'
 import { useBrowseStore } from '../stores/browse'
 import { avatarUrl, relTime } from '../utils/format'
-import type { DiscourseTopicLite } from '../../../main/api/client'
+import type { DiscourseTopicLite, TopPeriod } from '../../../main/api/client'
 
 // pane=true：作为双栏左栏嵌入（点击行走 browse.select，URL 由 BrowseView 统一同步）；缺省为整页模式
 const props = defineProps<{ pane?: boolean }>()
@@ -26,7 +26,15 @@ function toggleQueue(t: DiscourseTopicLite): void {
   else queue.add(t.id, t.title)
 }
 
-const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '最新'))
+const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '分类'))
+
+/** Top 榜周期子选项；Top 激活时显示，切换即重置列表 */
+const topPeriods: Array<{ value: TopPeriod; label: string }> = [
+  { value: 'weekly', label: '周' },
+  { value: 'monthly', label: '月' },
+  { value: 'all', label: '全部' }
+]
+const activePeriod = computed(() => (store.mode.type === 'top' ? store.mode.period : null))
 
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
@@ -63,6 +71,27 @@ onMounted(() => {
         <button class="chip" :class="{ active: store.mode.type === 'latest' }" @click="store.switchMode({ type: 'latest' })">
           最新
         </button>
+        <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="store.switchMode({ type: 'hot' })">
+          最热
+        </button>
+        <button
+          class="chip"
+          :class="{ active: store.mode.type === 'top' }"
+          @click="store.switchMode({ type: 'top', period: 'weekly' })"
+        >
+          Top
+        </button>
+        <template v-if="activePeriod">
+          <button
+            v-for="p in topPeriods"
+            :key="p.value"
+            class="chip sub"
+            :class="{ active: activePeriod === p.value }"
+            @click="store.switchMode({ type: 'top', period: p.value })"
+          >
+            {{ p.label }}
+          </button>
+        </template>
         <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' })">
           离线
         </button>

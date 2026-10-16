@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import type { DiscourseTopicLite, DiscourseUserLite, TopicListResponse } from '../../../main/api/client'
+import type { DiscourseTopicLite, DiscourseUserLite, TopicListResponse, TopPeriod } from '../../../main/api/client'
 import type { OfflineIndexEntry } from '../../../main/api/offline'
 
 export type ListMode =
   | { type: 'latest' }
+  | { type: 'hot' }
+  | { type: 'top'; period: TopPeriod }
   | { type: 'category'; slug: string; id: number; name: string }
   | { type: 'offline' }
 
@@ -66,10 +68,22 @@ export const useTopicListStore = defineStore('topicList', {
       this.loading = true
       try {
         const page = this.page
-        const res =
-          this.mode.type === 'latest'
-            ? await window.api.fetchLatest(page)
-            : await window.api.fetchCategoryTopics(this.mode.slug, this.mode.id, page)
+        const mode = this.mode
+        // hot/top 与 latest 同构（page 参数递增分页，与 latest 同法；去重由下方 seen 兜底）
+        let res: TopicListResponse
+        switch (mode.type) {
+          case 'latest':
+            res = await window.api.fetchLatest(page)
+            break
+          case 'hot':
+            res = await window.api.fetchHot(page)
+            break
+          case 'top':
+            res = await window.api.fetchTop(mode.period, page)
+            break
+          default:
+            res = await window.api.fetchCategoryTopics(mode.slug, mode.id, page)
+        }
         const incoming = this.absorb(res).filter((t) => t.pinned !== true || page === 0)
         const seen = new Set(this.topics.map((t) => t.id))
         this.topics.push(...incoming.filter((t) => !seen.has(t.id)))

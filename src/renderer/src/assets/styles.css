@@ -54,7 +54,11 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; cursor: pointer; }
 
-.topbar { background: var(--panel); border-bottom: 1px solid var(--line); flex: none; }
+/* 顶栏即窗口拖拽区（titleBarStyle:hidden，R2）：双击最大化/还原由 drag 区自带 */
+.topbar { background: var(--panel); border-bottom: 1px solid var(--line); flex: none; -webkit-app-region: drag; }
+/* 拖拽区内的可点元素全部 no-drag（brand/nav 链接、chip、queue 面板浮层、[data-nodrag] 兜底）；
+   .queue-panel 是锚定在顶栏内的浮层，整块 no-drag 免得点面板空白处变成拖窗 */
+.topbar a, .topbar button, .topbar [data-nodrag], .topbar .queue-panel { -webkit-app-region: no-drag; }
 .topbar-inner { max-width: 1060px; margin: 0 auto; padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 20px; }
 .brand { font-weight: 800; letter-spacing: 1px; color: var(--brand); }
 .brand span { color: var(--text); }
@@ -80,6 +84,7 @@ button { font: inherit; cursor: pointer; }
 .crumb { display: flex; gap: 8px; }
 .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; color: var(--muted); }
 .chip.active { color: var(--brand); border-color: var(--brand); }
+.chip.sub { padding: 2px 9px; font-size: 12px; }
 .cat-panel { position: absolute; z-index: 5; top: 40px; left: 0; width: 420px; max-height: 320px; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .cat-item { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 6px 8px; border-radius: 8px; text-align: left; color: var(--text); }
 .cat-item:hover { background: var(--brand-weak); }
