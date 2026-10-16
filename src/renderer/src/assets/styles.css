@@ -65,6 +65,17 @@ button { font: inherit; cursor: pointer; }
 .page { flex: 1; overflow: auto; }
 .home { max-width: 760px; margin: 0 auto; padding: 16px; }
 
+/* ---------- 双栏主从（BrowseView）：≥1200px 左列表右阅读；窄屏单栏全宽 ---------- */
+.browse { display: flex; height: 100%; }
+.list-pane { flex: none; width: 400px; min-width: 340px; overflow-y: auto; border-right: 1px solid var(--border); }
+/* position:relative 让 .composer/.composer-open 锚定在右栏内（不盖左栏） */
+.reader-pane { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+.browse[data-dual='false'] .list-pane { width: 100%; min-width: 0; border-right: 0; }
+.browse[data-dual='false'] .reader-pane { width: 100%; }
+.reader-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); }
+.reader-empty-logo { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: var(--brand); }
+.reader-empty-logo span { color: var(--text); }
+
 .list-toolbar { position: relative; margin-bottom: 8px; }
 .crumb { display: flex; gap: 8px; }
 .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; color: var(--muted); }

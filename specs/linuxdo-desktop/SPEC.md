@@ -97,3 +97,12 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **排版变量**：`--reading-font-size/--reading-line-height/--reading-font-family/--reading-width` 挂在 `:root`，`.topic-scroller`（正文+标题继承）与 `.cooked`、`.timeline`（仅字体族）消费；内容列 `.topic-scroller > *` `max-width: var(--reading-width)`（full=none）居中。时间轴字号保持 11px 刻度不动（68px 窄列装不下 16-20px 正文字号），只跟随字体族。设置中心等控件区用固定 tokens 不受影响。
 - **踩坑**：① radio 分段控件里值含数字（行距/宽度）时用 `:checked`+`@change` 而非 v-model（union 类型收窄+DOM value 字符串化的坑）；② MediaQueryList addEventListener 的 listener 传模块级可空变量触发 TS2769（收窄不进闭包），用局部 const 再注册。
 - **待人工验收**：AC1–AC3（四项调整即时生效+重启保持；亮色全页面无暗色残留；跟随系统实时切换）。
+
+### 双栏主从布局（P2，2026-10-16）
+
+- **形态**：`/` 与 `/t/:id` 统一渲染 `BrowseView.vue`（路由表两行同组件，RouterView 复用实例不重挂）；`matchMedia('(min-width:1200px)')` + change listener 判双栏（AC3 拉宽恢复），窄屏按 route 条件渲染模拟 router-view 语义（`showList = dual || route.name==='home'`，`showReader = dual || route.name==='topic'`），BrowseView 内不再嵌 router-view。
+- **归一策略**（store 不引 router，防 store↔router 循环依赖）：`stores/browse.ts` 持 `selectedId/offlineFlag/selectSeq`；列表点击 `select(id, offline)` 只改状态 + 递增 `selectSeq`（同 id 重复点击也要触发导航，纯值 watch 挂不上），BrowseView 监听 seq 统一写 URL——双栏 `replace`（可分享可回跳不留栈）、窄屏 `push`；外部跳转（通知 `?pn`、队列上下贴、离线 `?offline=1`、冷启动深链）由 route watcher 经 `syncFromRoute` 归一进 store（等值 no-op 防循环）。两向归一收敛后 `activeId` 即 `browse.selectedId`。
+- **TopicView 参数化**：`topicId/offline` 可选 props + route 兜底（`props.topicId ?? Number(route.params.id)`）；`:key="selectedId+'-'+offlineFlag"` 换主题强制重建（store.open 幂等）；`?pn=` 仍读 route.query（BrowseView 场景下 route 就是 `/t/<id>?pn=<n>`）。
+- **HomeView `pane` prop**：pane 模式在 RouterLink `@click` 里 `preventDefault` 后走 `browse.select`（RouterLink 保留——非 pane 整页模式零行为变化，Ctrl/中键新开标签也不受影响）。
+- **样式要点**：`.reader-pane` 必须 `position:relative`——`.composer/.composer-open` 是 absolute，不锚定右栏就会盖住左栏；右栏 `overflow:hidden`（TopicView 自有 scroller）；`--reading-width` 限宽在窄右栏里由 max-width 自动收缩，无需特判。列表无限滚动 sentinel 的 IntersectionObserver（root=null）会被 overflow 容器裁剪，双栏左栏内滚照常工作。
+- **待人工验收**：AC1（连续切换+列表状态保持）、AC2（队列/通知双栏直达）、AC3（缩放阈值往返）、AC4（离线列表→右栏离线阅读）。

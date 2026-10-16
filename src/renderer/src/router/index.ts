@@ -1,14 +1,15 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import BrowseView from '../views/BrowseView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', name: 'home', component: HomeView },
+    // 双栏主从：/ 与 /t/:id 同渲染 BrowseView（内部按视口宽/路由分流列表与阅读）；/login、/settings 等维持整页
+    { path: '/', name: 'home', component: BrowseView },
     {
       path: '/t/:id',
       name: 'topic',
-      component: () => import('../views/TopicView.vue')
+      component: BrowseView
     },
     {
       path: '/login',

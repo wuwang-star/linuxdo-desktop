@@ -7,12 +7,14 @@ import { relTime } from '../utils/format'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
+// 双栏右栏场景由 BrowseView 注入 topicId/offline；未注入（整页语义保留）时兜底读路由
+const props = defineProps<{ topicId?: number; offline?: boolean }>()
 const route = useRoute()
 const router = useRouter()
 const store = useTopicStore()
 const queue = useQueueStore()
 const scroller = ref<HTMLElement | null>(null)
-const topicId = computed(() => Number(route.params.id))
+const topicId = computed(() => props.topicId ?? Number(route.params.id))
 
 // ---- 回复/编辑编辑器 ----
 const composerOpen = ref(false)
@@ -142,8 +144,10 @@ async function doBookmark(): Promise<void> {
 }
 
 onMounted(() => {
-  void store.open(topicId.value, { offline: route.query.offline === '1' }).then(() => {
-    // 通知跳转：?pn=直达楼层
+  // offline：父级 prop（BrowseView 已从 route 归一）优先，route query 兜底（?offline=1 语义保留）
+  const offline = props.offline === true || route.query.offline === '1'
+  void store.open(topicId.value, { offline }).then(() => {
+    // 通知跳转：?pn= 直达楼层（query 仍来自 route，双栏场景同样成立）
     const pn = Number(route.query.pn ?? 0)
     if (pn > 0) void store.jumpTo(pn)
   })

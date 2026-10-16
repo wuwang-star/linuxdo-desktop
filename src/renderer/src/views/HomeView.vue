@@ -2,13 +2,24 @@
 import { onMounted, ref, computed } from 'vue'
 import { useTopicListStore } from '../stores/topicList'
 import { useQueueStore } from '../stores/queue'
+import { useBrowseStore } from '../stores/browse'
 import { avatarUrl, relTime } from '../utils/format'
 import type { DiscourseTopicLite } from '../../../main/api/client'
 
+// pane=true：作为双栏左栏嵌入（点击行走 browse.select，URL 由 BrowseView 统一同步）；缺省为整页模式
+const props = defineProps<{ pane?: boolean }>()
 const store = useTopicListStore()
 const queue = useQueueStore()
+const browse = useBrowseStore()
 const sentinel = ref<HTMLElement | null>(null)
 const showCats = ref(false)
+
+/** 列表行点击：pane 模式拦截 RouterLink 默认导航改走 store（双栏/窄屏分流由 BrowseView 处理）；整页模式走 RouterLink 原语义 */
+function onTitleClick(e: MouseEvent, id: number, offline = false): void {
+  if (!props.pane) return
+  e.preventDefault()
+  browse.select(id, offline)
+}
 
 function toggleQueue(t: DiscourseTopicLite): void {
   if (queue.has(t.id)) queue.remove(t.id)
@@ -77,7 +88,7 @@ onMounted(() => {
     <template v-if="store.mode.type === 'offline'">
       <article v-for="t in store.offlineEntries" :key="t.id" class="topic-row">
         <div class="topic-main">
-          <RouterLink :to="`/t/${t.id}?offline=1`" class="topic-title">{{ t.title }}</RouterLink>
+          <RouterLink :to="`/t/${t.id}?offline=1`" class="topic-title" @click="onTitleClick($event, t.id, true)">{{ t.title }}</RouterLink>
           <div class="topic-meta">
             <span>📄 {{ t.posts_count }} 楼</span>
             <span>保存于 {{ relTime(t.savedAt) }}</span>
@@ -91,7 +102,7 @@ onMounted(() => {
       <article v-for="t in store.topics" :key="t.id" class="topic-row">
       <img class="avatar" :src="avatarUrl(opOf(t)?.avatar_template ?? '')" alt="" loading="lazy" />
       <div class="topic-main">
-        <RouterLink :to="`/t/${t.id}`" class="topic-title">
+        <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">
           <span v-if="t.pinned" class="pin">置顶</span>
           <span v-if="t.closed" class="closed">已关闭</span>
           {{ t.title }}

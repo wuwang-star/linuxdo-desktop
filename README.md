@@ -37,6 +37,11 @@ pnpm run smoke       # 冒烟：启动→窗口→SMOKE_OK→自动退出
 - **主题模式**：跟随系统（matchMedia 实时切换）/ 亮 / 暗。亮暗两套完整变量组由 `data-theme` 属性单轨切换——JS 按偏好与系统状态写 `documentElement` 属性，CSS 只认 attribute，不再用 `prefers-color-scheme` media query 分叉（消灭双轨竞争）。
 - **排版**：正文字号（14–20px）、行距、字体族（系统/衬线/无衬线/等宽）、阅读宽度（全宽/960/1120/1280px 居中）。作用于正文渲染区（楼层 cooked、主题标题、时间轴字体族），设置中心等控件区不受影响；代码块恒为等宽。
 
+## 双栏浏览（宽屏主从布局）
+
+视口 ≥1200px 时「最新」与主题页渲染为双栏主从（BrowseView）：左栏列表常驻（约 400px，滚动位置与「最新/离线/分类」筛选全程保留），右栏阅读；点击左栏主题右栏即时切换，URL `replace('/t/<id>')` 保持可分享可回跳。窄屏（<1200px）自动回退整页导航，拉宽恢复双栏且右栏保持当前主题。队列上一贴/下一贴、通知 `?pn=` 直达楼层、离线 `?offline=1` 均在双栏下工作；未选主题时右栏显示占位。实现要点：`stores/browse.ts` 持有选中态（`select` 只改状态递增 `selectSeq`，URL 由 BrowseView 统一 replace/push，避免 store ↔ router 循环依赖；外部路由跳转经 `syncFromRoute` 归一进 store），TopicView 参数化 `topicId/offline` props（route 兜底），换主题靠 `:key` 重建组件。
+
+
 ## 网络（DoH，实验，当前未生效）
 
 应用内建 DoH 设置基建：设置中心（顶栏「设置」→ 网络）可开关/切模式（secure/auto）/选解析器模板（默认为用户指定自建端点 edge.1molchuan.top，另有 Cloudflare/Google/阿里/自定义），并提供 `resolveHost('linux.do')` 测试解析按钮。
