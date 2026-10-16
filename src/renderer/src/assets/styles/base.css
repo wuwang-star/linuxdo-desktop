@@ -136,3 +136,27 @@
 
 /* ---------- 应用壳 ---------- */
 .page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+/* @scope: settings-ui-fix — 裸控件兜底：未挂 .act/.ico 的原生按钮与文本输入（拆分前
+   styles.css 仅剩 button{font-family:inherit}，cursor 与形态全丢；此处统一 tokens 皮肤，
+   .act/.primary/.ico/.stepper button 等类选择器特异性更高，各自规则不受影响） */
+button {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text);
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: 12px; cursor: pointer;
+  font-family: inherit;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text);
+  border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; font-family: inherit;
+}
+input:not([type='checkbox']):not([type='radio']):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none; border-color: var(--accent);
+}
+.card h2 { margin: 0 0 10px; font-size: 15px; }
+.card-badge.reco { background: var(--accent); color: #fff; }

@@ -36,6 +36,7 @@
 | 10-16 15:4x | 主会话 | 实测发现：列表新缩略图无尺寸约束（撑爆行）、部分新组件无样式——均为该会话未完成项，已反馈 | 随 044c0bb 拆分处理，待人工验收复核 |
 | 10-16 16:2x | 搜索UI会话 | 端点核实（page 翻页上限10页/空页即尽/blurb 300字）+ IPC 四点布线契约入 backend spec + PRD 补核实结论 | 已提交 e6d542e |
 | 10-16 17:0x | 主会话（doh-real） | 新文件 main/api/dohProxy.ts（分区A）；公用文件 ipc.ts（settings:setDoh 段追加 applyDohRuntime）、main/index.ts（ready 段追加接线）；SettingsView 仅 DoH 卡片文案 | 已提交 00302f5（待真机验收） |
+| 10-16 17:4x | 阅读体感会话 | 分区 B topic.css cooked 段全量重设计（标题层级/引用楼/onebox/折叠/表格/mention/emoji，用户拍板折进 10-16-reading-feel），不碰公用 tokens/base | 在途 |
 
 ## 待用户决策
 

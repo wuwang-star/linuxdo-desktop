@@ -25,9 +25,21 @@
 .diag-row .time { color: var(--muted); }
 .diag-row .method { color: var(--accent); font-weight: 600; }
 .dns-result { font-size: 12px; padding: 4px 0; }
-.doh-radios { display: flex; gap: 8px; }
-.doh-toggle { display: flex; align-items: center; gap: 8px; }
 .method { color: var(--accent); font-weight: 600; }
 .url { font-family: var(--font-mono); font-size: 11px; word-break: break-all; }
 .ms { color: var(--muted); }
 .st { color: var(--muted); }
+.diag-row.bad .st { color: #e5484d; font-weight: 600; }
+
+/* @scope: settings-ui-fix — 导航项激活态 / 快捷键徽标（拆分时 .accel 断链，此处补回） */
+.settings-nav button {
+  text-align: left; border-color: transparent; background: transparent;
+  padding: 7px 10px; font-size: 13px;
+}
+.settings-nav button:hover { background: var(--accent-weak); color: var(--accent); border-color: transparent; }
+.settings-nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+code.accel {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  background: var(--accent-weak); color: var(--accent);
+  border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+}
