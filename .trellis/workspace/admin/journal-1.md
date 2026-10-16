@@ -355,7 +355,8 @@ brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+
 
 ### Summary
 
-P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）。离线 Topic 交付：offline.ts JSON 存储（userData/offline 分文件+index、原子写、分块全量拉取失败不落半截），TopicView 保存+进度、离线模式隐藏互动、在线失败回落离线存档，HomeView 离线列表+删除（9b13d80）；选型注明不用 sqlite 的原因。阅读体感交付：prefs.ts（localStorage ldd-reading）驱动 CSS 变量——字号/行距/字体族/阅读宽度即时生效，主题模式三选（跟随系统/亮/暗）单轨制（media query 迁 data-theme 属性组，JS 监听系统切换），设置中心外观/阅读占位卡换真实控件+恢复默认（8d05f5d）。扩展桥接 R7 实测迭代：配对码一键复制；Edge 拉起重写（msedge.exe 定位直呼，cmd start 静默失败踩坑）；扩展握手 /ingest-hello（向导步骤②实时「已检测到扩展」）；方式一加「在系统浏览器登录（需扩展桥接）」（ae446cb）；Edge 已运行时 edge:// 命令行 URL 被 ProcessSingleton 丢弃（只弹新标签）→ 按 tasklist 分流：运行中=剪贴板+地址栏粘贴，冷启动=命令行直进（8f1ac5c）。
+P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）。离线 Topic 交付：offline.ts JSON 存储（userData/offline 分文件+index、原子写、分块全量拉取失败不落半截），TopicView 保存+进度、离线模式隐藏互动、在线失败回落离线存档，HomeView 离线列表+删除（9b13d80）；选型注明不用 sqlite 的原因。阅读体感交付：prefs.ts（localStorage ldd-reading）驱动 CSS 变量——字号/行距/字体族/阅读宽度即时生效，主题模式三选（跟随系统/亮/暗）单轨制（media query 迁 data-theme 属性组，JS 监听系统切换），设置中心外观/阅读占位卡换真实控件+恢复默认（8d05f5d）、双栏浏览主从（23b3f40：BrowseView 统一 / 与 /t/:id，≥1200px 左列表右阅读，selectSeq+route watcher 归一，窄屏回退）、评论树形楼中楼（bc50e17：时间流/树形双视图，children 表+DFS 深度钳 3，父楼未加载成根带标记懒加载归位，只看楼主在过滤集重建树）
+。扩展桥接 R7 实测迭代：配对码一键复制；Edge 拉起重写（msedge.exe 定位直呼，cmd start 静默失败踩坑）；扩展握手 /ingest-hello（向导步骤②实时「已检测到扩展」）；方式一加「在系统浏览器登录（需扩展桥接）」（ae446cb）；Edge 已运行时 edge:// 命令行 URL 被 ProcessSingleton 丢弃（只弹新标签）→ 按 tasklist 分流：运行中=剪贴板+地址栏粘贴，冷启动=命令行直进（8f1ac5c）。
 
 ### Git Commits
 
