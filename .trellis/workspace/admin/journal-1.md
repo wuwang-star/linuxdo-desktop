@@ -571,3 +571,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 19 追记 2：顶栏三张皮错位修复
 
 用户截图反馈「最上面的操作按钮 UI 奇怪 + 右上奇怪的关闭缩小放大」。定位：topbar-inner max-width 1060 居中列，宽窗口（1356）下顶栏内容悬空居中，与全出血内容区、钉死窗口角落的 titleBarOverlay 原生 −□× 互不对齐，视觉三张皮。修复：topbar-inner 全宽贴边；Chromium WCO 媒体查询 (display-mode:window-controls-overlay) 下用 env(titlebar-area-width) 精确预留右上原生钮区（148px 兜底、env 优先），浏览器模式零影响。topbar.css 按分区表属 B 区（内链跳转会话），已在 coordination.md 登记借用缘由。
+
+### Session 19 追记 3：移除原生窗口钮（用户拍板）
+
+顶栏对齐修复后用户再反馈「右上的按钮还在啊」——诉求是根本不要原生 −□×，不是对齐。移除 titleBarOverlay（index.ts 选项、win.ts 配色/跟随全套、topbar.css WCO 媒体查询、preload 注释），保留 titleBarStyle:'hidden'。窗口操作路径靠既有托盘常驻模型：× 隐藏到托盘、任务栏最小化、拖拽区双击最大化、托盘退出。过程事故一次：Edit new_string 误混入一行伪代码，读回检查发现并清除——多文件结构改动后必须 git diff 复查再提交。
