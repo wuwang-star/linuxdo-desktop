@@ -5,6 +5,7 @@ import { useTopicStore } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
 import { relTime } from '../utils/format'
 import { loadPrefs, savePrefs, type ViewModePref } from '../utils/prefs'
+import { parseSiteTopicLink } from '../utils/links'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
@@ -27,6 +28,13 @@ const composerBusy = ref(false)
 const bookmarking = ref(false)
 
 const total = computed(() => store.stream.length || store.topic?.posts_count || 0)
+// 收起态位置圆点：按当前楼层占总楼层的百分比落在轨道上
+const dotPct = computed(() => {
+  const n = total.value
+  if (n <= 1) return '0%'
+  const cur = Math.min(Math.max(store.currentPostNumber, 1), n)
+  return `${((cur - 1) / (n - 1)) * 100}%`
+})
 
 // ---- 视图模式（时间流/树形）：偏好存 ldd-reading（重启保留），即时生效 ----
 const viewMode = ref<ViewModePref>(loadPrefs().viewMode)
@@ -161,16 +169,64 @@ onMounted(() => {
     if (pn > 0) void store.jumpTo(pn)
   })
   scroller.value?.addEventListener('scroll', onScroll, { passive: true })
+  scroller.value?.addEventListener('click', onCookedClick, true)
+  window.addEventListener('keydown', onLightboxKey)
   void nextTick().then(() => void consumePendingJump())
 })
 
 onBeforeUnmount(() => {
   scroller.value?.removeEventListener('scroll', onScroll)
+  scroller.value?.removeEventListener('click', onCookedClick, true)
+  window.removeEventListener('keydown', onLightboxKey)
   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
 })
 
+// ---- 图片灯箱（批 2 R3）：.cooked img 事件委托，树形/离线同覆盖；点图切原始尺寸，Esc/遮罩/按钮回退 ----
+const lightbox = ref<string | null>(null)
+const lbZoom = ref(false)
+
+function onScrollerClick(e: MouseEvent): void {
+  const t = e.target
+  if (t instanceof HTMLImageElement && t.closest('.cooked') && t.src) {
+    lightbox.value = t.getAttribute('src')
+    lbZoom.value = false
+  }
+}
+
+function closeLightbox(): void {
+  lightbox.value = null
+}
+
+function onLightboxKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape') closeLightbox()
+}
+
 function go(postNumber: number): void {
   void store.jumpTo(postNumber)
+}
+
+// ---- 正文内链跳转：cooked 内所有 <a> 一律拦截（capture，含 quote 引用块）----
+// 站内 /t/ 应用内打开（同主题跳楼层 / 异主题路由复用 ?pn 语义）；其余交系统浏览器（主进程 window-open handler 接走）
+function onCookedClick(e: MouseEvent): void {
+  const el = e.target as Element | null
+  const a = el?.closest?.('a[href]')
+  if (!a || !a.closest('.cooked')) return
+  e.preventDefault()
+  const href = a.getAttribute('href') ?? ''
+  const link = parseSiteTopicLink(href)
+  if (!link) {
+    window.open(href, '_blank')
+    return
+  }
+  if (link.topicId === topicId.value) {
+    if (link.postNumber > 1) void store.jumpTo(link.postNumber)
+    else scroller.value?.scrollTo({ top: 0 })
+  } else {
+    void router.push({
+      path: `/t/${link.topicId}`,
+      query: link.postNumber > 1 ? { pn: String(link.postNumber) } : {}
+    })
+  }
 }
 
 // ---- 阅读队列：入队切换 + 按入队顺序的上/下一贴 ----
@@ -272,7 +328,7 @@ function readOffline(): void {
       </div>
       <span v-if="saveResult" class="th-toast" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
     </div>
-    <div ref="scroller" class="topic-scroller">
+    <div ref="scroller" class="topic-scroller" @click="onScrollerClick">
       <div v-if="store.loading" class="loading">加载中…</div>
       <div v-else-if="store.error && !store.topic" class="error">
         {{ store.error }}
@@ -329,16 +385,20 @@ function readOffline(): void {
     </div>
 
     <aside class="timeline">
-      <div class="tl-head">{{ total }} 楼</div>
-      <button
-        v-for="n in timelineTicks"
-        :key="n"
-        class="tl-tick"
-        :class="{ current: Math.abs(n - store.currentPostNumber) < 5 }"
-        @click="go(n)"
-      >
-        {{ n }}
-      </button>
+      <!-- 收起态：细轨道 + 当前位置圆点；悬停 0.35s 后展开数字刻度（防扫过误触） -->
+      <div class="tl-track"><span class="tl-dot" :style="{ top: dotPct }" /></div>
+      <div class="tl-list">
+        <div class="tl-head">{{ total }} 楼</div>
+        <button
+          v-for="n in timelineTicks"
+          :key="n"
+          class="tl-tick"
+          :class="{ current: Math.abs(n - store.currentPostNumber) < 5 }"
+          @click="go(n)"
+        >
+          {{ n }}
+        </button>
+      </div>
     </aside>
 
     <!-- 回复/编辑编辑器 -->
@@ -365,5 +425,18 @@ function readOffline(): void {
     </div>
     <!-- 离线快照模式下不渲染回复入口（无网络写操作） -->
     <button v-else-if="!store.offline" class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
+
+    <!-- 图片灯箱：点图切原始尺寸（可滚动），Esc/遮罩/关闭钮回退 -->
+    <div v-if="lightbox" class="lightbox-ov" @click="closeLightbox">
+      <img
+        :src="lightbox"
+        :class="{ zoom: lbZoom }"
+        alt=""
+        :title="lbZoom ? '点击回到适屏' : '点击看原始尺寸'"
+        @click.stop="lbZoom = !lbZoom"
+      />
+      <button class="lb-close" aria-label="关闭灯箱" @click="closeLightbox">×</button>
+      <span class="lb-tip">{{ lbZoom ? '点击图片回到适屏 · Esc 关闭' : '点击图片看原始尺寸 · Esc 关闭' }}</span>
+    </div>
   </div>
 </template>

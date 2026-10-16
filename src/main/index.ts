@@ -102,6 +102,15 @@ app.whenReady().then(() => {
     return { action: 'deny' }
   })
 
+  // 兜底：任何窗口级导航到非应用 URL（正文内链漏拦等）拦下转系统浏览器，防 SPA 被整窗冲掉
+  const devOrigin = process.env.ELECTRON_RENDERER_URL
+  win.webContents.on('will-navigate', (e, url) => {
+    const own = devOrigin ? url.startsWith(devOrigin) : url.startsWith('file://')
+    if (own) return
+    e.preventDefault()
+    void shell.openExternal(url)
+  })
+
   const devUrl = process.env.ELECTRON_RENDERER_URL
   if (devUrl) {
     void win.loadURL(devUrl)
