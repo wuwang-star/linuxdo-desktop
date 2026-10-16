@@ -38,6 +38,7 @@
 | 10-16 17:0x | 主会话（doh-real） | 新文件 main/api/dohProxy.ts（分区A）；公用文件 ipc.ts（settings:setDoh 段追加 applyDohRuntime）、main/index.ts（ready 段追加接线）；SettingsView 仅 DoH 卡片文案 | 已提交 00302f5（待真机验收） |
 | 10-16 17:4x | 阅读体感会话 | 分区 B topic.css cooked 段全量重设计（标题层级/引用楼/onebox/折叠/表格/mention/emoji，用户拍板折进 10-16-reading-feel），不碰公用 tokens/base | 在途 |
 | 10-16 17:5x | 主会话（settings-ui-fix） | base.css 尾部 @scope 段（裸 button/input 兜底+card h2+card-badge.reco）；settings.css（nav 按钮/.accel/.diag-row.bad、删死类） | 已提交 f167017 |
+| 10-16 18:0x | 主会话（topbar-fix，用户截图反馈） | 分区 B topbar.css：topbar-inner 去 1060 居中改全宽 + WCO 预留原生窗口钮区（App 顶栏属全应用壳，借 B 区文件，已同步内链跳转会话） | 已提交（见 git log） |
 
 ## 待用户决策
 
