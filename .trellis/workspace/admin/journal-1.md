@@ -345,3 +345,38 @@ brainstorm 定稿：范围=P1 收尾（用户选），队列交互=手动入队+
 - 用户 Edge 加载 extension/（edge://extensions 开发人员模式）→ 应用开桥接填配对码 → Edge 登录 linux.do 验证自动同步
 - Connect 授权重试（net.fetch 修复后）；成功记 SPEC 实测结论
 - 积压决策不变：GitHub repo（AC5）、DoH 真实现立项；登录页多入口 UX 收编任务待排
+
+
+## Session 12: 离线 Topic（P2b-1）+ 阅读体感 + 扩展桥接实测迭代
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-offline-topic、10-16-reading-feel、10-16-companion-ext（R7）
+**Branch**: `master`
+
+### Summary
+
+P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）。离线 Topic 交付：offline.ts JSON 存储（userData/offline 分文件+index、原子写、分块全量拉取失败不落半截），TopicView 保存+进度、离线模式隐藏互动、在线失败回落离线存档，HomeView 离线列表+删除（9b13d80）；选型注明不用 sqlite 的原因。阅读体感交付：prefs.ts（localStorage ldd-reading）驱动 CSS 变量——字号/行距/字体族/阅读宽度即时生效，主题模式三选（跟随系统/亮/暗）单轨制（media query 迁 data-theme 属性组，JS 监听系统切换），设置中心外观/阅读占位卡换真实控件+恢复默认（8d05f5d）。扩展桥接 R7 实测迭代：配对码一键复制；Edge 拉起重写（msedge.exe 定位直呼，cmd start 静默失败踩坑）；扩展握手 /ingest-hello（向导步骤②实时「已检测到扩展」）；方式一加「在系统浏览器登录（需扩展桥接）」（ae446cb）；Edge 已运行时 edge:// 命令行 URL 被 ProcessSingleton 丢弃（只弹新标签）→ 按 tasklist 分流：运行中=剪贴板+地址栏粘贴，冷启动=命令行直进（8f1ac5c）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9b13d80` | feat: 离线 Topic 保存与离线阅读（P2b-1） |
+| `ae446cb` | feat: 桥接 R7 实测迭代（复制码/握手/系统浏览器登录） |
+| `8f1ac5c` | fix: 安装向导按 Edge 运行态分流（ProcessSingleton 丢弃 edge:// URL） |
+| `8d05f5d` | feat: 阅读体感（排版四项+主题模式三选+设置中心真实控件） |
+
+### Testing
+
+- [OK] typecheck 0 错（每任务收尾复跑）；smoke SMOKE_OK
+- [待人工] 离线 AC1–AC4（保存/断网阅读/回落/删除）；阅读体感 AC1–AC3（即时生效/亮色排查/目测）；扩展 AC1 全链路；Connect 复验（net.fetch 后）
+
+### Status
+
+[进行中] offline-topic/reading-feel/companion-ext/login-ux 代码交付待人工验收；webdav-sync/global-shortcuts 排队
+
+### Next Steps
+
+- 用户真机：桥接全链路（Edge 登录自动同步）+ 阅读体感目测 + Connect 复验 + P1/P2a 验收
+- 排队：webdav-sync（依赖 offline 数据层）、global-shortcuts
+- 积压决策：GitHub repo（AC5）、DoH 真实现立项
