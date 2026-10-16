@@ -1,4 +1,7 @@
+import { app, clipboard } from 'electron'
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
+import { spawn } from 'node:child_process'
+import { join } from 'node:path'
 import { setTCookieManually } from './auth'
 import {
   getBridgeConfig,
@@ -165,4 +168,48 @@ export function getBridgeStatus(): BridgeStatus {
 /** 应用启动时按已持久化的开关决定是否自动开始监听（whenReady 后调用） */
 export function initBridge(): void {
   if (getBridgeConfig().enabled) startBridge()
+}
+
+// ---------- 安装向导（R6）：复制扩展路径 + 拉起 Edge 扩展管理页 ----------
+
+export interface WizardResult {
+  /** 扩展目录绝对路径（dev=仓库 extension/，打包=resources/extension），已复制进剪贴板 */
+  extPath: string
+  opened: boolean
+  /** 非致命提示（剪贴板失败 / 非 Windows），浮层仍可用 */
+  error?: string
+}
+
+/** 打开 Edge 扩展管理页并复制路径。`start` 是 cmd 内建命令，必须经 `cmd /c`；detached+unref 防 Electron 退出拉扯 Edge */
+export function installWizard(): WizardResult {
+  const extPath = app.isPackaged
+    ? join(process.resourcesPath, 'extension')
+    : join(app.getAppPath(), 'extension')
+  let error: string | undefined
+  try {
+    clipboard.writeText(extPath)
+  } catch (e) {
+    error = `路径复制失败（可手动输入）：${e instanceof Error ? e.message : String(e)}`
+  }
+  let opened = false
+  if (process.platform === 'win32') {
+    try {
+      const child = spawn('cmd', ['/c', 'start', 'msedge', 'edge://extensions'], {
+        detached: true,
+        shell: false,
+        windowsHide: true,
+        stdio: 'ignore'
+      })
+      child.on('error', () => {
+        /* Edge 未安装等：向导浮层的文字指引仍可用，不阻塞 */
+      })
+      child.unref()
+      opened = true
+    } catch (e) {
+      error = `无法拉起 Edge（可手动打开 edge://extensions）：${e instanceof Error ? e.message : String(e)}`
+    }
+  } else {
+    error = '自动打开仅支持 Windows，请手动打开浏览器的扩展管理页'
+  }
+  return { extPath, opened, error }
 }

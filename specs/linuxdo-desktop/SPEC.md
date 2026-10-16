@@ -75,4 +75,5 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **配对码**：6 位数字（`crypto.randomInt`，保留前导零），首次启用时生成并持久化 translate-settings.json（`bridgeEnabled`/`bridgePairCode`，Boolean 归一，沿用原子写盘；既有 translate/DoH/notification setter 均已改为透传 bridge 字段防覆盖）；UI 可重新生成，旧码立即失效。
 - **安全边界**：仅回环绑定 + 弱配对码（防本机其他程序误撞，不做 safeStorage 加密——弱凭据加密反增跨启动复杂度）；`_t` 属敏感会话凭据，扩展与应用两端只在内存转发，响应/日志/chrome.storage 一律不落不回显；端口固定 17366（扩展 manifest 写死），被占用时报错透出 UI 不阻塞应用。
 - **IPC 三件**：`bridge:getStatus` / `bridge:setEnabled` / `bridge:regenPair`（返回统一 `BridgeStatus`：enabled/pairCode/listening/lastPushTime/lastPushOk/lastError）；UI 在登录页方式二卡片内（开关 + 等宽配对码 + 重新生成 + 最近推送），renderer 5s 轮询 status、检测到新推送即 `auth.refresh()`。
-- **待人工验收**：AC1 全链路（真实 Edge + linux.do 登录态，加载扩展 → 自动同步 10s 内可见）；端口占用场景与打包态行为。
+- **安装向导（R6，2026-10-16）**：`bridge:installWizard` IPC → `installWizard()`（bridge.ts）：路径 `app.isPackaged ? resourcesPath/extension : appPath/extension`（extraResources 把 `extension/` 打进 `resources/extension`）→ `clipboard.writeText` 复制 → `spawn('cmd', ['/c','start','msedge','edge://extensions'], {detached:true, shell:false}).unref()` 拉起 Edge（`start` 是 cmd 内建必须经 `cmd /c`；detached+unref 防 Electron 退出拉扯 Edge；非 Windows 不 spawn 仅提示）。UI 浮层三步指引（开发人员模式 → 加载解压缩 + Ctrl+V 粘贴 → 完成），复用既有 5s 轮询，`lastPushOk===true` 自动切「✅ 安装成功」态。
+- **待人工验收**：AC1 全链路（真实 Edge + linux.do 登录态，加载扩展 → 自动同步 10s 内可见）；端口占用场景与打包态行为；向导在真实 Edge 的拉起与成功态切换。

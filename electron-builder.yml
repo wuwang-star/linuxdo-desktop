@@ -13,6 +13,9 @@ extraResources:
   # 托盘图标：打包态从资源目录读取（asar 内相对路径在运行期不可靠）
   - from: build/icon.png
     to: icon.png
+  # 伴生扩展（R6 安装向导）：打包态位于 resources/extension，向导把该路径复制进剪贴板
+  - from: extension
+    to: extension
 win:
   target:
     - nsis

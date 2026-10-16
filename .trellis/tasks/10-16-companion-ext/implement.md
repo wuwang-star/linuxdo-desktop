@@ -21,3 +21,5 @@
 
 - bridge.ts 端口被占用：错误透出到 UI，不阻塞应用其余功能。
 - 扩展与本桥接口协议（字段名/端口）需一致——同一 commit 内交付。
+
+8. [ ] 安装向导（R6）：electron-builder.yml extraResources 加 extension/ → 主进程 `bridge:installWizard` IPC（clipboard.writeText(路径) + spawn `start msedge edge://extensions`；路径 app.isPackaged ? resourcesPath/extension : appPath/extension）→ preload 两件 → LoginView 桥接行加向导按钮 + 浮层（3 步指引 + 5s 轮询到 lastPushOk 自动变成功态）。

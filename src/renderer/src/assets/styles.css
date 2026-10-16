@@ -111,6 +111,11 @@ button { font: inherit; cursor: pointer; }
 .tl-tick:hover { background: var(--brand-weak); }
 
 .login-page { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; display: flex; flex-direction: column; gap: 16px; }
+/* ---------- 通用浮层（扩展安装向导等）：遮罩 + 居中卡片 ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.overlay .card { width: min(520px, 92vw); max-height: 84vh; overflow: auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); }
+.wiz-step { display: flex; gap: 10px; margin: 10px 0; align-items: flex-start; }
+.wiz-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-weak); color: var(--brand); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
 .card h2 { margin: 0 0 8px; font-size: 15px; }
 .card input { width: 100%; margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }

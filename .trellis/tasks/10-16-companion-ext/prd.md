@@ -27,6 +27,8 @@
 - [x] **AC4** 配对码重新生成后旧码失效。（regenBridgePair 现场生成新码持久化，校验以最新 settings 为准）
 - [ ] **AC5** `pnpm run typecheck` 0 错；`pnpm run smoke` SMOKE_OK。
 
+- **R6 安装向导（用户 2026-10-16「做」）**：桥接行加「安装到 Edge（向导）」按钮 → 主进程复制扩展路径到剪贴板 + 拉起 Edge 打开 `edge://extensions`（命令行参数可行，外部协议不行）→ 应用内浮层分步指引（开发人员模式→加载解压缩→粘贴路径）→ 桥接口收到首次推送（既有 5s 轮询）浮层自动变「✅ 安装成功」。打包态扩展目录经 extraResources 进 resources。
+
 ## Out of Scope
 
 - Chrome/Firefox 扩展商店分发（本机加载解压缩即可）

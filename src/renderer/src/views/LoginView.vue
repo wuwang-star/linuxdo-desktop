@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import type { BridgeStatus } from '../../../main/api/bridge'
+import type { BridgeStatus, WizardResult } from '../../../main/api/bridge'
 
 const auth = useAuthStore()
 const apiKey = ref('')
@@ -22,6 +22,8 @@ async function loadBridge(): Promise<void> {
     const st = await window.api.getBridgeStatus()
     bridgeStatus.value = st
     bridgeEnabled.value = st.enabled
+    // 向导浮层打开时：收到成功推送即切「安装成功」态
+    if (wizardOpen.value && st.lastPushOk === true) wizardDone.value = true
     // 有新推送（无论成败）就刷新登录态，让「已登录」状态 10s 内可见
     if (st.lastPushTime && st.lastPushTime !== lastSeenPush) {
       lastSeenPush = st.lastPushTime
@@ -54,6 +56,30 @@ async function regenPair(): Promise<void> {
   } finally {
     bridgeBusy.value = false
   }
+}
+
+// ---- 安装向导（R6）：浮层三步指引，收到首次成功推送自动切成功态 ----
+const wizardOpen = ref(false)
+const wizardDone = ref(false)
+const wizardBusy = ref(false)
+const wizard = ref<WizardResult | null>(null)
+
+async function openWizard(): Promise<void> {
+  if (wizardBusy.value) return
+  wizardBusy.value = true
+  try {
+    wizard.value = await window.api.installWizard()
+    wizardDone.value = false
+    wizardOpen.value = true
+  } catch (e) {
+    auth.message = e instanceof Error ? e.message : String(e)
+  } finally {
+    wizardBusy.value = false
+  }
+}
+
+function closeWizard(): void {
+  wizardOpen.value = false
 }
 
 function lastPushText(st: BridgeStatus): string {
@@ -181,6 +207,9 @@ onUnmounted(() => {
           <span class="switch-thumb"></span>
         </label>
       </div>
+      <div class="row" style="margin-top:4px">
+        <button :disabled="wizardBusy" @click="openWizard">安装到 Edge（向导）</button>
+      </div>
       <template v-if="bridgeStatus?.enabled">
         <div class="row" style="align-items:center">
           <code style="font-family:Consolas,monospace; font-size:20px; letter-spacing:6px">
@@ -264,5 +293,39 @@ onUnmounted(() => {
         <RouterLink class="act settings-entry" to="/settings">打开设置中心</RouterLink>
       </div>
     </section>
+
+    <!-- 扩展安装向导浮层：三步指引，桥接口收到首次成功推送即自动切成功态 -->
+    <div v-if="wizardOpen" class="overlay" @click.self="closeWizard">
+      <div class="card">
+        <template v-if="!wizardDone">
+          <h2>安装扩展到 Edge</h2>
+          <div class="wiz-step">
+            <span class="wiz-num">1</span>
+            <div>已尝试打开 Edge 扩展管理页（<code>edge://extensions</code>，未弹出请手动打开）；在左栏打开<strong>「开发人员模式」</strong>开关。</div>
+          </div>
+          <div class="wiz-step">
+            <span class="wiz-num">2</span>
+            <div>点上方<strong>「加载解压缩」</strong>，在路径栏 <strong>Ctrl+V</strong> 粘贴（扩展路径已复制到剪贴板），选中 <code>extension</code> 文件夹后确认。</div>
+          </div>
+          <div class="wiz-step">
+            <span class="wiz-num">3</span>
+            <div>完成。在浏览器里登录 linux.do 后，登录态会自动同步进应用（本浮层自动检测推送）。</div>
+          </div>
+          <p class="tip">扩展路径：<code style="user-select:all">{{ wizard?.extPath }}</code></p>
+          <p v-if="wizard?.error" class="tip">{{ wizard.error }}</p>
+          <p class="tip">等待扩展首次推送…（每 5s 自动检查）</p>
+          <div class="row">
+            <button @click="closeWizard">关闭</button>
+          </div>
+        </template>
+        <template v-else>
+          <h2>✅ 安装成功，登录态已同步</h2>
+          <p class="tip">应用已收到扩展推送，登录态更新完成。回到浏览器即可正常使用，无需手动粘贴。</p>
+          <div class="row">
+            <button class="primary" @click="closeWizard">完成</button>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
