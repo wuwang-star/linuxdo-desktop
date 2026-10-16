@@ -532,3 +532,34 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 
 - list-ui-redesign 会话完成 styles 收尾后，主会话做全类清单比对补漏
 - 三决策：GitHub repo（AC5）/ DoH 真实现立项 / 主题工坊收尾归属
+
+## Session 19: DoH 真实现（本地代理）落地
+
+**Date**: 2026-10-16
+**Task**: .trellis/tasks/10-16-doh-real
+
+### What Happened
+
+用户「继续开发新功能」→ 中途短句定方向「完善doh功能」。背景：p2-doh 交付的 Chromium 命令行开关被源码级核实 Electron 44 不消费（SPEC:53），整功能空转，真实现挂在 coordination.md 待决策。本会话补齐证据链后立项：FluxDO（GPL-3.0，zread 调研）用 Rust 本地代理网关 + 独立 DoH resolver 兜底 + 系统解析 bootstrap——行为可等价映射到 Electron：`session.setProxy` + 本地 CONNECT 代理。关键覆盖面核实：renderer 与全部主进程 net.fetch 共享 defaultSession（client.ts:72,86），一处 setProxy 全覆盖。
+
+交付（00302f5）：`src/main/api/dohProxy.ts` 新模块（纯 Node 零依赖，~330 行）——手工 RFC 1035 报文构造/解析（A→AAAA 回退、压缩指针、TTL 提取）、缓存（钳 60s–10min，auto 回退短 TTL 2min 仿 FluxDO）、127.0.0.1 随机端口 CONNECT 隧道（逐 IP 尝试 8s 超时、socket 级错误隔离）；DoH 查询走 Node 全局 fetch（undici）不经 defaultSession 防递归，域名模板由 dns.lookup 隐式 bootstrap。接线：index.ts ready + ipc.ts setDoh 保存后 `applyDohRuntime()`——**保存即时生效**，删「重启生效」限制与「实验·暂未生效」横幅；禁用还原系统代理；`proxyBypassRules` 回环口直连（Electron 参数名与 Chromium bypassList 不同，typecheck 揪出）。诊断 `diag:resolveDns` 按运行态分流（resolveHost 不走代理路径，启用时改调 diagResolve），契约加可选 via 字段向后兼容。smoke 增 dohSelfCheck 报文编解码往返断言。默认仍 enabled=false，待真机验收后放开（settings.ts 注释同步）。
+
+### Commits
+
+| Commit | Description |
+|---|---|
+| `00302f5` | feat: DoH 真实现——本地 CONNECT 代理+DoH 上游解析，保存即时生效 |
+
+### Testing
+
+- [OK] typecheck 0 错；smoke SMOKE_OK（含 dohSelfCheck）
+- [待人工] AC1 污染环境 secure 可加载；AC2 诊断开关前后 via/IP 不同；AC3 auto+坏模板回退；AC4 关闭还原；AC5 免重启+回环 bypass
+
+### Status
+
+[进行中] 代码交付，AC1–5 待真机验收；验收过放开默认开启
+
+### Next Steps
+
+- 真机验收 doh-real（重点：secure 模式 + 默认自建模板 edge.1molchuan.top）
+- 设置页 bug：用户提了「修复设置页面bug」但未描述现象，等用户补充后立轻量任务

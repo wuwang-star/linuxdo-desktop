@@ -35,7 +35,7 @@
 | 10-16 16:0x | 用户拍板 | styles.css 收尾权确认归 list-ui-redesign 会话（方案1）；完成后主会话做全局校对补漏 | 已兑现 044c0bb |
 | 10-16 15:4x | 主会话 | 实测发现：列表新缩略图无尺寸约束（撑爆行）、部分新组件无样式——均为该会话未完成项，已反馈 | 随 044c0bb 拆分处理，待人工验收复核 |
 | 10-16 16:2x | 搜索UI会话 | 端点核实（page 翻页上限10页/空页即尽/blurb 300字）+ IPC 四点布线契约入 backend spec + PRD 补核实结论 | 已提交 e6d542e |
-| 10-16 17:0x | 主会话（doh-real） | 新文件 main/api/dohProxy.ts（分区A）；公用文件 ipc.ts（settings:setDoh 段追加 applyDohRuntime）、main/index.ts（ready 段追加接线）；SettingsView 仅 DoH 卡片文案 | 在途 |
+| 10-16 17:0x | 主会话（doh-real） | 新文件 main/api/dohProxy.ts（分区A）；公用文件 ipc.ts（settings:setDoh 段追加 applyDohRuntime）、main/index.ts（ready 段追加接线）；SettingsView 仅 DoH 卡片文案 | 已提交 00302f5（待真机验收） |
 
 ## 待用户决策
 
