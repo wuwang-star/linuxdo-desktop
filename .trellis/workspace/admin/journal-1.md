@@ -493,3 +493,42 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 - 用户全量真机验收后归档任务链
 - 三决策：GitHub repo（AC5）/ DoH 真实现立项 / 主题工坊收尾归属
 - 排队池：搜索深化、浏览历史、划词引用、Reactions 抓包、设置导入导出
+
+
+## Session 16: styles 拆分为多文件体系 + 多会话取证协同
+
+**Date**: 2026-10-16
+**Task**: 10-16-hot-top、10-16-window-chrome、10-16-webdav-sync、10-16-global-shortcuts、10-16-list-ui-redesign、10-16-login-ux、10-16-dual-pane、10-16-reply-tree、10-16-reading-feel
+**Branch**: `master`
+
+### Summary
+
+加载全部并行会话内容（直查 ZCode 会话库）：搜索UI MVP（666e07d 已提交）、内链跳转（fa05630 已收尾）、主题工坊（App/PostItem/UserCard 等在途）。用户拍板：所有 UI 改动移交本会话、修复全部 bug、建立多会话协同。协同落地：`.trellis/workspace/coordination.md` 公告板（六分区责任表+公用文件五条铁律+认领登记），SPEC 增协议指针。样式体系重构：单文件 styles.css 拆为 assets/styles/ 11 个按部位文件（tokens/base/topbar/browse/home/topic/login/settings/notifications/user/lightbox），main.ts 按序引入；tokens 单轨主题组；base 公用控件层。实测迭代：主题加载 20s 超时+重试（395aba1）、阅读固定顶栏+单行紧凑+媒体自适应（0cbdaca/200d36c）、时间轴瘦身悬停展开+防误触延迟（776bde4/dde19e1）。事故：多会话并发写 styles.css 致规则互相误删，回滚恢复（dde19e1），教训入 coordination.md 铁律。注意：044c0bb 提交随树共携了并行会话在途改动（App/PostItem/router/prefs/UserCard/UserProfileView/AGENTS.md/workflow.md 等）——归属其会话，后续提交注意区分。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0df5260` | feat: 最热/Top 榜 + 窗口观感融合 |
+| `ea8bb7c` | feat: WebDAV 手动同步 + 主题工坊快照 |
+| `d16f841` | feat: 全局快捷键（P2b-3） |
+| `23b3f40` | feat: 双栏浏览主从布局 |
+| `bc50e17` | feat: 评论树形展示（楼中楼视图） |
+| `0cbdaca`/`200d36c` | feat: 阅读页固定顶栏（紧凑单行+媒体自适应） |
+| `776bde4`/`dde19e1` | feat/fix: 时间轴瘦身悬停展开 + styles 误删恢复 |
+| `044c0bb`/`e5f439f` | refactor: styles 拆分多文件体系 + 清理 playwright 日志 |
+| `e09da49`/`f41630e` | docs: 多会话协同公告板 + SPEC 协议指针 |
+
+### Testing
+
+- [OK] typecheck 0 错；smoke SMOKE_OK；实机目测双栏/列表/登录态正常
+- [待人工] 各任务 AC 全量验收（见各 prd.md）
+
+### Status
+
+[进行中] 六任务 in_progress 待验收；主题工坊/list-ui-redesign 并行会话在途改动归属其会话
+
+### Next Steps
+
+- list-ui-redesign 会话完成 styles 收尾后，主会话做全类清单比对补漏
+- 三决策：GitHub repo（AC5）/ DoH 真实现立项 / 主题工坊收尾归属
