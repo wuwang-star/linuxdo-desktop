@@ -11,6 +11,8 @@ export type WidthPref = 'full' | 960 | 1120 | 1280
 export type ThemePref = 'system' | 'light' | 'dark'
 /** 阅读页楼层视图：时间流 / 树形（楼中楼） */
 export type ViewModePref = 'stream' | 'tree'
+/** 列表样式（三态对应设计稿方案）：悬浮行 / 卡片流 / 紧凑密排 */
+export type ListStylePref = 'float' | 'card' | 'compact'
 
 export interface ReadingPrefs {
   /** 正文字号 px（14–20） */
@@ -25,6 +27,8 @@ export interface ReadingPrefs {
   theme: ThemePref
   /** 楼层视图模式（默认时间流 = 现状） */
   viewMode: ViewModePref
+  /** 列表样式（默认悬浮行） */
+  listStyle: ListStylePref
 }
 
 export const DEFAULT_PREFS: ReadingPrefs = {
@@ -33,7 +37,8 @@ export const DEFAULT_PREFS: ReadingPrefs = {
   fontFamily: 'system',
   width: 1120,
   theme: 'system',
-  viewMode: 'stream'
+  viewMode: 'stream',
+  listStyle: 'float'
 }
 
 const STORAGE_KEY = 'ldd-reading'
@@ -78,8 +83,11 @@ export function normalizePrefs(raw: unknown): ReadingPrefs {
   const viewMode = (['stream', 'tree'] as const).includes(r.viewMode as ViewModePref)
     ? (r.viewMode as ViewModePref)
     : d.viewMode
+  const listStyle = (['float', 'card', 'compact'] as const).includes(r.listStyle as ListStylePref)
+    ? (r.listStyle as ListStylePref)
+    : d.listStyle
 
-  return { fontSize, lineHeight, fontFamily, width, theme, viewMode }
+  return { fontSize, lineHeight, fontFamily, width, theme, viewMode, listStyle }
 }
 
 export function loadPrefs(): ReadingPrefs {
@@ -114,6 +122,7 @@ export function applyPrefs(p: ReadingPrefs): void {
   root.style.setProperty('--reading-font-family', FONT_FAMILIES[p.fontFamily])
   root.style.setProperty('--reading-width', p.width === 'full' ? 'none' : `${p.width}px`)
   root.dataset.theme = resolveTheme(p.theme)
+  root.dataset.listStyle = p.listStyle
 }
 
 let media: MediaQueryList | null = null

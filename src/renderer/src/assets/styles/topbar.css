@@ -1,0 +1,38 @@
+/* ============================================================
+   顶栏：拖拽区 / 品牌 / 导航 / 队列浮层
+   ============================================================ */
+.topbar {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  flex: none; -webkit-app-region: drag;
+}
+.topbar-inner {
+  max-width: 1060px; margin: 0 auto; padding: 0 16px; height: 48px;
+  display: flex; align-items: center; gap: 20px;
+}
+.topbar a, .topbar button, .topbar [data-nodrag], .topbar .queue-panel {
+  -webkit-app-region: no-drag;
+}
+.brand { font-weight: 800; font-size: 15px; letter-spacing: 1px; color: var(--text); text-decoration: none; }
+.brand span { color: var(--accent); }
+.nav { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+.nav a:hover, .nav a.router-link-active { color: var(--accent); }
+.bell { position: relative; font-size: 15px; text-decoration: none; }
+.login-link { font-size: 13px; }
+
+/* 队列浮层 */
+.queue-wrap { position: relative; }
+.queue-panel {
+  position: absolute; right: 0; top: calc(100% + 6px); width: 320px; z-index: 30;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 8px; max-height: 420px; overflow-y: auto;
+}
+.queue-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); }
+.queue-item:hover { background: var(--bg); }
+.queue-item a {
+  flex: 1; min-width: 0; color: var(--text); text-decoration: none;
+  font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.queue-item a:hover { color: var(--accent); }
+.queue-empty { color: var(--muted); font-size: 12px; padding: 8px; }
+.queue-clear { width: 100%; margin-top: 6px; }

@@ -1,5 +1,7 @@
 # Development Workflow
 
+> **多会话协同**：本仓库多 AI 会话并行，开工前必读 `.trellis/workspace/coordination.md`（责任分区/公用文件只追加/认领登记/原子提交），动手前先查 `git status` 是否有他人未提交改动。
+
 ---
 
 ## Core Principles

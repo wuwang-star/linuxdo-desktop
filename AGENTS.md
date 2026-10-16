@@ -19,3 +19,7 @@ If you're using Codex or another agent-capable tool, additional project-scoped h
 Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
 
 <!-- TRELLIS:END -->
+
+# 多会话协同（必读）
+
+本项目多 AI 会话并行开发。**开工前必读 `.trellis/workspace/coordination.md`**：会话责任分区、公用文件（styles.css/App.vue/router 等）只追加不重排、动公用文件先在认领登记表登记、原子功能完成立即提交、发现树被他人改动时重读适配禁止旧内容回写。

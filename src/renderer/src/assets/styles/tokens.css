@@ -1,0 +1,66 @@
+/* ============================================================
+   设计 tokens 与主题组（真源：--accent / --border / --panel）
+   ============================================================ */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1b1f24;
+  --muted: #6b7280;
+  --accent: #1a7f64;
+  --brand: var(--accent);
+  --accent-weak: #e6f2ee;
+  --brand-weak: var(--accent-weak);
+  --border: #e5e7eb;
+  --line: var(--border);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --font-mono: Consolas, 'Courier New', monospace;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* 阅读排版（由 utils/prefs.ts 驱动） */
+  --reading-font-size: 16px;
+  --reading-line-height: 1.7;
+  --reading-font-family: ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --reading-width: 1120px;
+}
+
+:root[data-theme='dark'] {
+  --bg: #16191d;
+  --panel: #1d2126;
+  --text: #e6e8ea;
+  --muted: #8b9198;
+  --accent: #3ecf9a;
+  --accent-weak: #1d2b26;
+  --border: #2b3138;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- 基础 ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--reading-font-family); font-size: 14px;
+  transition: background-color 0.2s, color 0.2s;
+  overflow: hidden;
+}
+#app { height: 100%; }
+a { color: inherit; }
+button { font-family: inherit; }
+img { max-width: 100%; }
+
+/* 主题跟随系统由 prefs.ts 写 data-theme；此处兜底无属性时按系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #16191d; --panel: #1d2126; --text: #e6e8ea; --muted: #8b9198;
+    --accent: #3ecf9a; --accent-weak: #1d2b26; --border: #2b3138;
+  }
+}
+
+/* 窗口拖拽区（顶栏）由 topbar.css 声明 */

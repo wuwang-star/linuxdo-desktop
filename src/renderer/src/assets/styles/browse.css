@@ -1,0 +1,18 @@
+/* ============================================================
+   双栏主从布局：列表栏 + 阅读栏 + 空态
+   ============================================================ */
+.browse { display: flex; height: 100%; min-height: 0; }
+.list-pane {
+  flex: none; width: 400px; min-width: 340px;
+  overflow-y: auto; overflow-x: hidden;
+  border-right: 1px solid var(--border); background: var(--panel);
+}
+.reader-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.reader-pane > * { flex: 1; min-height: 0; }
+.reader-empty {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--muted); gap: 8px;
+}
+.reader-empty-logo { font-weight: 800; font-size: 26px; letter-spacing: 2px; color: var(--text); }
+.reader-empty-logo span { color: var(--accent); }

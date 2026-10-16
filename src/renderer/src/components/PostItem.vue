@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { DiscoursePost } from '../../../main/api/client'
 import { avatarUrl, relTime } from '../utils/format'
 import { likeInfo } from '../stores/topic'
+import { openUserCard } from '../utils/userCard'
 
 const props = defineProps<{ post: DiscoursePost; offline?: boolean }>()
 const emit = defineEmits<{
@@ -49,10 +50,10 @@ async function translate(): Promise<void> {
 
 <template>
   <article class="post" :id="`post-${post.post_number}`">
-    <img class="avatar" :src="avatarUrl(post.avatar_template)" alt="" loading="lazy" />
+    <img class="avatar clickable" :src="avatarUrl(post.avatar_template)" alt="" loading="lazy" title="查看用户卡片" @click="openUserCard(post.username)" />
     <div class="post-body">
       <header class="post-head">
-        <span class="author">@{{ post.username }}</span>
+        <span class="author clickable" title="查看用户卡片" @click="openUserCard(post.username)">@{{ post.username }}</span>
         <span class="floor">{{ floor }}</span>
         <button v-if="post.reply_to_post_number" class="reply-to" @click="emit('jump', post.reply_to_post_number)">
           ↩ 回复 #{{ post.reply_to_post_number }}

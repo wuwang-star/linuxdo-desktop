@@ -10,6 +10,7 @@ import {
   normalizePrefs,
   savePrefs,
   type FontFamilyPref,
+  type ListStylePref,
   type ReadingPrefs,
   type ThemePref,
   type WidthPref
@@ -139,6 +140,11 @@ const widths: { value: WidthPref; label: string }[] = [
   { value: 960, label: '960' },
   { value: 1120, label: '1120' },
   { value: 1280, label: '1280' }
+]
+const listStyles: { value: ListStylePref; label: string }[] = [
+  { value: 'float', label: '悬浮' },
+  { value: 'card', label: '卡片' },
+  { value: 'compact', label: '紧凑' }
 ]
 
 function updateReading(patch: Partial<ReadingPrefs>): void {
@@ -490,6 +496,23 @@ onMounted(async () => {
       <template v-else-if="active === 'reading'">
         <section class="card">
           <h2>阅读</h2>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">列表样式</div>
+              <div class="field-desc">左侧帖子列表的行形态：悬浮行（默认）/ 卡片流 / 紧凑密排，即时生效</div>
+            </div>
+            <div class="seg field-control">
+              <label v-for="l in listStyles" :key="l.value" class="seg-opt">
+                <input
+                  type="radio"
+                  :value="l.value"
+                  :checked="reading.listStyle === l.value"
+                  @change="updateReading({ listStyle: l.value })"
+                />
+                <span>{{ l.label }}</span>
+              </label>
+            </div>
+          </div>
           <div class="field-row">
             <div class="field-main">
               <div class="field-label">正文字号</div>

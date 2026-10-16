@@ -1,0 +1,26 @@
+/* ============================================================
+   图片灯箱
+   ============================================================ */
+.lightbox-ov {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.lightbox-ov img {
+  max-width: 92vw; max-height: 92vh; object-fit: contain;
+  border-radius: var(--radius-sm); transition: transform 0.15s ease;
+}
+.lightbox-ov img.zoom { transform: scale(1.6); cursor: zoom-in; }
+.lb-close {
+  position: absolute; top: 18px; right: 24px;
+  border: 0; background: rgba(255, 255, 255, 0.12); color: #fff;
+  width: 34px; height: 34px; border-radius: 50%;
+  font-size: 16px; cursor: pointer;
+}
+.lb-close:hover { background: rgba(255, 255, 255, 0.25); }
+.lb-tip {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.85); font-size: 12px;
+  background: rgba(0, 0, 0, 0.45); padding: 4px 12px; border-radius: 999px;
+}

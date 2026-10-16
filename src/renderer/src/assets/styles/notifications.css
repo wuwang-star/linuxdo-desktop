@@ -1,0 +1,18 @@
+/* ============================================================
+   通知页
+   ============================================================ */
+.notif-page { height: 100%; overflow-y: auto; padding: 14px 16px; }
+.notif-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.notif-head h2 { margin: 0; font-size: 16px; }
+.notif-item {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left;
+  border: 0; background: transparent; color: var(--text); cursor: pointer;
+  padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.notif-item:hover { background: var(--bg); }
+.notif-item .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--border); margin-top: 6px; }
+.notif-item .dot.on { background: var(--accent); }
+.notif-item .tag { flex: none; color: var(--accent); font-size: 11px; }
+.notif-item .body { flex: 1; min-width: 0; }
+.notif-item .body strong { font-weight: 600; }
+.notif-item .time { flex: none; color: var(--muted); font-size: 11px; }

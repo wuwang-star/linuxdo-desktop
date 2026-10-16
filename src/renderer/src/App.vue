@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { applyPrefs, loadPrefs, watchSystemTheme } from './utils/prefs'
 import { applyThemeById, loadSelectedThemeId } from './utils/themes'
+import UserCard from './components/UserCard.vue'
 
 const auth = useAuthStore()
 const queue = useQueueStore()
@@ -126,5 +127,6 @@ onBeforeUnmount(() => {
   </header>
   <main class="page">
     <RouterView />
+    <UserCard />
   </main>
 </template>

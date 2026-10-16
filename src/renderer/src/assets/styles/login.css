@@ -1,0 +1,31 @@
+/* ============================================================
+   登录页：接入卡片 / 向导 / 状态列表
+   ============================================================ */
+.login-page { height: 100%; overflow-y: auto; padding: 20px 16px 60px; max-width: 860px; margin: 0 auto; }
+.login-page .card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+}
+.card-hero { border-color: var(--accent); box-shadow: var(--shadow); }
+.card-badge {
+  display: inline-block; font-size: 10px; padding: 1px 8px; border-radius: 999px;
+  background: var(--accent-weak); color: var(--accent);
+  margin-left: 8px; vertical-align: 2px;
+}
+.card-badge.off { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.adv summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 6px 0; }
+.adv[open] summary { margin-bottom: 8px; }
+.status-list { display: flex; flex-direction: column; gap: 6px; }
+.sum-hint { font-size: 11px; color: var(--muted); }
+.settings-entry {
+  display: inline-block; margin-top: 8px;
+  color: var(--accent); text-decoration: none; font-size: 12px;
+}
+.settings-entry:hover { text-decoration: underline; }
+.wiz-step { display: flex; gap: 8px; margin: 6px 0; align-items: flex-start; }
+.wiz-num {
+  flex: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent-weak); color: var(--accent);
+  font-size: 11px; display: inline-flex; align-items: center;
+  justify-content: center; font-weight: 600;
+}

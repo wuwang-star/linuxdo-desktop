@@ -58,8 +58,16 @@ export const feishuTheme: ThemePackage = {
 /* 列表 → 会话列表：白底面板 + 圆角行卡片 + hover */
 .list-pane { background: var(--panel); }
 .topic-row { margin: 0 8px; padding: 10px; border-bottom: 0; border-radius: var(--radius-sm); }
-.topic-row:hover { background: var(--bg); }
+.topic-row:hover { background: var(--bg); box-shadow: none; }
 .avatar { border-radius: 50%; }
+.row-q:hover { background: var(--bg); }
+
+/* 工具条与浮层：飞书 popover 质感（chips/act 矩形化，面板柔影） */
+.list-toolbar { background: var(--panel); }
+.crumb .chip, .act, .row-q { border-radius: var(--radius-sm); }
+.crumb .chip.active { background: var(--accent); }
+.cat-panel, .queue-panel, .overlay .card { border-radius: var(--radius-sm); box-shadow: 0 6px 20px rgba(31, 35, 41, 0.14); }
+.cat-item:hover, .queue-item:hover { background: var(--bg); }
 
 /* 会话区：浅灰底衬托白卡 */
 .reader-pane { background: var(--bg); }
