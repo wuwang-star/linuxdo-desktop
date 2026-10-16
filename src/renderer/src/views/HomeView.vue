@@ -28,6 +28,22 @@ function toggleQueue(t: DiscourseTopicLite): void {
 
 const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '分类'))
 
+/** 行内 SVG 图标（16px stroke 系，替代 emoji 的跨平台一致渲染） */
+const ICONS = {
+  chat:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>',
+  heart:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+  plus:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  pin:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>',
+  lock:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+}
+
 /** Top 榜周期（Discourse top.json 全六档）；下拉浮层选择，不插入 crumb 行 */
 const topPeriods: Array<{ value: TopPeriod; label: string }> = [
   { value: 'daily', label: '日榜' },
@@ -58,11 +74,6 @@ const topLabel = computed(
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
   return first !== undefined ? store.usersById.get(first) : undefined
-}
-
-function lastOf(topic: DiscourseTopicLite) {
-  const last = topic.posters?.[topic.posters.length - 1]?.user_id
-  return last !== undefined ? store.usersById.get(last) : undefined
 }
 
 /** 删除离线存档后重读 index */
@@ -102,32 +113,37 @@ onMounted(() => {
             {{ store.mode.type === 'top' ? `Top · ${topLabel}` : 'Top' }} ▾
           </button>
           <div v-if="showTopPanel" class="cat-panel top-panel">
+            <div class="panel-head">Top 榜周期</div>
             <button
               v-for="p in topPeriods"
               :key="p.value"
               class="cat-item"
+              :class="{ active: activePeriod === p.value }"
               @click="pickPeriod(p.value)"
             >
               {{ p.label }}
-              <small v-if="activePeriod === p.value">✓</small>
+              <span v-if="activePeriod === p.value" class="ic" v-html="ICONS.check"></span>
             </button>
           </div>
         </div>
         <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' }); showTopPanel = false">
           离线
         </button>
-        <button class="chip" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
+        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
       </div>
       <div v-if="showCats" class="cat-panel">
+        <div class="panel-head">选择分类</div>
         <button
           v-for="c in store.categories"
           :key="c.id"
           class="cat-item"
+          :class="{ active: store.mode.type === 'category' && store.mode.id === c.id }"
           @click="store.switchMode({ type: 'category', slug: c.slug, id: c.id, name: c.name }); showCats = false"
         >
           <span class="cat-dot" :style="{ background: `#${c.color}` }"></span>
           {{ c.name }}
           <small>{{ c.topic_count }}</small>
+          <span v-if="store.mode.type === 'category' && store.mode.id === c.id" class="ic" v-html="ICONS.check"></span>
         </button>
       </div>
     </div>
@@ -152,32 +168,25 @@ onMounted(() => {
       <article v-for="t in store.topics" :key="t.id" class="topic-row">
       <img class="avatar" :src="avatarUrl(opOf(t)?.avatar_template ?? '')" alt="" loading="lazy" />
       <div class="topic-main">
-        <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">
-          <span v-if="t.pinned" class="pin">置顶</span>
-          <span v-if="t.closed" class="closed">已关闭</span>
-          {{ t.title }}
-        </RouterLink>
-        <div class="topic-meta">
-          <span v-if="opOf(t)">@{{ opOf(t)?.username }}</span>
-          <span>💬 {{ Math.max(0, t.posts_count - 1) }}</span>
-          <span v-if="t.like_count">❤ {{ t.like_count }}</span>
-          <span>{{ relTime(t.last_posted_at ?? t.created_at) }}</span>
-          <img
-            v-if="lastOf(t) && lastOf(t)?.id !== opOf(t)?.id"
-            class="avatar tiny"
-            :src="avatarUrl(lastOf(t)?.avatar_template ?? '', 48)"
-            alt=""
-            loading="lazy"
-          />
+        <div class="topic-title-line">
+          <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin"></span>置顶</span>
+          <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock"></span>已关闭</span>
+          <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">{{ t.title }}</RouterLink>
           <button
-            class="act"
+            class="row-q"
             :class="{ acted: queue.has(t.id) }"
             :title="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
             :aria-label="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
-            @click="toggleQueue(t)"
+            @click.stop="toggleQueue(t)"
           >
-            {{ queue.has(t.id) ? '✓' : '＋' }}
+            <span class="ic" v-html="queue.has(t.id) ? ICONS.check : ICONS.plus"></span>
           </button>
+        </div>
+        <div class="topic-meta">
+          <span v-if="opOf(t)" class="u">@{{ opOf(t)?.username }}</span>
+          <span class="m"><span class="ic" v-html="ICONS.chat"></span>{{ Math.max(0, t.posts_count - 1) }}</span>
+          <span v-if="t.like_count" class="m"><span class="ic" v-html="ICONS.heart"></span>{{ t.like_count }}</span>
+          <span class="time">{{ relTime(t.last_posted_at ?? t.created_at) }}</span>
         </div>
       </div>
       </article>

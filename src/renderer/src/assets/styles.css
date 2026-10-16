@@ -155,9 +155,25 @@ button { font: inherit; cursor: pointer; }
 .cooked .lightbox img { display: block; }
 .cooked .lightbox .meta { display: none; }
 
-.timeline { flex: none; width: 68px; border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 10px 6px; display: flex; flex-direction: column; gap: 2px; font-family: var(--reading-font-family); }
-.tl-head { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px; }
-.tl-tick { border: 0; background: transparent; color: var(--muted); font-size: 11px; padding: 2px 0; border-radius: 6px; text-align: right; }
+/* 时间轴：常驻收成细进度条（当前位置点亮），悬停展开刻度列表 */
+.timeline {
+  flex: none; width: 14px; border-left: 1px solid var(--line); background: var(--panel);
+  overflow-y: auto; overflow-x: hidden; padding: 8px 3px;
+  display: flex; flex-direction: column; gap: 2px; align-items: stretch;
+  font-family: var(--reading-font-family); font-size: 11px;
+  transition: width 0.15s ease;
+}
+.timeline:hover { width: 60px; padding: 8px 6px; }
+.tl-head { display: none; }
+.timeline:hover .tl-head { display: block; color: var(--muted); text-align: center; margin-bottom: 6px; white-space: nowrap; }
+.tl-tick {
+  border: 0; background: transparent; color: transparent; font-size: 11px;
+  padding: 2px 0; border-radius: 6px; text-align: right; white-space: nowrap;
+  height: 10px; min-height: 10px;
+}
+.tl-tick.current { background: var(--accent); color: transparent; height: 14px; min-height: 14px; border-radius: 3px; }
+.timeline:hover .tl-tick { color: var(--muted); height: auto; min-height: 0; }
+.timeline:hover .tl-tick.current { color: var(--accent); background: var(--accent-weak); font-weight: 600; }
 .tl-tick.current { color: var(--brand); font-weight: 700; }
 .tl-tick:hover { background: var(--brand-weak); }
 
