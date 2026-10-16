@@ -13,7 +13,7 @@
   border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer;
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
-.chip.active { color: var(--accent); border-color: var(--accent); background: var(--accent-weak); }
+.chip.active { color: #fff; border-color: var(--accent); background: var(--accent); font-weight: 600; }
 .chip.tool { border-style: dashed; }
 .chip.sub { padding: 2px 9px; font-size: 12px; }
 .chip-wrap { position: relative; display: inline-block; }
@@ -70,3 +70,6 @@
 }
 .row-q:hover { border-color: var(--accent); color: var(--accent); }
 .row-q.acted { color: var(--accent); border-color: var(--accent); }
+
+/* 搜索结果行内分类徽标 */
+.row-tag.catname { background: transparent; border: 1px solid var(--accent-weak); }
