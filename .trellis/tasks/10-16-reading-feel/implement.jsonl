@@ -1,0 +1,2 @@
+{"file": "specs/linuxdo-desktop/SPEC.md", "reason": "架构边界：UI 偏好 renderer 本地、网络凭据主进程的分层依据"}
+{"file": ".trellis/tasks/10-16-reading-feel/design.md", "reason": "单轨主题机制与变量接线设计"}

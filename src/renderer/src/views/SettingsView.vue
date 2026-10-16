@@ -2,6 +2,16 @@
 import { onMounted, ref } from 'vue'
 import type { DiagEntry } from '../../../main/api/client'
 import type { TranslateConfig } from '../../../main/api/settings'
+import {
+  DEFAULT_PREFS,
+  applyPrefs,
+  loadPrefs,
+  savePrefs,
+  type FontFamilyPref,
+  type ReadingPrefs,
+  type ThemePref,
+  type WidthPref
+} from '../utils/prefs'
 
 // ---- 分类导航（顺序对齐参考项目：FluxDO 外观/偏好/网络/通知/日志/关于） ----
 const sections = [
@@ -15,6 +25,53 @@ const sections = [
 ] as const
 type SectionKey = (typeof sections)[number]['key']
 const active = ref<SectionKey>('appearance')
+
+// ---- 外观：主题模式（renderer 本地偏好 ldd-reading，即时生效） ----
+const themePref = ref<ThemePref>(loadPrefs().theme)
+const themes: { value: ThemePref; label: string }[] = [
+  { value: 'system', label: '跟随系统' },
+  { value: 'light', label: '亮色' },
+  { value: 'dark', label: '暗色' }
+]
+
+function applyThemePref(): void {
+  const p = loadPrefs()
+  p.theme = themePref.value
+  savePrefs(p)
+  applyPrefs(p)
+}
+
+// ---- 阅读：排版偏好（字号/行距/字体/宽度，即时生效 + localStorage 持久化） ----
+const reading = ref<ReadingPrefs>(loadPrefs())
+const lineHeights: { value: number; label: string }[] = [
+  { value: 1.5, label: '1.5' },
+  { value: 1.7, label: '1.7' },
+  { value: 1.9, label: '1.9' }
+]
+const fontFamilies: { value: FontFamilyPref; label: string }[] = [
+  { value: 'system', label: '系统默认' },
+  { value: 'serif', label: '衬线' },
+  { value: 'sans', label: '无衬线' },
+  { value: 'mono', label: '等宽' }
+]
+const widths: { value: WidthPref; label: string }[] = [
+  { value: 'full', label: '全宽' },
+  { value: 960, label: '960' },
+  { value: 1120, label: '1120' },
+  { value: 1280, label: '1280' }
+]
+
+function updateReading(patch: Partial<ReadingPrefs>): void {
+  reading.value = { ...reading.value, ...patch }
+  savePrefs(reading.value)
+  applyPrefs(reading.value)
+}
+
+function resetReading(): void {
+  reading.value = { ...DEFAULT_PREFS }
+  savePrefs(reading.value)
+  applyPrefs(reading.value)
+}
 
 // ---- 通知 ----
 const notifEnabled = ref(true)
@@ -158,19 +215,108 @@ onMounted(async () => {
     </nav>
 
     <div class="settings-panel">
-      <!-- 外观：诚实占位 -->
+      <!-- 外观：主题模式 -->
       <template v-if="active === 'appearance'">
         <section class="card">
           <h2>外观</h2>
-          <p class="tip">主题系统规划中。当前亮/暗配色跟随系统偏好，落地后将在此提供主题与强调色选择。</p>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">主题模式</div>
+              <div class="field-desc">
+                跟随系统：系统切换亮暗时实时跟随；亮 / 暗：手动覆盖。全部页面即时生效，无需保存。
+              </div>
+            </div>
+            <div class="seg field-control">
+              <label v-for="t in themes" :key="t.value" class="seg-opt">
+                <input type="radio" :value="t.value" v-model="themePref" @change="applyThemePref" />
+                <span>{{ t.label }}</span>
+              </label>
+            </div>
+          </div>
         </section>
       </template>
 
-      <!-- 阅读：诚实占位 -->
+      <!-- 阅读：排版偏好 -->
       <template v-else-if="active === 'reading'">
         <section class="card">
           <h2>阅读</h2>
-          <p class="tip">全局阅读偏好规划中。当前仅有楼内 per-topic 开关（只看楼主等），在主题页内使用。</p>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">正文字号</div>
+              <div class="field-desc">正文与主题标题的基础字号（14–20px）</div>
+            </div>
+            <div class="stepper field-control">
+              <button
+                :disabled="reading.fontSize <= 14"
+                aria-label="减小字号"
+                @click="updateReading({ fontSize: reading.fontSize - 1 })"
+              >
+                −
+              </button>
+              <span class="stepper-val">{{ reading.fontSize }}px</span>
+              <button
+                :disabled="reading.fontSize >= 20"
+                aria-label="增大字号"
+                @click="updateReading({ fontSize: reading.fontSize + 1 })"
+              >
+                ＋
+              </button>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">行距</div>
+              <div class="field-desc">正文行高倍数</div>
+            </div>
+            <div class="seg field-control">
+              <label v-for="l in lineHeights" :key="l.value" class="seg-opt">
+                <input
+                  type="radio"
+                  :value="l.value"
+                  :checked="reading.lineHeight === l.value"
+                  @change="updateReading({ lineHeight: l.value })"
+                />
+                <span>{{ l.label }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">正文字体族</div>
+              <div class="field-desc">仅作用于正文渲染区（代码块保持等宽字体）</div>
+            </div>
+            <div class="seg field-control">
+              <label v-for="f in fontFamilies" :key="f.value" class="seg-opt">
+                <input
+                  type="radio"
+                  :value="f.value"
+                  :checked="reading.fontFamily === f.value"
+                  @change="updateReading({ fontFamily: f.value })"
+                />
+                <span>{{ f.label }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">阅读宽度</div>
+              <div class="field-desc">主题页内容列最大宽度，居中显示（时间轴不参与）</div>
+            </div>
+            <div class="seg field-control">
+              <label v-for="w in widths" :key="String(w.value)" class="seg-opt">
+                <input
+                  type="radio"
+                  :value="w.value"
+                  :checked="reading.width === w.value"
+                  @change="updateReading({ width: w.value })"
+                />
+                <span>{{ w.label }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="row">
+            <button @click="resetReading">恢复默认</button>
+          </div>
         </section>
       </template>
 

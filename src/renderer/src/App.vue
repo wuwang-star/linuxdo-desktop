@@ -3,10 +3,15 @@ import { useAuthStore } from './stores/auth'
 import { useQueueStore } from './stores/queue'
 import { useRouter } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { applyPrefs, loadPrefs, watchSystemTheme } from './utils/prefs'
 
 const auth = useAuthStore()
 const queue = useQueueStore()
 const router = useRouter()
+
+// 阅读体感：启动即应用（setup 同步执行早于首帧，避免暗色系统下白闪）；system 模式实时跟随
+applyPrefs(loadPrefs())
+const disposeThemeWatcher = watchSystemTheme()
 const queueOpen = ref(false)
 const who = computed(() => auth.status?.user?.username ?? null)
 const unread = computed(() => {
@@ -65,6 +70,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', onFocus)
   offPush?.()
   offOpen?.()
+  disposeThemeWatcher()
 })
 </script>
 

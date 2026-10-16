@@ -89,3 +89,11 @@ linux.do（Discourse）的第三方桌面客户端，Windows + macOS。参考 Fl
 - **失败回落（AC3）**：在线 fetchTopic 抛错且 `offline:list` index 有档 → store.hasOffline → TopicView 错误区渲染 `.offline-tip`「网络异常，该主题有离线存档」+「阅读离线存档」按钮（直接 store.open offline 重开，不改路由）。
 - **列表**：HomeView「离线」chip → ListMode 扩展 `{type:'offline'}`，topicList store loadMore 分支读本地 index 一次取完即 exhausted；行渲染标题/楼层数/savedAt 相对时间/行内删除（删除后重读 index），行点击 `/t/<id>?offline=1`。
 - **边界**：不缓存图片/附件（离线图片显示浏览器默认占位）；无敏感凭据入快照（纯公开 cooked 内容），不入 safeStorage。
+
+### 阅读体感：排版与主题偏好（P2，2026-10-16）
+
+- **分层**：阅读偏好属纯 UI 状态，存 renderer localStorage（键 `ldd-reading`），不经主进程不进 safeStorage——与桥接/DoH（主进程 settings.json）分源是刻意分层（省 IPC、无敏感数据）。
+- **单轨主题机制**：`data-theme` 属性是亮/暗唯一事实源。JS（`utils/prefs.ts` applyPrefs，App.vue setup 同步执行早于首帧防白闪）按偏好写入 documentElement；theme=system 时经 matchMedia 实时映射并注册 change 监听（导出 dispose 函数）。CSS 只认 `:root[data-theme='dark']` 属性组（亮色=:root 默认值），原 `@media (prefers-color-scheme: dark)` 分叉已删——消灭 media 与手动覆盖的双轨竞争。
+- **排版变量**：`--reading-font-size/--reading-line-height/--reading-font-family/--reading-width` 挂在 `:root`，`.topic-scroller`（正文+标题继承）与 `.cooked`、`.timeline`（仅字体族）消费；内容列 `.topic-scroller > *` `max-width: var(--reading-width)`（full=none）居中。时间轴字号保持 11px 刻度不动（68px 窄列装不下 16-20px 正文字号），只跟随字体族。设置中心等控件区用固定 tokens 不受影响。
+- **踩坑**：① radio 分段控件里值含数字（行距/宽度）时用 `:checked`+`@change` 而非 v-model（union 类型收窄+DOM value 字符串化的坑）；② MediaQueryList addEventListener 的 listener 传模块级可空变量触发 TS2769（收窄不进闭包），用局部 const 再注册。
+- **待人工验收**：AC1–AC3（四项调整即时生效+重启保持；亮色全页面无暗色残留；跟随系统实时切换）。

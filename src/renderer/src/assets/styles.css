@@ -21,19 +21,25 @@
   --space-5: 20px;
   --font-mono: Consolas, monospace;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* 阅读体感（prefs.ts 启动时覆盖；此处为默认值，供首帧渲染） */
+  --reading-font-size: 16px;
+  --reading-line-height: 1.7;
+  --reading-font-family: ui-sans-serif, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --reading-width: 1120px;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171a;
-    --panel: #1d2126;
-    --text: #e6e8ea;
-    --muted: #9aa1a9;
-    --accent: #3ecf9a;
-    --accent-weak: #1d2b26;
-    --border: #2b3138;
-    --bad: #e57368;
-    --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  }
+/* 亮/暗由 data-theme 属性单轨切换（JS 按偏好与 matchMedia 写入），不再用 media query 分叉。
+   亮色组 = 上面 :root 默认值；下面是完整暗色组（原 media query 内容迁移）。 */
+:root[data-theme='dark'] {
+  --bg: #14171a;
+  --panel: #1d2126;
+  --text: #e6e8ea;
+  --muted: #9aa1a9;
+  --accent: #3ecf9a;
+  --accent-weak: #1d2b26;
+  --border: #2b3138;
+  --bad: #e57368;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 * { box-sizing: border-box; }
@@ -42,6 +48,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font: 14px/1.6 -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  transition: background-color 0.2s, color 0.2s;
 }
 #app { display: flex; flex-direction: column; height: 100vh; }
 a { color: inherit; text-decoration: none; }
@@ -80,8 +87,16 @@ button { font: inherit; cursor: pointer; }
 .sentinel { text-align: center; color: var(--muted); padding: 18px 0 40px; }
 
 .topic-page { display: flex; height: 100%; }
-.topic-scroller { flex: 1; overflow: auto; padding: 20px clamp(12px, 4vw, 40px); }
-.topic-title-h1 { font-size: 20px; margin: 0 0 6px; }
+/* 正文排版：字号/行距/字体族由阅读偏好驱动（子元素显式字号如 .topic-sub 12px 不受影响）；
+   内容列宽度由 --reading-width 控制（full=none），时间轴贴右侧不参与 */
+.topic-scroller {
+  flex: 1; overflow: auto; padding: 20px clamp(12px, 4vw, 40px);
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
+  font-family: var(--reading-font-family);
+}
+.topic-scroller > * { max-width: var(--reading-width); margin-left: auto; margin-right: auto; }
+.topic-title-h1 { font-size: calc(var(--reading-font-size) + 4px); margin: 0 0 6px; }
 .topic-sub { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .only-op { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
 .hint { opacity: .8; }
@@ -95,16 +110,16 @@ button { font: inherit; cursor: pointer; }
 .reply-to { border: 1px solid var(--line); background: var(--panel); color: var(--brand); font-size: 12px; border-radius: 999px; padding: 1px 10px; }
 .post-foot { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
-.cooked { margin-top: 6px; overflow-wrap: anywhere; }
+.cooked { margin-top: 6px; overflow-wrap: anywhere; font-size: var(--reading-font-size); line-height: var(--reading-line-height); font-family: var(--reading-font-family); }
 .cooked img { max-width: 100%; border-radius: 8px; }
 .cooked pre { background: var(--bg); padding: 10px; border-radius: 8px; overflow: auto; }
-.cooked code { font-family: Consolas, monospace; font-size: 13px; }
+.cooked code { font-family: var(--font-mono); font-size: calc(var(--reading-font-size) - 3px); }
 .cooked blockquote { border-left: 3px solid var(--brand); margin: 6px 0; padding: 2px 12px; color: var(--muted); background: var(--bg); border-radius: 0 8px 8px 0; }
 .cooked table { border-collapse: collapse; }
 .cooked td, .cooked th { border: 1px solid var(--line); padding: 4px 8px; }
 .cooked a { color: var(--brand); }
 
-.timeline { flex: none; width: 68px; border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 10px 6px; display: flex; flex-direction: column; gap: 2px; }
+.timeline { flex: none; width: 68px; border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 10px 6px; display: flex; flex-direction: column; gap: 2px; font-family: var(--reading-font-family); }
 .tl-head { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px; }
 .tl-tick { border: 0; background: transparent; color: var(--muted); font-size: 11px; padding: 2px 0; border-radius: 6px; text-align: right; }
 .tl-tick.current { color: var(--brand); font-weight: 700; }
@@ -116,7 +131,7 @@ button { font: inherit; cursor: pointer; }
 .overlay .card { width: min(520px, 92vw); max-height: 84vh; overflow: auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); }
 .wiz-step { display: flex; gap: 10px; margin: 10px 0; align-items: flex-start; }
 .wiz-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-weak); color: var(--brand); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; transition: background-color 0.2s, color 0.2s; }
 .card h2 { margin: 0 0 8px; font-size: 15px; }
 .card input { width: 100%; margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
 .row { display: flex; gap: 8px; margin-top: 8px; }
@@ -234,6 +249,12 @@ button.primary:disabled { opacity: .5; }
 .seg-opt + .seg-opt { border-left: 1px solid var(--border); }
 .seg-opt input:checked + span { background: var(--panel); color: var(--accent); font-weight: 600; }
 .seg-opt input:disabled + span { opacity: 0.5; cursor: default; }
+
+/* ---------- 设置中心：stepper（阅读字号 -/+） ---------- */
+.stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg); }
+.stepper button { border: 0; background: transparent; color: var(--text); width: 32px; padding: 6px 0; font-size: 14px; }
+.stepper button:disabled { opacity: 0.4; cursor: default; }
+.stepper .stepper-val { min-width: 58px; text-align: center; font-size: 13px; color: var(--text); border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 6px 0; align-self: center; }
 
 /* ---------- 设置中心：banner（醒目但不刺眼的提示行） ---------- */
 .settings-banner { display: flex; align-items: flex-start; gap: var(--space-2); background: var(--accent-weak); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); font-size: 12px; color: var(--text); }
