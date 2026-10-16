@@ -5,9 +5,15 @@
   background: var(--panel); border-bottom: 1px solid var(--border);
   flex: none; -webkit-app-region: drag;
 }
+/* 全宽贴边：1060 居中列在宽窗口下顶栏悬空、与全出血内容区和右上原生窗口钮三不对齐 */
 .topbar-inner {
-  max-width: 1060px; margin: 0 auto; padding: 0 16px; height: 48px;
+  padding: 0 16px; height: 48px;
   display: flex; align-items: center; gap: 20px;
+}
+/* WCO（titleBarOverlay）生效时为原生 −□× 预留右上区：env 精确值优先，媒体查询兜底固定宽 */
+@media (display-mode: window-controls-overlay) {
+  .topbar-inner { padding-right: 148px; }
+  .topbar-inner { padding-right: calc(100vw - env(titlebar-area-width, 100vw) + 8px); }
 }
 .topbar a, .topbar button, .topbar [data-nodrag], .topbar .queue-panel {
   -webkit-app-region: no-drag;
