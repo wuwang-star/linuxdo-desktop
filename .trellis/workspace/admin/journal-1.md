@@ -583,3 +583,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 19 追记 5（2026-10-17 凌晨）：DoH 断网事故定位与链式转发修复
 
 用户贴 dev 日志：`ssl_client_socket_impl.cc handshake failed ... net_error -100` 每秒刷屏。同机探测三步定位：① nslookup linux.do → Facebook 段 face:b00c + SoftLayer（系统 DNS 污染实锤）；② 自建模板 edge.1molchuan.top HTTP 200 返回干净 CF IP（172.64.229.x）；③ 对干净 IP 做 SNI=linux.do 的 TLS 握手 → ECONNRESET，同 IP 换 cloudflare.com SNI → TLSv1.3 OK——**纯 SNI 阻断**。结论：该网络下 DoH 直连无解（SPEC 早已排除 ECH），而原实现 setProxy 顶掉 Clash → 全应用断网。修复：applyDohRuntime 接管前 resolveProxy 探测系统代理，有则 chainConnect（发 CONNECT 给上游、等 2xx、leftover unshift），无则 DoH 直连；diag 增 via=upstream；设置横幅文案改链式语义。教训：设计前提「linux.do 直连可达只差 DNS」在这台机器不成立，功能上线前应先探测目标网络形态（污染 only vs 污染+SNI）。过程 chainConnect 首版写出 arguments[0]/不存在 API 的废代码，整函数重写——先想清 handler 生命周期再落键。
+
+### Session 19 追记 6：全局 button 皮肤回归波及定尺寸图标钮
+
+用户报「添加到队列按钮 UI 有问题」。根因：settings-ui-fix 的裸 button 兜底带 padding:4px 10px，而定尺寸钮 .row-q（24px）/ .stepper button（26px）未声明 padding——类选择器只覆盖同名属性，padding 落进固定盒宽把图标挤出。全仓 sweep 确认仅此两处（.settings-nav/.win-btn/.act/.ico 均自带 padding）。修复：两处追加 padding:0，row-q 顺带 flex 居中。教训：全局元素选择器皮肤上线时要 sweep 所有元素级按钮的盒模型自洽性（width/height vs padding）。
