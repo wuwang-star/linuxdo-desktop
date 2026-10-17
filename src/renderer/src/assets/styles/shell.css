@@ -101,6 +101,9 @@
 }
 
 /* ---------- 自绘窗口钮：悬浮窗口右上（原顶栏尾段迁出） ---------- */
+/* 整宽页右上安全区：通知「全部已读」/设置控件/用户卡右上角不得钻到窗口钮底下
+   （win-btns 右缘 12px 起占 88px 宽，预留 112px；login 居中布局除外，极窄窗仅卡角擦边属外观） */
+.notif-page, .profile-page, .settings-page { padding-right: 112px; }
 .win-btns {
   position: absolute; top: 10px; right: 12px; z-index: 60;
   display: flex; align-items: center; gap: 2px;
