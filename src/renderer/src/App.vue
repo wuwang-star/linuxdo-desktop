@@ -99,7 +99,12 @@ onBeforeUnmount(() => {
   <div class="app-shell">
     <RailNav />
     <main class="shell-main">
-      <RouterView />
+      <!-- R12：整宽页切换渐显（home↔topic 共用 BrowseView，同组件复用不触发动画） -->
+      <RouterView v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
       <UserCard />
     </main>
     <!-- 自绘窗口钮（原生 overlay 已移除）：关闭=隐藏到托盘；双击拖拽区同样可最大化 -->

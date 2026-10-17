@@ -24,3 +24,15 @@
   color: rgba(255, 255, 255, 0.85); font-size: 12px;
   background: rgba(0, 0, 0, 0.45); padding: 4px 12px; border-radius: 999px;
 }
+
+/* @scope: feishu-im-frame R12 — 灯箱开合动效（遮罩渐显 + 图片微缩放入场） */
+.lightbox-ov { animation: lb-fade var(--motion-base) var(--ease-out); }
+.lightbox-ov img { animation: lb-zoom-in var(--motion-slow) var(--ease-out); }
+@keyframes lb-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lb-zoom-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}

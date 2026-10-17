@@ -29,7 +29,7 @@
   display: flex; flex-direction: column; gap: 2px;
   padding: 14px 8px 8px;
   background: var(--im-rail-bg); border-right: 1px solid var(--im-line);
-  transition: width 0.18s ease;
+  transition: width var(--motion-base) var(--ease-out);
   position: relative; z-index: 5;
 }
 .rail.collapsed { width: 56px; }
@@ -79,6 +79,7 @@
   text-decoration: none; position: relative;
 }
 .rail-item svg { width: 20px; height: 20px; flex: none; }
+.rail-item { transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
 .rail-item:hover { background: var(--im-hov); color: var(--im-tx); }
 .rail-item.active { background: var(--im-accsoft); color: var(--im-acc); }
 .rail.collapsed .rail-item { justify-content: center; padding-left: 0; padding-right: 0; }
@@ -129,6 +130,12 @@
   box-shadow: 0 8px 28px rgba(31, 35, 41, 0.14);
   padding: 8px; max-height: 420px; overflow-y: auto;
   text-align: left;
+  transform-origin: 0 12px;
+  animation: im-pop-in var(--motion-fast) var(--ease-out);
+}
+@keyframes im-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }
 .queue-panel h4 {
   margin: 0; padding: 4px 8px 8px;
@@ -162,3 +169,15 @@
 }
 .ldd-empty svg { width: 60px; height: 60px; color: var(--im-line); }
 .ldd-empty b { color: color-mix(in srgb, var(--im-tx) 70%, var(--im-tx2)); font-weight: 500; font-size: 15px; }
+
+/* ---------- R12 动效：整宽页路由切换渐显（home↔topic 同组件不触发）+ 全局降级 ---------- */
+.page-fade-enter-active { transition: opacity var(--motion-fast) var(--ease-out); }
+.page-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
+.page-fade-enter-from, .page-fade-leave-to { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *, .app-shell *::before, .app-shell *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

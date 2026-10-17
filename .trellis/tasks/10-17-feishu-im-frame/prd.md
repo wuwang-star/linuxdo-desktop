@@ -19,6 +19,8 @@
 - R9 per-topic 未读徽标不做（无已读数据源）。
 - R10 rail「＋」新建钮仅占位（无新功能）。
 - R11 正文阅读优雅化（用户 2026-10-17「完成所有工作」拍板折入，参考 research/content-reading-reference.md 四项目源码参数）：① 正文列 max-width≈720px 居中，不通铺；② 动作行降噪——无内容的次级动作（回复/译）默认低透明度、楼层 hover/focus-within 显现，有内容的常显（赞数>0、可编辑钮）；③ 引用块重做=浅灰底+左色条 4px 卡片（弃蓝底），标题行 24px 小头像+用户名，正文 max-height 220px 默认折叠+展开钮+跳原楼；④ 排版基线：正文 15-16px/1.6、meta 12px muted、楼层发丝线+12px 顶距、头像 40px。
+- R12 动效系统（用户 2026-10-17「弹出等动效做一下设计」）：tokens 化三档时长（fast 120ms/base 180ms/slow 240ms）+ ease-out 曲线 + prefers-reduced-motion 全局降级；覆盖=队列浮层开合、lightbox 开合、thread 展开、整宽页路由切换、rail 收起（统一到 tokens）、行级 hover 渐变。原则：只动 opacity/transform 不动布局属性，无弹跳无循环。
+- R13 功能页继续打磨（「查看主页的功能页面继续开发」按「rail 进的功能页」理解）：通知/设置/用户页在安全区+新 tokens 下统一间距与 hover 渐变；空态/加载态样式与壳一致。属轻打磨，结构性重设计不在本批。
 
 ## Acceptance Criteria
 

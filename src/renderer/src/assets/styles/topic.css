@@ -330,3 +330,11 @@
 @media (pointer: coarse) {
   .post-actions .quiet { opacity: 1; }
 }
+
+/* @scope: feishu-im-frame R12 — thread 展开渐显（只动 opacity/transform，不动布局） */
+.ldd-thread { animation: im-rise-in var(--motion-base) var(--ease-out); }
+.ldd-fold { transition: background-color var(--motion-fast) var(--ease-out); }
+@keyframes im-rise-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}

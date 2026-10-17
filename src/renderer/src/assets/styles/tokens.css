@@ -97,3 +97,11 @@ img { max-width: 100%; }
   --im-hov: rgba(230, 232, 234, 0.07);
   --im-sel: rgba(69, 122, 255, 0.22);
 }
+
+/* R12 动效：三档时长 + 单一 ease-out 曲线（无弹跳无循环）；prefers-reduced-motion 由 shell.css 全局降级 */
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
