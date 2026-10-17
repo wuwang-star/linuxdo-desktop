@@ -1,0 +1,462 @@
+<style>
+#ldd-feishu-mockup{
+  --bg:#f5f6f7; --panel:#ffffff; --line:#e7e8ea;
+  --tx:#1f2329; --tx2:#8f959e; --acc:#3370ff; --accsoft:rgba(51,112,255,.10);
+  --red:#f54a45; --hov:rgba(31,35,41,.05);
+  display:flex; height:760px; min-width:660px; position:relative; overflow:hidden;
+  background:var(--bg); border:1px solid #d9dbde; border-radius:12px;
+  font:14px/1.65 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--tx); text-align:left;
+}
+#ldd-feishu-mockup *{box-sizing:border-box;margin:0;padding:0}
+#ldd-feishu-mockup button{font:inherit;color:inherit;background:none;border:0;text-align:left}
+#ldd-feishu-mockup svg{width:18px;height:18px;flex:none}
+#ldd-feishu-mockup ul{list-style:none}
+
+/* ---- 左 rail：搜索 + 导航，可收起 ---- */
+.ldd-rail{width:184px;flex:none;background:var(--bg);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:14px 8px 8px;gap:2px;transition:width .18s ease}
+#ldd-feishu-mockup.collapsed .ldd-rail{width:56px}
+.ldd-rail-top{display:flex;align-items:center;gap:8px;margin:0 4px 10px}
+.ldd-rail-avatar{width:32px;height:32px;border-radius:50%;flex:none;
+  background:linear-gradient(135deg,#3370ff,#00b42a);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:500;font-size:14px}
+.ldd-rail-plus{width:22px;height:22px;border-radius:50%;background:#e1e3e6;color:#646a73;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.ldd-rail-plus svg{width:13px;height:13px}
+.ldd-rail-plus:hover{background:var(--accsoft);color:var(--acc)}
+.ldd-search{display:flex;align-items:center;gap:8px;margin:0 4px 12px;background:#e9eaee;
+  border-radius:8px;padding:7px 10px;color:var(--tx2)}
+#ldd-feishu-mockup.collapsed .ldd-search{display:none}
+.ldd-search svg{width:15px;height:15px}
+.ldd-search input{border:0;background:none;outline:none;font:inherit;font-size:13px;color:var(--tx);width:100%}
+.ldd-search input::placeholder{color:var(--tx2)}
+.ldd-rail-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  color:#4e5460;font-size:13px;white-space:nowrap;position:relative}
+.ldd-rail-item svg{width:20px;height:20px}
+.ldd-rail-item:hover{background:rgba(31,35,41,.05)}
+.ldd-rail-item.active{background:var(--accsoft);color:var(--acc)}
+.ldd-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:999px;font-size:11px;
+  line-height:16px;padding:0 5px;font-weight:400}
+#ldd-feishu-mockup.collapsed .ldd-badge{position:absolute;margin:0;transform:translate(12px,-9px);padding:0 4px}
+.ldd-rail-spacer{flex:1}
+.ldd-rail-collapse{border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+#ldd-feishu-mockup.collapsed .lbl{display:none}
+#ldd-feishu-mockup .icon-open{display:none}
+#ldd-feishu-mockup.collapsed .icon-close{display:none}
+#ldd-feishu-mockup.collapsed .icon-open{display:block}
+#ldd-feishu-mockup.collapsed .ldd-rail-item{justify-content:center;padding:8px 0}
+#ldd-feishu-mockup.collapsed .ldd-rail-top{justify-content:center;margin-bottom:12px}
+#ldd-feishu-mockup.collapsed .ldd-rail-plus{display:none}
+
+/* ---- 中栏：节头 + 工具条 + 列表 ---- */
+.ldd-list{width:312px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+.ldd-sec-head{display:flex;align-items:center;gap:6px;padding:14px 16px 8px;font-size:14px;font-weight:500}
+.ldd-sec-head svg{width:15px;height:15px;color:var(--tx2)}
+.ldd-sec-head .filter{margin-left:auto;cursor:pointer}
+.ldd-tabs{display:flex;gap:2px;padding:0 12px 8px;border-bottom:1px solid var(--line)}
+.ldd-tab{display:flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;color:var(--tx2);font-size:13px}
+.ldd-tab svg{width:13px;height:13px}
+.ldd-tab:hover{background:var(--hov)}
+.ldd-tab.active{background:var(--accsoft);color:var(--acc);font-weight:500}
+.ldd-topics{flex:1;overflow-y:auto;padding:4px 8px 12px}
+.ldd-item{display:flex;gap:10px;width:100%;padding:10px;border-radius:8px;align-items:flex-start}
+.ldd-item:hover{background:#f5f6f7}
+.ldd-item.sel{background:#e8effd}
+.ldd-av{width:36px;height:36px;border-radius:50%;flex:none;color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:15px;font-weight:500}
+.ldd-item-mid{flex:1;min-width:0}
+.ldd-item-top{display:flex;align-items:baseline;gap:8px}
+.ldd-item-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:13.5px}
+.ldd-item.sel .ldd-item-title{color:var(--acc)}
+.ldd-item-time{flex:none;color:var(--tx2);font-size:11px}
+.ldd-item-snip{color:var(--tx2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.ldd-item-snip b{color:#646a73;font-weight:400}
+
+/* ---- 内容区：白底通铺，标题 + 页签行 ---- */
+.ldd-main{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;background:var(--panel)}
+.ldd-topic{flex:1;overflow-y:auto;padding:20px 32px 32px}
+.ldd-t-title{font-size:19px;font-weight:500;line-height:1.4}
+.ldd-t-meta{display:flex;align-items:center;gap:12px;margin-top:8px;color:var(--tx2);font-size:12px;flex-wrap:wrap}
+.ldd-chip{background:#f2f3f5;border-radius:4px;padding:1px 7px;color:#646a73}
+.ldd-t-bar{display:flex;align-items:center;gap:2px;border-bottom:1px solid var(--line);margin-top:14px}
+.ldd-ctab{display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:13px;color:var(--tx2);border-radius:6px 6px 0 0}
+.ldd-ctab svg{width:14px;height:14px}
+.ldd-ctab:hover{color:var(--acc)}
+.ldd-ctab.active{color:var(--acc);background:var(--accsoft);font-weight:500}
+.ldd-t-actions{margin-left:auto;display:flex;gap:8px;padding-bottom:8px}
+.ldd-btn{display:inline-flex;align-items:center;gap:5px;background:var(--acc);color:#fff;
+  border-radius:6px;padding:5px 14px;font-size:13px}
+.ldd-btn svg{width:14px;height:14px}
+.ldd-ghost{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);color:#646a73;
+  border-radius:6px;padding:5px 12px;font-size:13px;background:var(--panel)}
+.ldd-ghost svg{width:14px;height:14px}
+.ldd-ghost:hover{border-color:var(--acc);color:var(--acc)}
+
+.ldd-floor{display:flex;gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}
+.ldd-floor:last-child{border-bottom:0}
+.ldd-f-av{width:34px;height:34px;border-radius:50%;flex:none;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500}
+.ldd-f-body{flex:1;min-width:0}
+.ldd-f-head{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);flex-wrap:wrap}
+.ldd-f-author{color:var(--tx);font-weight:500;font-size:13px}
+.ldd-f-op{color:var(--acc);border:1px solid var(--accsoft);background:var(--accsoft);border-radius:4px;padding:0 5px;font-size:11px}
+.ldd-f-re{display:inline-flex;align-items:center;gap:2px;color:var(--acc);background:var(--accsoft);
+  border-radius:4px;padding:0 6px;font-size:11px;cursor:pointer}
+.ldd-f-re svg{width:11px;height:11px}
+.ldd-cooked{margin-top:6px}
+.ldd-cooked p{margin:6px 0}
+.ldd-cooked code{background:#f2f3f5;border-radius:4px;padding:1px 5px;font-size:12.5px}
+.ldd-cooked pre{background:#f7f8fa;border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+  overflow-x:auto;margin:8px 0}
+.ldd-cooked pre code{background:none;padding:0;font-size:12.5px;line-height:1.6}
+.ldd-cooked blockquote{background:#e8f1ff;border-radius:8px;padding:10px 14px;color:#1f2329;margin:8px 0}
+.ldd-cooked blockquote p{margin:0;color:#2856b6}
+.ldd-f-acts{display:flex;gap:16px;margin-top:10px;color:var(--tx2);font-size:12px}
+.ldd-f-acts button{display:inline-flex;align-items:center;gap:4px;color:var(--tx2);font-size:12px}
+.ldd-f-acts button:hover{color:var(--acc)}
+.ldd-f-acts svg{width:14px;height:14px}
+.ldd-fold{display:inline-flex;align-items:center;gap:4px;color:var(--acc);background:var(--accsoft);
+  border-radius:6px;padding:5px 12px;font-size:12.5px;margin:10px 0 6px 46px}
+.ldd-fold svg{width:13px;height:13px;transition:transform .15s}
+.ldd-fold[aria-expanded="true"] svg{transform:rotate(90deg)}
+.ldd-thread{margin:2px 0 4px 46px;padding-left:14px;border-left:2px solid var(--line)}
+.ldd-t-item{display:flex;gap:10px;padding:10px 0}
+.ldd-t-item .ldd-f-av{width:26px;height:26px;font-size:12px}
+.ldd-t-item .ldd-cooked{margin-top:3px;font-size:13.5px}
+
+/* ---- 空态 / 整宽页 ---- */
+.ldd-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--tx2)}
+.ldd-empty svg{width:60px;height:60px;color:#c9cdd4}
+.ldd-empty b{color:#4e5460;font-weight:500;font-size:15px}
+.ldd-page{flex:1;overflow-y:auto;padding:22px 32px}
+.ldd-page h2{font-size:17px;font-weight:500;margin-bottom:16px}
+.ldd-group{border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.ldd-group h3{font-size:13px;color:var(--tx2);font-weight:400;padding:10px 14px 0}
+.ldd-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--line)}
+.ldd-row:first-of-type{border-top:0}
+.ldd-row-label{flex:1}
+.ldd-row-label small{display:block;color:var(--tx2);font-size:12px}
+.ldd-row select,.ldd-row input[type="text"]{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px;background:var(--panel);color:var(--tx)}
+.ldd-notif{display:flex;gap:12px;align-items:flex-start;padding:14px 4px;border-bottom:1px solid var(--line)}
+.ldd-notif p{font-size:13.5px}
+.ldd-notif time{color:var(--tx2);font-size:12px;margin-left:auto;flex:none}
+
+/* ---- 窗口钮 + 队列浮层 ---- */
+.ldd-win{position:absolute;top:10px;right:12px;display:flex;gap:2px;z-index:6}
+.ldd-win button{width:28px;height:28px;border-radius:6px;color:#646a73;display:flex;align-items:center;justify-content:center}
+.ldd-win button:hover{background:var(--hov)}
+.ldd-win button.close:hover{background:var(--red);color:#fff}
+.ldd-win svg{width:14px;height:14px}
+.ldd-qpop{position:absolute;left:64px;top:150px;width:320px;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(31,35,41,.14);
+  padding:8px;z-index:8}
+.ldd-qpop h4{font-size:12px;color:var(--tx2);font-weight:400;padding:4px 8px 8px}
+.ldd-qitem{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;font-size:13px}
+.ldd-qitem:hover{background:#f5f6f7}
+.ldd-qitem span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ldd-qitem button{color:var(--tx2);font-size:12px;flex:none}
+.ldd-qitem button:hover{color:var(--red)}
+.ldd-qfoot{border-top:1px solid var(--line);margin-top:6px;padding:8px 8px 2px}
+.ldd-qfoot button{color:var(--tx2);font-size:12px}
+.ldd-qfoot button:hover{color:var(--red)}
+[hidden]{display:none !important}
+</style>
+
+<div id="ldd-feishu-mockup">
+
+  <!-- 左 rail：头像(+新建) / 搜索 / 最新 / 队列 / 通知 / 设置，可收起 -->
+  <aside class="ldd-rail">
+    <div class="ldd-rail-top">
+      <div class="ldd-rail-avatar" data-tooltip="Rem · 用户卡片">R</div>
+      <div class="ldd-rail-plus" data-tooltip="发新主题（占位）"><i data-lucide="plus" aria-hidden="true"></i></div>
+    </div>
+    <div class="ldd-search">
+      <i data-lucide="search" aria-hidden="true"></i>
+      <input type="text" id="ldd-q" placeholder="搜索" aria-label="搜索">
+    </div>
+    <button type="button" class="ldd-rail-item active cursor-interaction" data-nav="home" data-tooltip="最新">
+      <i data-lucide="home" aria-hidden="true"></i><span class="lbl">最新</span>
+    </button>
+    <button type="button" class="ldd-rail-item cursor-interaction" id="ldd-nav-queue" data-tooltip="队列">
+      <i data-lucide="inbox" aria-hidden="true"></i><span class="lbl">队列</span>
+      <span class="ldd-badge tabular-nums">3</span>
+    </button>
+    <button type="button" class="ldd-rail-item cursor-interaction" data-nav="notif" data-tooltip="通知">
+      <i data-lucide="bell" aria-hidden="true"></i><span class="lbl">通知</span>
+      <span class="ldd-badge tabular-nums">5</span>
+    </button>
+    <div class="ldd-rail-spacer"></div>
+    <button type="button" class="ldd-rail-item cursor-interaction" data-nav="settings" data-tooltip="设置">
+      <i data-lucide="settings" aria-hidden="true"></i><span class="lbl">设置</span>
+    </button>
+    <button type="button" class="ldd-rail-item ldd-rail-collapse cursor-interaction" id="ldd-collapse"
+      data-tooltip="收起 / 展开导航" aria-label="收起或展开导航">
+      <i data-lucide="panel-left-close" class="icon-close" aria-hidden="true"></i>
+      <i data-lucide="panel-left-open" class="icon-open" aria-hidden="true"></i>
+      <span class="lbl">收起导航</span>
+    </button>
+  </aside>
+
+  <!-- 中栏：节头 + 工具条 + 帖子列表 -->
+  <aside class="ldd-list" id="ldd-listbar">
+    <div class="ldd-sec-head">帖子 <i data-lucide="list-filter" class="filter" aria-hidden="true"></i></div>
+    <div class="ldd-tabs" role="group" aria-label="列表工具条">
+      <button type="button" class="ldd-tab active cursor-interaction">最新</button>
+      <button type="button" class="ldd-tab cursor-interaction">热门</button>
+      <button type="button" class="ldd-tab cursor-interaction">Top <i data-lucide="chevron-down" aria-hidden="true"></i></button>
+    </div>
+    <ul class="ldd-topics" id="ldd-topics"></ul>
+  </aside>
+
+  <!-- 内容区：白底通铺 -->
+  <main class="ldd-main">
+    <div class="ldd-topic" id="ldd-topic"></div>
+    <div class="ldd-empty" id="ldd-empty" hidden>
+      <i data-lucide="laugh" aria-hidden="true"></i>
+      <b>你的每一个好想法，都让人惊喜</b>
+      <span>从左侧列表选择主题开始阅读</span>
+    </div>
+
+    <div class="ldd-page" id="ldd-settings" hidden>
+      <h2>设置</h2>
+      <div class="ldd-group"><h3>外观</h3>
+        <div class="ldd-row"><div class="ldd-row-label">主题<small>亮色为临时方案，暗色由 tokens 映射</small></div>
+          <select aria-label="主题"><option>跟随系统</option><option selected>亮色</option><option>暗色</option></select></div>
+        <div class="ldd-row"><div class="ldd-row-label">皮肤<small>主题工坊 · 纯 CSS</small></div>
+          <select aria-label="皮肤"><option selected>默认（群公告色调）</option><option>飞书样例</option></select></div>
+      </div>
+      <div class="ldd-group"><h3>阅读</h3>
+        <div class="ldd-row"><div class="ldd-row-label">正文字号</div>
+          <input type="range" aria-label="正文字号" value="15" min="12" max="22"></div>
+        <div class="ldd-row"><div class="ldd-row-label">回复串默认展开</div>
+          <input type="checkbox" aria-label="回复串默认展开"></div>
+      </div>
+      <div class="ldd-group"><h3>网络</h3>
+        <div class="ldd-row"><div class="ldd-row-label">DoH 加速</div>
+          <input type="checkbox" checked aria-label="DoH 加速"></div>
+        <div class="ldd-row"><div class="ldd-row-label">系统代理</div>
+          <input type="text" value="http://127.0.0.1:7897" aria-label="系统代理地址"></div>
+      </div>
+    </div>
+
+    <div class="ldd-page" id="ldd-notif" hidden>
+      <h2>通知</h2>
+      <div class="ldd-notif"><div class="ldd-av" style="background:#ff7d00">n</div>
+        <p><b>neo</b> 回复了你在「Clash Verge 更新后 TUN 模式频繁掉线」中的帖子</p><time>5 分钟前</time></div>
+      <div class="ldd-notif"><div class="ldd-av" style="background:#00b42a">j</div>
+        <p><b>jbro</b> 在「自托管 RSS 方案」中提到了你</p><time>1 小时前</time></div>
+      <div class="ldd-notif"><div class="ldd-av" style="background:#3370ff">L</div>
+        <p>你的帖子「自托管 RSS 方案」被加入<b>精华</b></p><time>昨天</time></div>
+      <div class="ldd-notif"><div class="ldd-av" style="background:#8f959e">!</div>
+        <p>账号安全提醒：新设备登录已拦截</p><time>10-12</time></div>
+    </div>
+  </main>
+
+  <!-- 自绘窗口钮：悬浮窗口右上 -->
+  <div class="ldd-win" data-nodrag>
+    <button type="button" class="cursor-interaction" data-tooltip="最小化" aria-label="最小化"><i data-lucide="minus" aria-hidden="true"></i></button>
+    <button type="button" class="cursor-interaction" data-tooltip="最大化 / 还原" aria-label="最大化或还原"><i data-lucide="square" aria-hidden="true"></i></button>
+    <button type="button" class="close cursor-interaction" data-tooltip="关闭（隐藏到托盘）" aria-label="关闭"><i data-lucide="x" aria-hidden="true"></i></button>
+  </div>
+
+  <!-- 队列浮层 -->
+  <div class="ldd-qpop" id="ldd-qpop" hidden>
+    <h4>队列 · 3</h4>
+    <div class="ldd-qitem"><span>GLM-5.3 Flash 写代码体感如何？</span><button type="button">移除</button></div>
+    <div class="ldd-qitem"><span>Windows 12 消息汇总：悬浮任务栏 + AI 侧栏</span><button type="button">移除</button></div>
+    <div class="ldd-qitem"><span>每月白嫖云服务器汇总（10 月更新）</span><button type="button">移除</button></div>
+    <div class="ldd-qfoot"><button type="button">清空队列</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.getElementById('ldd-feishu-mockup')
+
+  var TOPICS=[
+    {id:1,title:'Clash Verge 更新后 TUN 模式频繁掉线，排查思路分享',av:['V','#34c724'],time:'03:18',
+     snip:'jbro|gvisor 稳，mixed 在 UDP 场景偶尔丢包',meta:['技术','7 楼','1.2k 浏览'],
+     floors:[
+      {n:1,u:'Rem',c:'#3370ff',t:'10:24',
+       html:'<p>更新到 1.7.2 之后 TUN 模式隔几分钟断一次，重开就好。翻日志发现主进程里全是 <code>get connection closed</code>。</p><p>排查三步：</p><pre><code>1. 关闭系统代理，只留 TUN —— 观察是否复现\n2. clash-verge-service 重装（服务残留旧版本最常见）\n3. 日志级别调 debug，看 DNS 劫持是否正常</code></pre><blockquote><p>📌 服务残留旧版本是最常见的坑：重装 clash-verge-service 即可。</p></blockquote><p>我这里是第二步解决的，服务一直残留在 1.6.x。</p>',
+       thread:[
+        {n:3,u:'neo',c:'#ff7d00',t:'10:31',re:1,html:'<p>同问题，第二步解决，感谢。补充：Win11 24H2 要以管理员身份跑 service 安装。</p>'},
+        {n:4,u:'jbro',c:'#00b42a',t:'10:40',re:3,html:'<p>24H2 的坑 +1，服务装完记得重启一次 TUN 才生效。</p>'},
+        {n:7,u:'Rem',c:'#3370ff',t:'11:02',re:1,html:'<p>楼主补充：Mihomo 内核同理，service 路径在 <code>%APPDATA%\\io.github.clash-verge-rev\\</code>。</p>'}]},
+      {n:5,u:'neo',c:'#ff7d00',t:'11:15',html:'<p>顺带问下，TUN 的 stack 你们用 gvisor 还是 mixed？我这边 mixed 延迟明显低一些。</p>'},
+      {n:6,u:'jbro',c:'#00b42a',t:'11:20',html:'<p>gvisor 稳，mixed 在 UDP 场景偶尔丢包。</p>'}]},
+    {id:2,title:'自托管 RSS 方案：FreshRSS + Docker Compose 一键部署',av:['m','#722ed1'],time:'昨天',
+     snip:'osi|建议再挂个 cron 容器定时刷新，别开 FreshRSS 自带的',meta:['资源荟萃','5 楼','890 浏览'],
+     floors:[
+      {n:1,u:'miu',c:'#722ed1',t:'昨天 21:08',
+       html:'<p>一个 compose 文件搞定订阅、桥接、自动更新：</p><pre><code>services:\n  freshrss:\n    image: freshrss/freshrss:latest\n    ports: ["8080:80"]\n    volumes: ["./data:/var/www/FreshRSS/data"]\n    restart: unless-stopped</code></pre>',
+       thread:[
+        {n:2,u:'bit',c:'#f53f3f',t:'昨天 21:30',re:1,html:'<p>内存占用多少？1G 小鸡跑得动吗。</p>'},
+        {n:3,u:'miu',c:'#722ed1',t:'昨天 21:41',re:2,html:'<p>空载 120MB 左右，1G 够用，桥接多了会涨。</p>'}]},
+      {n:5,u:'osi',c:'#00b42a',t:'昨天 22:10',html:'<p>建议再挂个 <code>cron</code> 容器定时刷新，别开 FreshRSS 自带的。</p>'}]},
+    {id:3,title:'GLM-5.3 Flash 写代码体感如何？和 4.7 比提升大吗',av:['b','#f53f3f'],time:'昨天',
+     snip:'jbro|体感提升最大的是多文件改动的稳定性，单文件差异不大',meta:['搞七捻三','12 楼','2.3k 浏览'],
+     floors:[
+      {n:1,u:'bit',c:'#f53f3f',t:'昨天 09:12',html:'<p>如题，主要写 Vue3 前端，现在默认给的是 Flash。日常补全和小改没问题，就是长上下文重构偶尔犯懒。你们都切什么模型？</p>',
+       thread:[{n:2,u:'neo',c:'#ff7d00',t:'昨天 09:20',re:1,html:'<p>重构上 5.3，补全留 Flash，组合拳。</p>'}]},
+      {n:4,u:'jbro',c:'#00b42a',t:'昨天 10:02',html:'<p>体感提升最大的是多文件改动的稳定性，单文件差异不大。</p>'}]},
+    {id:4,title:'Windows 12 消息汇总：悬浮任务栏 + AI 侧栏',av:['o','#00b42a'],time:'10月15日',
+     snip:'free|悬浮任务栏若不开 AERO 就是要了命了，审美回归 Win7？',meta:['搞七捻三','34 楼','5.1k 浏览'],
+     floors:[{n:1,u:'osi',c:'#00b42a',t:'10-14 20:44',html:'<p>汇总一下这两天泄露的编译版本变化，图多杀流量。</p>'},
+      {n:2,u:'free',c:'#722ed1',t:'10-14 21:01',html:'<p>悬浮任务栏若不开 AERO 就是要了命了，审美回归 Win7？</p>'}]},
+    {id:5,title:'每月白嫖云服务器汇总（10 月更新）',av:['f','#3370ff'],time:'10月14日',
+     snip:'free|Oracle 新开 arm 4C24G 又开放了一批区域，手快有',meta:['资源荟萃','89 楼','9.8k 浏览'],
+     floors:[{n:1,u:'free',c:'#722ed1',t:'10-14 08:00',html:'<p>十月版本：Oracle 新开 arm 4C24G 又开放了一批区域，手快有。</p>'}]}
+  ]
+
+  var state={mode:'home',topic:1,collapsed:false,onlyOp:false,q:''}
+
+  function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+  function icons(){if(window.lucide)window.lucide.createIcons()}
+  function cur(){for(var i=0;i<TOPICS.length;i++)if(TOPICS[i].id===state.topic)return TOPICS[i];return null}
+
+  /* ---- 列表：搜索过滤 + 摘要作者前缀 ---- */
+  function renderList(){
+    var ul=document.getElementById('ldd-topics');ul.innerHTML=''
+    var q=state.q.trim().toLowerCase()
+    TOPICS.forEach(function(tp){
+      if(q && (tp.title+' '+tp.snip).toLowerCase().indexOf(q)<0)return
+      var li=el('li')
+      var b=el('button','ldd-item cursor-interaction'+(tp.id===state.topic?' sel':''))
+      b.type='button'
+      var av=el('div','ldd-av','<span>'+tp.av[0]+'</span>');av.style.background=tp.av[1];b.appendChild(av)
+      var mid=el('div','ldd-item-mid')
+      var top=el('div','ldd-item-top')
+      top.appendChild(el('span','ldd-item-title',tp.title))
+      top.appendChild(el('span','ldd-item-time',tp.time))
+      mid.appendChild(top)
+      var pair=tp.snip.split('|')
+      mid.appendChild(el('div','ldd-item-snip','<b>'+pair[0]+':</b> '+pair[1]))
+      b.appendChild(mid)
+      b.addEventListener('click',function(){state.topic=tp.id;state.onlyOp=false;state.mode='home';render()})
+      li.appendChild(b);ul.appendChild(li)
+    })
+    if(!ul.children.length)ul.appendChild(el('li','ldd-item-snip','没有匹配的主题'))
+  }
+
+  /* ---- 主题页：白底通铺 + 页签行（正文/只看楼主）+ thread 折叠 ---- */
+  function renderTopic(){
+    var box=document.getElementById('ldd-topic');box.innerHTML=''
+    var tp=cur()
+    if(!tp){box.hidden=true;document.getElementById('ldd-empty').hidden=false;return}
+    box.hidden=false;document.getElementById('ldd-empty').hidden=true
+    var op=tp.floors[0].u
+
+    var head=el('div')
+    head.appendChild(el('div','ldd-t-title',tp.title))
+    var meta=el('div','ldd-t-meta')
+    tp.meta.forEach(function(m){meta.appendChild(el('span','ldd-chip',m))})
+    head.appendChild(meta)
+
+    var bar=el('div','ldd-t-bar')
+    var tabAll=el('button','ldd-ctab cursor-interaction'+(state.onlyOp?'':' active'))
+    tabAll.type='button';tabAll.innerHTML='<i data-lucide="message-circle" aria-hidden="true"></i>正文'
+    var tabOp=el('button','ldd-ctab cursor-interaction'+(state.onlyOp?' active':''))
+    tabOp.type='button';tabOp.innerHTML='<i data-lucide="user" aria-hidden="true"></i>只看楼主'
+    tabAll.addEventListener('click',function(){if(state.onlyOp){state.onlyOp=false;renderTopic();icons()}})
+    tabOp.addEventListener('click',function(){if(!state.onlyOp){state.onlyOp=true;renderTopic();icons()}})
+    bar.appendChild(tabAll);bar.appendChild(tabOp)
+    var acts=el('div','ldd-t-actions')
+    acts.innerHTML='<button type="button" class="ldd-btn cursor-interaction"><i data-lucide="message-circle" aria-hidden="true"></i>回复</button>'
+      +'<button type="button" class="ldd-ghost cursor-interaction"><i data-lucide="plus" aria-hidden="true"></i>入队</button>'
+      +'<button type="button" class="ldd-ghost cursor-interaction"><i data-lucide="download" aria-hidden="true"></i>离线</button>'
+    bar.appendChild(acts)
+    head.appendChild(bar);box.appendChild(head)
+
+    tp.floors.forEach(function(f){
+      if(state.onlyOp && f.u!==op)return
+      box.appendChild(floorEl(f,false,op))
+      if(f.thread){
+        var shown=f.thread
+        if(state.onlyOp)shown=f.thread.filter(function(s){return s.u===op})
+        if(!shown.length && state.onlyOp)return
+        var fold=el('button','ldd-fold cursor-interaction')
+        fold.type='button';fold.setAttribute('aria-expanded','false')
+        fold.innerHTML='<i data-lucide="chevron-right" aria-hidden="true"></i>'+shown.length+' 条回复'
+        var wrap=el('div','ldd-thread');wrap.hidden=true
+        shown.forEach(function(s){wrap.appendChild(floorEl(s,true,op))})
+        fold.addEventListener('click',function(){
+          var open=fold.getAttribute('aria-expanded')==='true'
+          fold.setAttribute('aria-expanded',open?'false':'true')
+          fold.innerHTML='<i data-lucide="chevron-right" aria-hidden="true"></i>'+(open?('回复 '+shown.length+' 条'):(shown.length+' 条回复'))
+          wrap.hidden=open;icons()
+        })
+        box.appendChild(fold);box.appendChild(wrap)
+      }
+    })
+  }
+
+  function floorEl(f,sub,op){
+    var art=el('article','ldd-floor'+(sub?' ldd-t-item':''))
+    art.id='post-'+f.n
+    var av=el('div','ldd-f-av','<span>'+f.u.charAt(0).toLowerCase()+'</span>');av.style.background=f.c
+    art.appendChild(av)
+    var body=el('div','ldd-f-body')
+    var head=el('div','ldd-f-head')
+    head.appendChild(el('span','ldd-f-author','@'+f.u))
+    if(f.u===op)head.appendChild(el('span','ldd-f-op','楼主'))
+    head.appendChild(el('span','tabular-nums','#'+f.n))
+    if(f.re){head.appendChild(el('button','ldd-f-re cursor-interaction','<i data-lucide="corner-down-right" aria-hidden="true"></i>回复 #'+f.re))}
+    head.appendChild(el('span',null,f.t))
+    body.appendChild(head)
+    body.appendChild(el('div','ldd-cooked',f.html))
+    var acts=el('div','ldd-f-acts')
+    acts.innerHTML='<button type="button" class="cursor-interaction"><i data-lucide="heart" aria-hidden="true"></i>赞</button>'
+      +'<button type="button" class="cursor-interaction"><i data-lucide="message-circle" aria-hidden="true"></i>回复</button>'
+      +'<button type="button" class="cursor-interaction"><i data-lucide="languages" aria-hidden="true"></i>译</button>'
+    body.appendChild(acts);art.appendChild(body)
+    return art
+  }
+
+  /* ---- rail 导航：帖子模式 vs 整宽页 ---- */
+  function renderMode(){
+    document.getElementById('ldd-listbar').hidden = state.mode!=='home'
+    document.getElementById('ldd-topic').hidden = state.mode!=='home'
+    document.getElementById('ldd-empty').hidden = state.mode!=='home'
+    document.getElementById('ldd-settings').hidden = state.mode!=='settings'
+    document.getElementById('ldd-notif').hidden = state.mode!=='notif'
+    root.querySelectorAll('.ldd-rail-item[data-nav]').forEach(function(b){
+      b.classList.toggle('active',b.getAttribute('data-nav')===state.mode)
+    })
+  }
+
+  root.querySelectorAll('.ldd-rail-item[data-nav]').forEach(function(b){
+    b.addEventListener('click',function(){state.mode=b.getAttribute('data-nav');render()})
+  })
+
+  /* rail 搜索过滤 */
+  document.getElementById('ldd-q').addEventListener('input',function(e){
+    state.q=e.target.value;renderList()
+  })
+
+  /* 队列浮层 */
+  var qpop=document.getElementById('ldd-qpop')
+  document.getElementById('ldd-nav-queue').addEventListener('click',function(){qpop.hidden=!qpop.hidden})
+  document.addEventListener('click',function(e){
+    if(!qpop.hidden && !qpop.contains(e.target) && e.target.closest('#ldd-nav-queue')===null)qpop.hidden=true
+  })
+
+  /* rail 收起 / 展开 */
+  document.getElementById('ldd-collapse').addEventListener('click',function(){
+    state.collapsed=!state.collapsed
+    root.classList.toggle('collapsed',state.collapsed)
+  })
+
+  /* 工具条 tab 视觉切换 */
+  root.querySelectorAll('.ldd-tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      root.querySelectorAll('.ldd-tab').forEach(function(x){x.classList.remove('active')})
+      t.classList.add('active')
+    })
+  })
+
+  function render(){renderList();renderTopic();renderMode();icons()}
+  render()
+})()
+</script>

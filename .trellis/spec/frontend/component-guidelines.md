@@ -69,3 +69,29 @@ Questions to answer:
 - Everything else → `window.open(href, '_blank')`; main-process `setWindowOpenHandler` routes it to the system browser. No new IPC for this.
 - Main process `will-navigate` guard (main/index.ts) is the safety net: non-app URLs are denied and opened externally.
 - Do NOT import main-process constants (e.g. `BASE_URL` from `main/api/client.ts`) into the renderer — that module pulls in Electron; duplicate the site origin in `utils/links.ts`.
+
+---
+
+## App Shell (since 2026-10-17 feishu-im-frame)
+
+**What**: the global chrome is `App.vue` `.app-shell` = `components/RailNav.vue` (left rail: avatar/search/最新/队列/通知/设置/收起) + `.shell-main` (RouterView) + floating `.win-btns` (absolute top-right, close = tray). The old `header.topbar` is deleted; `assets/styles/topbar.css` is deprecated (kept empty to avoid import breakage).
+
+**Why**: Feishu-style outer frame (user decision 2026-10-17); window buttons are self-drawn because native `titleBarOverlay` was removed earlier.
+
+**Rules**:
+- Global-chrome changes go to `RailNav.vue` + `assets/styles/shell.css`, never back into topbar.css.
+- Drag regions (`-webkit-app-region: drag`): rail top, list section head, content topic head; every interactive control inside must be marked `no-drag`.
+- Rail collapse state lives in `ldd-reading` prefs (`railCollapsed`); `viewMode` (时间流/树形) is dead — thread folding (`clusterThreads` in `stores/topic.ts`) is the only topic mode.
+
+## IM Frame Color Tokens (convention)
+
+**What**: Feishu-announcement palette lives in `tokens.css` under `/* @scope: feishu-im-frame */` as `--im-*` variables (light + `:root[data-theme='dark']` pairs). Tone is a provisional decision — user will retune it later.
+
+**Why**: base tokens already own `--panel/--line/--text`; coordination rules forbid touching existing variables, so the frame got its own prefixed slots.
+
+**Rules**: restyling the IM frame = edit the `--im-*` group only (both themes); never alias base token names; new shell styles consume `var(--im-*)`.
+
+## Theme-Workshop Skin Compatibility (gotcha)
+
+> **Warning**: `assets/themes/feishu.ts` (and future skin packs) target stable class names such as `.queue-panel`. When relocating/restyling a floated panel (e.g. queue popover moved into RailNav), keep the original class name and restyle via the part CSS file, or skin packs silently lose their hooks.
+

@@ -1,0 +1,5 @@
+{"file": ".trellis/workspace/coordination.md", "reason": "多会话协同铁律：公用文件只追加/认领登记/分区归属，动 App.vue、styles 前必读"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "前端组件规范层入口"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量红线"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "迁移队列浮层/搜索/未读徽标等既有逻辑时防重复造轮子"}
+{"file": ".trellis/tasks/10-17-feishu-im-frame/research/feishu-im-frame-mockup.html", "reason": "用户验收过的高保真视觉基准：布局尺寸/间距/交互状态以此为准"}
