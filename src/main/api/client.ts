@@ -1,4 +1,5 @@
 import { net } from 'electron'
+import { dohReady } from './dohProxy'
 
 export const BASE_URL = 'https://linux.do'
 
@@ -74,6 +75,8 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
  * - 每次请求记录诊断日志
  */
 export async function discourseRequest<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  // 启动门：等首次 DoH 运行时应用完成再出门，避免首帧请求抢在代理接管前直连（启动 403）
+  await dohReady
   const url = buildUrl(path, opts.query)
   const maxRetries = opts.retries ?? 3
   let attempt = 0

@@ -346,28 +346,43 @@ export function upstreamProxyLabel(): string {
 }
 
 /**
+ * 启动门：首个 applyDohRuntime 完成前拦住主进程对外请求。
+ * whenReady 里 applyDohRuntime 是 void 异步，渲染层首帧 fetch 会抢在 setProxy 接管前
+ * 直连出门（SNI 阻断网络 = 启动即 403，需手动重触发检测）——discourseRequest 统一 await 本门。
+ */
+let readyResolve: (() => void) | null = null
+export const dohReady = new Promise<void>((resolve) => {
+  readyResolve = resolve
+})
+
+/**
  * 读配置启停代理并接管/还原 defaultSession 代理（app ready 与设置保存两处共用）。
  * 接管前先 resolveProxy 探测系统代理（Clash 等）：有则 CONNECT 链式转发（上游远程解析，
  * SNI 阻断网络下 DoH 直连必死，2026-10-17 实测），无则 DoH 解析直连。
  * 已接管状态下 resolveProxy 只返回自身端口，此时沿用上次捕获值；系统代理变更后需重新保存开关。
  */
 export async function applyDohRuntime(): Promise<void> {
-  const cfg = getDohConfig()
-  if (cfg.enabled) {
-    const via = await session.defaultSession.resolveProxy('https://linux.do').catch(() => 'DIRECT')
-    const m = /PROXY\s+([^\s;]+)/i.exec(via)
-    const cand = m ? parseUpstream(m[1]) : null
-    if (cand && !(cand.host === '127.0.0.1' && cand.port === ownPort)) upstream = cand
-    else if (!m) upstream = null
-    const port = await startDohProxy(cfg)
-    await session.defaultSession.setProxy({
-      proxyRules: `127.0.0.1:${port}`,
-      proxyBypassRules: 'localhost;127.0.0.1;<local>'
-    })
-  } else {
-    upstream = null
-    await stopDohProxy()
-    await session.defaultSession.setProxy({ mode: 'system' })
+  try {
+    const cfg = getDohConfig()
+    if (cfg.enabled) {
+      const via = await session.defaultSession.resolveProxy('https://linux.do').catch(() => 'DIRECT')
+      const m = /PROXY\s+([^\s;]+)/i.exec(via)
+      const cand = m ? parseUpstream(m[1]) : null
+      if (cand && !(cand.host === '127.0.0.1' && cand.port === ownPort)) upstream = cand
+      else if (!m) upstream = null
+      const port = await startDohProxy(cfg)
+      await session.defaultSession.setProxy({
+        proxyRules: `127.0.0.1:${port}`,
+        proxyBypassRules: 'localhost;127.0.0.1;<local>'
+      })
+    } else {
+      upstream = null
+      await stopDohProxy()
+      await session.defaultSession.setProxy({ mode: 'system' })
+    }
+  } finally {
+    readyResolve?.()
+    readyResolve = null
   }
 }
 
