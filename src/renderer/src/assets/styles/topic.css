@@ -291,37 +291,19 @@
 .ldd-fold:hover { filter: brightness(1.05); }
 .ldd-fold .fold-chev { width: 13px; height: 13px; transition: transform 0.15s; }
 .ldd-fold .fold-chev.open { transform: rotate(90deg); }
+/* 纯缩进阶梯（用户拍板：弯头线层级感不足）：每级整体右移 + 左引导轨，Reddit/HN 式 */
 .ldd-thread {
-  --tw-line: color-mix(in srgb, var(--im-tx2) 40%, transparent);
-  margin: 2px 0 4px 50px; padding: 4px 0;
-  background: var(--im-canvas);
-  border: 1px solid var(--im-line); border-radius: 10px;
+  --tw-line: color-mix(in srgb, var(--im-tx2) 45%, transparent);
+  margin: 2px 0 4px 34px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--tw-line);
 }
-/* 容器内子楼密度：清掉楼层级发丝线，改子楼间淡分隔 */
-.ldd-thread .post { border-bottom: 0; padding: 6px 12px; }
-.ldd-thread .post + .post {
-  border-top: 1px solid color-mix(in srgb, var(--im-line) 55%, transparent);
-}
-/* 2 级子楼：L 弯头线从行顶下垂弯到本楼头像左缘 */
-.post--depth2 { position: relative; }
-.post--depth2::before {
-  content: ''; position: absolute; left: 5px; top: 0;
-  width: 9px; height: 20px;
-  border-left: 1.5px solid var(--tw-line); border-bottom: 1.5px solid var(--tw-line);
-  border-bottom-left-radius: 8px;
-}
-/* 3 级子楼：容器内再缩进 18px，双层弯线（父轨竖线延续 + 本层 L 弯线）；更深 reply 链平铺续接此级 */
-.post--depth3 { position: relative; margin-left: 18px; }
-.post--depth3::before {
-  content: ''; position: absolute; left: -13px; top: 0;
-  width: 0; height: 17px;
-  border-left: 1.5px solid var(--tw-line);
-}
-.post--depth3::after {
-  content: ''; position: absolute; left: 5px; top: 0;
-  width: 9px; height: 17px;
-  border-left: 1.5px solid var(--tw-line); border-bottom: 1.5px solid var(--tw-line);
-  border-bottom-left-radius: 8px;
+.ldd-thread .post { border-bottom: 0; padding: 7px 0; }
+/* 3 级子楼：在串内再缩进一级，自带引导轨；更深 reply 链平铺续接此级 */
+.post--depth3 {
+  margin-left: 30px;
+  padding-left: 12px;
+  border-left: 2px solid var(--tw-line);
 }
 .post--depth3 .avatar { width: 22px; height: 22px; }
 
