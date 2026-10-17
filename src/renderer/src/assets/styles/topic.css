@@ -279,7 +279,9 @@
 .ldd-ghost:disabled:hover { border-color: var(--im-line); color: color-mix(in srgb, var(--im-tx) 60%, var(--im-tx2)); }
 .ldd-ghost .ic { width: 14px; height: 14px; }
 
-/* 楼中楼（默认展开）：串底部「收起 N 条回复」钮 + 原位缩进子楼（缩进竖线 + 小卡；缩进对齐正文列 = 头像 40 + gap 10） */
+/* 楼中楼树形重设计：串容器化（灰底圆角卡 vs 主干白底 = 第一重）+ 弯头树线（ALDR 手法 = 第二重）
+   + 子楼密度/字号分层（第三重）+ 楼号 chip（第四重）。
+   缩进对齐正文列左缘 = 头像 40 + gap 10；树线色 = --im-tx2 40%（比发丝线深一档） */
 .ldd-fold {
   display: inline-flex; align-items: center; gap: 4px;
   color: var(--im-acc); background: var(--im-accsoft);
@@ -290,12 +292,43 @@
 .ldd-fold .fold-chev { width: 13px; height: 13px; transition: transform 0.15s; }
 .ldd-fold .fold-chev.open { transform: rotate(90deg); }
 .ldd-thread {
-  margin: 2px 0 4px 50px; padding-left: 14px;
-  border-left: 2px solid var(--im-line);
+  --tw-line: color-mix(in srgb, var(--im-tx2) 40%, transparent);
+  margin: 2px 0 4px 50px; padding: 4px 0;
+  background: var(--im-canvas);
+  border: 1px solid var(--im-line); border-radius: 10px;
 }
-/* 3 级子楼（回复的回复）：2 级容器内再加一层缩进竖线 + 更小头像；更深 reply 链平铺续接此级 */
-.post--depth3 { margin-left: 16px; padding-left: 10px; border-left: 2px solid var(--im-line); }
+/* 容器内子楼密度：清掉楼层级发丝线，改子楼间淡分隔 */
+.ldd-thread .post { border-bottom: 0; padding: 6px 12px; }
+.ldd-thread .post + .post {
+  border-top: 1px solid color-mix(in srgb, var(--im-line) 55%, transparent);
+}
+/* 2 级子楼：L 弯头线从行顶下垂弯到本楼头像左缘 */
+.post--depth2 { position: relative; }
+.post--depth2::before {
+  content: ''; position: absolute; left: 5px; top: 0;
+  width: 9px; height: 20px;
+  border-left: 1.5px solid var(--tw-line); border-bottom: 1.5px solid var(--tw-line);
+  border-bottom-left-radius: 8px;
+}
+/* 3 级子楼：容器内再缩进 18px，双层弯线（父轨竖线延续 + 本层 L 弯线）；更深 reply 链平铺续接此级 */
+.post--depth3 { position: relative; margin-left: 18px; }
+.post--depth3::before {
+  content: ''; position: absolute; left: -13px; top: 0;
+  width: 0; height: 17px;
+  border-left: 1.5px solid var(--tw-line);
+}
+.post--depth3::after {
+  content: ''; position: absolute; left: 5px; top: 0;
+  width: 9px; height: 17px;
+  border-left: 1.5px solid var(--tw-line); border-bottom: 1.5px solid var(--tw-line);
+  border-bottom-left-radius: 8px;
+}
 .post--depth3 .avatar { width: 22px; height: 22px; }
+
+/* 子楼字号分层（ALDR ×0.96 思路）：level2 正文 14px / level3 13.5px */
+.post--compact .cooked { margin-top: 3px; }
+.post--depth2 .cooked { font-size: 14px; }
+.post--depth3 .cooked { font-size: 13.5px; }
 
 /* 楼主角标 + 子楼小尺寸变体（PostItem compact） */
 .op-badge {
@@ -303,8 +336,14 @@
   border-radius: 4px; padding: 0 5px; font-size: 11px; white-space: nowrap;
 }
 .post--compact .avatar { width: 28px; height: 28px; }
-.post--compact .cooked { margin-top: 3px; font-size: 13.5px; }
 .post--compact { padding: 10px 0; }
+
+/* 楼号 chip 化：主干/子楼统一（树形四重信号之一） */
+.floor {
+  padding: 0 5px; border-radius: 4px;
+  background: color-mix(in srgb, var(--im-acc) 7%, transparent);
+  color: var(--im-acc);
+}
 
 /* callout 引用卡：bare blockquote 浅灰卡 + 4px 左色条（R11 弃蓝底；aside.quote 引用楼保持原结构样式），
    超长默认折叠 220px（ALDR 参数），展开/收起由 PostItem 注入 .bq-toggle 钮 */

@@ -418,7 +418,7 @@ function readOffline(): void {
                 :post="m.post"
                 :is-op="isOpPost(m.post)"
                 compact
-                :class="{ 'post--depth3': m.depth > 1 }"
+                :class="m.depth > 1 ? 'post--depth3' : 'post--depth2'"
                 :offline="store.offline"
                 @jump="go"
                 @like="(id) => store.toggleLike(id)"
