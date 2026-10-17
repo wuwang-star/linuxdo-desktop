@@ -105,3 +105,14 @@ img { max-width: 100%; }
   --motion-slow: 240ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* R13 间距规则化：4px 网格 + 树形缩进步长/轨距统一，禁止散数
+   楼中楼规则：每级缩进 = --im-indent-step（32px）；引导轨到内容 = --im-rail-gap（16px） */
+:root {
+  --im-space-2: 8px;
+  --im-space-3: 12px;
+  --im-space-4: 16px;
+  --im-space-6: 24px;
+  --im-indent-step: 32px;
+  --im-rail-gap: 16px;
+}

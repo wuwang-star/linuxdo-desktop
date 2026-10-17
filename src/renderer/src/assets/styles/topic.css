@@ -291,18 +291,19 @@
 .ldd-fold:hover { filter: brightness(1.05); }
 .ldd-fold .fold-chev { width: 13px; height: 13px; transition: transform 0.15s; }
 .ldd-fold .fold-chev.open { transform: rotate(90deg); }
-/* 纯缩进阶梯（用户拍板：弯头线层级感不足）：每级整体右移 + 左引导轨，Reddit/HN 式 */
+/* 纯缩进阶梯（用户拍板：弯头线层级感不足）：每级整体右移 + 左引导轨，Reddit/HN 式
+   间距规则化（R13）：缩进步长/轨距走 tokens（--im-indent-step / --im-rail-gap），不写散数 */
 .ldd-thread {
   --tw-line: color-mix(in srgb, var(--im-tx2) 45%, transparent);
-  margin: 2px 0 4px 34px;
-  padding: 2px 0 2px 14px;
+  margin: 2px 0 4px var(--im-indent-step);
+  padding: 2px 0 2px var(--im-rail-gap);
   border-left: 2px solid var(--tw-line);
 }
 .ldd-thread .post { border-bottom: 0; padding: 7px 0; }
 /* 3 级子楼：在串内再缩进一级，自带引导轨；更深 reply 链平铺续接此级 */
 .post--depth3 {
-  margin-left: 30px;
-  padding-left: 12px;
+  margin-left: var(--im-indent-step);
+  padding-left: var(--im-rail-gap);
   border-left: 2px solid var(--tw-line);
 }
 .post--depth3 .avatar { width: 22px; height: 22px; }

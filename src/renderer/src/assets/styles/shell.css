@@ -35,7 +35,8 @@
 .rail.collapsed { width: 56px; }
 
 .rail-top { display: flex; align-items: center; gap: 8px; margin: 0 4px 10px; }
-.rail.collapsed .rail-top { justify-content: center; margin-bottom: 12px; }
+/* 收起态头像与图标列共用一条中线：去掉 rail-top 侧边距（其 4px 会把头像中心推离图标列） */
+.rail.collapsed .rail-top { justify-content: center; margin-left: 0; margin-right: 0; margin-bottom: 12px; }
 
 .rail-avatar {
   width: 32px; height: 32px; border-radius: 50%; flex: none;
@@ -79,6 +80,8 @@
   text-decoration: none; position: relative;
 }
 .rail-item svg { width: 20px; height: 20px; flex: none; }
+/* 图标盒与 svg 同尺寸：底座 .ic 固定 13px，20px svg 溢出右移 3.5px——收起态居中列不齐的根因 */
+.rail-item .ic { width: 20px; height: 20px; justify-content: center; align-items: center; }
 .rail-item { transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
 .rail-item:hover { background: var(--im-hov); color: var(--im-tx); }
 .rail-item.active { background: var(--im-accsoft); color: var(--im-acc); }
