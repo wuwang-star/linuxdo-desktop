@@ -241,15 +241,6 @@ onMounted(() => {
         <div class="topic-main">
           <div class="topic-title-line">
             <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">{{ t.title }}</RouterLink>
-            <button
-              class="row-q"
-              :class="{ acted: queue.has(t.id) }"
-              :title="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
-              :aria-label="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
-              @click.stop="toggleQueue(t)"
-            >
-              <span class="ic" v-html="queue.has(t.id) ? ICONS.check : ICONS.plus"></span>
-            </button>
             <span class="row-time">{{ rowTime(t.last_posted_at ?? t.created_at) }}</span>
           </div>
           <div class="row-snip">
@@ -259,6 +250,15 @@ onMounted(() => {
             <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin"></span>置顶</span>
             <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock"></span>已关闭</span>
             <span v-if="opOf(t)" class="u" title="查看用户卡片" @click.stop="showUser(t)">@{{ opOf(t)?.username }}</span>
+            <button
+              class="row-q"
+              :class="{ acted: queue.has(t.id) }"
+              :title="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
+              :aria-label="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
+              @click.stop="toggleQueue(t)"
+            >
+              <span class="ic" v-html="queue.has(t.id) ? ICONS.check : ICONS.plus"></span>
+            </button>
           </div>
         </div>
       </article>
