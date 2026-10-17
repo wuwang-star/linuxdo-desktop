@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { applyPrefs, loadPrefs, watchSystemTheme } from './utils/prefs'
 import { applyThemeById, loadSelectedThemeId } from './utils/themes'
+import RailNav from './components/RailNav.vue'
 import UserCard from './components/UserCard.vue'
 
 const auth = useAuthStore()
@@ -20,8 +21,6 @@ void window.api.setTheme(startPrefs.theme).catch(() => {})
 const disposeThemeWatcher = watchSystemTheme()
 // 主题工坊：启动应用已选皮肤（异步读盘，切换瞬间允许短暂默认色——见 PRD Out of Scope）
 void applyThemeById(loadSelectedThemeId()).catch(() => {})
-const queueOpen = ref(false)
-const who = computed(() => auth.status?.user?.username ?? null)
 const api = window.api
 const unread = computed(() => {
   const u = auth.status?.user
@@ -96,52 +95,26 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <RouterLink to="/" class="brand">LINUX<span>DO</span></RouterLink>
-      <nav class="nav">
-        <RouterLink to="/">最新</RouterLink>
-        <div class="queue-wrap">
-          <button class="chip" :class="{ active: queueOpen }" @click="queueOpen = !queueOpen">
-            队列{{ queue.count > 0 ? ` ${queue.count}` : '' }}
-          </button>
-          <div v-if="queueOpen" class="queue-panel">
-            <div v-if="queue.count === 0" class="queue-empty">队列为空：在列表或主题页点「＋」入队（悬停看提示）</div>
-            <div v-for="item in queue.items" :key="item.id" class="queue-item">
-              <RouterLink :to="`/t/${item.id}`" @click="queueOpen = false">{{ item.title }}</RouterLink>
-              <button class="act" @click="queue.remove(item.id)">移除</button>
-            </div>
-            <button v-if="queue.count > 0" class="act queue-clear" @click="queue.clear()">清空队列</button>
-          </div>
-        </div>
-        <RouterLink to="/notifications" class="bell" aria-label="通知">
-          🔔
-          <span v-if="unread > 0" class="badge">{{ unread > 99 ? '99+' : unread }}</span>
-        </RouterLink>
-        <RouterLink to="/settings">设置</RouterLink>
-        <RouterLink to="/login" class="login-link">
-          <template v-if="who">@{{ who }}</template>
-          <template v-else>登录</template>
-        </RouterLink>
-      </nav>
-      <!-- 自绘窗口钮（原生 overlay 已移除）：关闭=隐藏到托盘；双击拖拽区同样可最大化 -->
-      <div class="win-btns" data-nodrag>
-        <button class="win-btn" aria-label="最小化" @click="api.winMinimize()">
-          <svg viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
-        </button>
-        <button class="win-btn" aria-label="最大化/还原" @click="api.winToggleMaximize()">
-          <svg viewBox="0 0 12 12">
-            <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.2" fill="none" />
-          </svg>
-        </button>
-        <button class="win-btn close" aria-label="关闭" @click="api.winClose()">
-          <svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
-        </button>
-      </div>
+  <!-- feishu-im-frame 外框架：左 rail 常驻 + 内容区整宽切换（顶栏已删，win-btns 悬浮右上） -->
+  <div class="app-shell">
+    <RailNav />
+    <main class="shell-main">
+      <RouterView />
+      <UserCard />
+    </main>
+    <!-- 自绘窗口钮（原生 overlay 已移除）：关闭=隐藏到托盘；双击拖拽区同样可最大化 -->
+    <div class="win-btns" data-nodrag>
+      <button class="win-btn" aria-label="最小化" @click="api.winMinimize()">
+        <svg viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
+      </button>
+      <button class="win-btn" aria-label="最大化/还原" @click="api.winToggleMaximize()">
+        <svg viewBox="0 0 12 12">
+          <rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.2" fill="none" />
+        </svg>
+      </button>
+      <button class="win-btn close" aria-label="关闭" @click="api.winClose()">
+        <svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
+      </button>
     </div>
-  </header>
-  <main class="page">
-    <RouterView />
-    <UserCard />
-  </main>
+  </div>
 </template>

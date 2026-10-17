@@ -64,3 +64,36 @@ img { max-width: 100%; }
 }
 
 /* 窗口拖拽区（顶栏）由 topbar.css 声明 */
+
+/* @scope: feishu-im-frame — 外框架配色（临时方案，用户后续会改）。
+   只追加不覆盖：既有 --panel/--line/--text 等底座变量不动，本组用 im- 前缀独立槽位，
+   亮色取群公告页色调（mockup 基准），暗色同槽位映射现有暗色底，保证切换不炸。 */
+:root {
+  --im-rail-bg: #f5f6f7;
+  --im-panel: #ffffff;
+  --im-canvas: #fafbfc;
+  --im-quote-bg: #f7f9fa;
+  --im-line: #e7e8ea;
+  --im-tx: #1f2329;
+  --im-tx2: #8f959e;
+  --im-acc: #3370ff;
+  --im-accsoft: rgba(51, 112, 255, 0.1);
+  --im-red: #f54a45;
+  --im-hov: rgba(31, 35, 41, 0.05);
+  --im-sel: #e8effd;
+}
+
+:root[data-theme='dark'] {
+  --im-rail-bg: #17191d;
+  --im-panel: #1d2126;
+  --im-canvas: #1a1d21;
+  --im-quote-bg: #22262c;
+  --im-line: #2b3138;
+  --im-tx: #e6e8ea;
+  --im-tx2: #8b9198;
+  --im-acc: #457aff;
+  --im-accsoft: rgba(69, 122, 255, 0.18);
+  --im-red: #f54a45;
+  --im-hov: rgba(230, 232, 234, 0.07);
+  --im-sel: rgba(69, 122, 255, 0.22);
+}

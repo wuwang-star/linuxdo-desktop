@@ -4,17 +4,7 @@
 .topic-page { display: flex; height: 100%; min-height: 0; }
 .topic-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* 固定顶栏（单行紧凑）：标题 + 图标化操作 */
-.topic-head {
-  flex: none; display: flex; align-items: center; gap: 8px;
-  padding: 5px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
-  position: relative;
-}
-.th-title {
-  flex: 1; min-width: 0; font-size: 13px; font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.th-ops { display: flex; gap: 2px; }
+/* 内容区头部（拖拽区 3）：标题/meta/页签/动作——结构样式见尾部 @scope: feishu-im-frame 段 */
 .th-toast {
   position: absolute; right: 12px; top: 100%; margin-top: 4px;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -34,7 +24,8 @@
   line-height: var(--reading-line-height);
   font-family: var(--reading-font-family);
 }
-.topic-scroller > * { max-width: var(--reading-width); margin-left: auto; margin-right: auto; }
+/* R11 正文列封顶 720px 居中（Discourse 690+24 基准）；阅读宽度偏好只作上限收紧 */
+.topic-scroller > * { max-width: min(var(--reading-width), 720px); margin-left: auto; margin-right: auto; }
 .error-inline { color: #e5484d; font-size: 12px; margin: 0 0 10px; }
 .err-ops { display: flex; gap: 8px; margin-top: 8px; }
 .offline-tip {
@@ -42,15 +33,14 @@
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
   background: var(--accent-weak); font-size: 12px; color: var(--text);
 }
-.reply-tree { border-left: 2px solid var(--border); padding-left: 10px; }
-.reply-tree.thread-line { margin-left: 16px; }
 
-/* 帖子 */
-.post { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.post .avatar { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
+/* 帖子（R11 基线：40px 头像、发丝线分隔、楼层顶距 12px，末楼无线） */
+.post { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--im-line); }
+.post:last-child { border-bottom: 0; }
+.post .avatar { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
 .post-body { flex: 1; min-width: 0; }
-.post-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
-.author { font-weight: 600; color: var(--text); cursor: pointer; }
+.post-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 12px; color: var(--im-tx2); }
+.author { font-size: 13px; font-weight: 600; color: var(--im-tx); cursor: pointer; }
 .author:hover { color: var(--accent); }
 .floor { color: var(--muted); }
 .reply-to { border: 0; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; padding: 0; }
@@ -60,9 +50,9 @@
 .post-actions .act { border: none; background: transparent; padding: 2px 4px; }
 .clickable { cursor: pointer; }
 
-/* cooked 正文排版（阅读体感变量驱动；Discourse 结构全覆盖） */
+/* cooked 正文排版（R11 基线 15.5px/1.6；Discourse 结构全覆盖） */
 .cooked {
-  font-size: var(--reading-font-size); line-height: var(--reading-line-height);
+  font-size: 15.5px; line-height: 1.6;
   font-family: var(--reading-font-family); overflow-wrap: break-word;
 }
 .cooked > :first-child { margin-top: 0; }
@@ -236,3 +226,107 @@
 }
 .tl-tick:hover { background: var(--accent-weak); }
 .tl-tick.current { color: var(--accent); background: var(--accent-weak); font-weight: 600; }
+
+/* @scope: feishu-im-frame — 内容区头部/页签行/楼中楼折叠/楼主角标/子楼小卡/callout 引用卡
+   （视觉基准 research/feishu-im-frame-mockup.html，配色走 tokens im- 组；不影响底座规则） */
+
+/* 内容区头部：标题 + meta 行（白底通铺） */
+.ldd-t-head { flex: none; position: relative; padding: 16px 20px 0; }
+.ldd-t-title-row { display: flex; align-items: baseline; gap: 8px; }
+.ldd-t-title {
+  flex: 1; min-width: 0;
+  font-size: 19px; font-weight: 500; line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--im-tx);
+}
+.ldd-t-meta { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.ldd-chip {
+  background: var(--im-hov); border-radius: 4px; padding: 1px 7px;
+  color: color-mix(in srgb, var(--im-tx) 60%, var(--im-tx2)); font-size: 12px;
+}
+
+/* 页签行 + 动作 */
+.ldd-t-bar {
+  display: flex; align-items: center; gap: 2px;
+  border-bottom: 1px solid var(--im-line); margin-top: 14px;
+}
+.ldd-ctab {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 12px; font-size: 13px; color: var(--im-tx2);
+  border: 0; background: none; cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+.ldd-ctab .ic { width: 14px; height: 14px; }
+.ldd-ctab:hover { color: var(--im-acc); }
+.ldd-ctab.active { color: var(--im-acc); background: var(--im-accsoft); font-weight: 500; }
+.ldd-t-actions { margin-left: auto; display: flex; gap: 8px; padding-bottom: 8px; }
+.ldd-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--im-acc); color: #fff; border: 0;
+  border-radius: 6px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+}
+.ldd-btn:hover { filter: brightness(1.08); color: #fff; }
+.ldd-btn .ic { width: 14px; height: 14px; }
+.ldd-ghost {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--im-line); color: color-mix(in srgb, var(--im-tx) 60%, var(--im-tx2));
+  border-radius: 6px; padding: 5px 12px; font-size: 13px;
+  background: var(--im-panel); cursor: pointer;
+}
+.ldd-ghost:hover { border-color: var(--im-acc); color: var(--im-acc); }
+.ldd-ghost.on { border-color: var(--im-acc); color: var(--im-acc); background: var(--im-accsoft); }
+.ldd-ghost:disabled { opacity: 0.45; cursor: default; }
+.ldd-ghost:disabled:hover { border-color: var(--im-line); color: color-mix(in srgb, var(--im-tx) 60%, var(--im-tx2)); }
+.ldd-ghost .ic { width: 14px; height: 14px; }
+
+/* 楼中楼（默认展开）：串底部「收起 N 条回复」钮 + 原位缩进子楼（缩进竖线 + 小卡；缩进对齐正文列 = 头像 40 + gap 10） */
+.ldd-fold {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--im-acc); background: var(--im-accsoft);
+  border: 0; border-radius: 6px; padding: 5px 12px; font-size: 12.5px;
+  margin: 10px 0 6px 50px; cursor: pointer;
+}
+.ldd-fold:hover { filter: brightness(1.05); }
+.ldd-fold .fold-chev { width: 13px; height: 13px; transition: transform 0.15s; }
+.ldd-fold .fold-chev.open { transform: rotate(90deg); }
+.ldd-thread {
+  margin: 2px 0 4px 50px; padding-left: 14px;
+  border-left: 2px solid var(--im-line);
+}
+/* 3 级子楼（回复的回复）：2 级容器内再加一层缩进竖线 + 更小头像；更深 reply 链平铺续接此级 */
+.post--depth3 { margin-left: 16px; padding-left: 10px; border-left: 2px solid var(--im-line); }
+.post--depth3 .avatar { width: 22px; height: 22px; }
+
+/* 楼主角标 + 子楼小尺寸变体（PostItem compact） */
+.op-badge {
+  color: var(--im-acc); border: 1px solid var(--im-accsoft); background: var(--im-accsoft);
+  border-radius: 4px; padding: 0 5px; font-size: 11px; white-space: nowrap;
+}
+.post--compact .avatar { width: 28px; height: 28px; }
+.post--compact .cooked { margin-top: 3px; font-size: 13.5px; }
+.post--compact { padding: 10px 0; }
+
+/* callout 引用卡：bare blockquote 浅灰卡 + 4px 左色条（R11 弃蓝底；aside.quote 引用楼保持原结构样式），
+   超长默认折叠 220px（ALDR 参数），展开/收起由 PostItem 注入 .bq-toggle 钮 */
+.cooked > blockquote {
+  max-height: 220px; overflow: hidden;
+  background: var(--im-quote-bg); border-left: 4px solid var(--im-acc);
+  border-radius: 8px; padding: 12px 14px;
+  color: var(--im-tx);
+}
+.cooked > blockquote.bq-open { max-height: none; }
+.bq-toggle {
+  display: block; margin: 8px auto 0; padding: 2px 14px;
+  border: 0; border-radius: 999px; background: var(--im-accsoft); color: var(--im-acc);
+  font-size: 12px; line-height: 1.6; cursor: pointer;
+}
+.bq-toggle:hover { filter: brightness(1.06); }
+
+/* 动作行降噪（R11）：有内容的项（赞数>0/已赞/编辑/已有译文）常显；
+   次级动作（回复/无译文）默认低透明度，楼层 hover/focus-within 显现（0.2s），触屏常显 */
+.post-actions .quiet { opacity: 0.35; transition: opacity 0.2s ease; }
+.post:hover .post-actions .quiet,
+.post:focus-within .post-actions .quiet { opacity: 1; }
+@media (pointer: coarse) {
+  .post-actions .quiet { opacity: 1; }
+}

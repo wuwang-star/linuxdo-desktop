@@ -1,51 +1,5 @@
 /* ============================================================
-   顶栏：拖拽区 / 品牌 / 导航 / 队列浮层
+   [DEPRECATED] 顶栏样式（feishu-im-frame 改版后顶栏整体删除）
+   壳/rail/win-btns/队列浮层样式已迁至 shell.css，本文件留空仅防
+   main.ts @import 断链；确认无外部引用后随后续任务删除。
    ============================================================ */
-.topbar {
-  background: var(--panel); border-bottom: 1px solid var(--border);
-  flex: none; -webkit-app-region: drag;
-}
-/* 全宽贴边：1060 居中列在宽窗口下顶栏悬空、与全出血内容区不对齐 */
-.topbar-inner {
-  padding: 0 16px; height: 48px;
-  display: flex; align-items: center; gap: 20px;
-}
-.topbar a, .topbar button, .topbar [data-nodrag], .topbar .queue-panel {
-  -webkit-app-region: no-drag;
-}
-.brand { font-weight: 800; font-size: 15px; letter-spacing: 1px; color: var(--text); text-decoration: none; }
-.brand span { color: var(--accent); }
-.nav { margin-left: auto; display: flex; align-items: center; gap: 14px; }
-.nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
-.nav a:hover, .nav a.router-link-active { color: var(--accent); }
-.bell { position: relative; font-size: 15px; text-decoration: none; }
-.login-link { font-size: 13px; }
-
-/* 队列浮层 */
-.queue-wrap { position: relative; }
-.queue-panel {
-  position: absolute; right: 0; top: calc(100% + 6px); width: 320px; z-index: 30;
-  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 8px; max-height: 420px; overflow-y: auto;
-}
-.queue-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); }
-.queue-item:hover { background: var(--bg); }
-.queue-item a {
-  flex: 1; min-width: 0; color: var(--text); text-decoration: none;
-  font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.queue-item a:hover { color: var(--accent); }
-.queue-empty { color: var(--muted); font-size: 12px; padding: 8px; }
-.queue-clear { width: 100%; margin-top: 6px; }
-
-/* 自绘窗口钮（titleBarOverlay 已移除，用户拍板自绘）：tokens 同源配色，关闭悬停红 */
-.win-btns { display: flex; align-items: center; gap: 2px; margin-left: 12px; }
-.win-btn {
-  width: 34px; height: 30px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: none; background: transparent; color: var(--muted);
-  border-radius: var(--radius-sm); cursor: pointer;
-}
-.win-btn:hover { background: var(--accent-weak); color: var(--text); }
-.win-btn.close:hover { background: #e5484d; color: #fff; }
-.win-btn svg { width: 11px; height: 11px; display: block; }

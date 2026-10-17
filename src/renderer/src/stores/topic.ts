@@ -5,13 +5,76 @@ import type { OfflineTopic } from '../../../main/api/offline'
 const CHUNK = 20
 const progressKey = (topicId: number): string => `ldd:progress:${topicId}`
 const LIKE_ACTION = 2
-/** 树形视图渲染深度钳制（更深层续用第 3 层缩进+引导线） */
-const TREE_DEPTH_MAX = 3
 
-/** 树形视图渲染项：楼层 + 渲染深度（0 = 根） */
-export interface TreeItem {
+/** 楼中楼串成员：楼层 + 相对串根的回复深度（渲染层级） */
+export interface ThreadMember {
   post: DiscoursePost
+  /** 1 = 根的直接回复（2 级缩进）；2 = 回复的回复（3 级缩进）；更深的 reply 链钳制为 2，平铺续接（引用关系由「回复 #N」chip 表达） */
   depth: number
+}
+
+/** 楼中楼折叠渲染项：主干楼层 + 以该楼为串根的回复成员（平铺，升序） */
+export interface TrunkItem {
+  post: DiscoursePost
+  thread: ThreadMember[]
+}
+
+/** 渲染层级钳制：>2 级的 reply 链全部续接在第 3 级缩进上 */
+const THREAD_DEPTH_MAX = 2
+
+/**
+ * 楼中楼聚类（feishu-im-frame 唯一模式，纯函数幂等——loadOlder 增量加载后重算即可）：
+ * 1. 有 reply_to 且 parent 在已加载范围 → 沿链上溯到串根（无 reply_to 或 parent 未加载的楼层），
+ *    沿途跳数即成员相对串根的深度
+ * 2. 串成员 = 以该根为祖先的所有回复（post_number 升序平铺，深度钳制 ≤2）
+ * 3. 主干 = 非成员楼层（含串根）
+ */
+export function clusterThreads(posts: DiscoursePost[]): {
+  items: TrunkItem[]
+  rootOf: Map<number, number>
+} {
+  const byNumber = new Map<number, DiscoursePost>()
+  for (const p of posts) byNumber.set(p.post_number, p)
+  // post_number → 串根 post_number（仅成员有记录；主干楼/环/父缺失不入表）
+  const rootOf = new Map<number, number>()
+  // post_number → 相对串根的回复深度（与 rootOf 同键）
+  const depthOf = new Map<number, number>()
+  for (const p of posts) {
+    if (!p.reply_to_post_number) continue
+    const seen = new Set<number>([p.post_number])
+    let cur: DiscoursePost | undefined = p
+    let depth = 0
+    let root = -1
+    while (cur) {
+      const pn = cur.reply_to_post_number
+      // 无 reply_to / 自引用 / 父楼未加载 → 当前楼即串根；环防御同回路
+      if (!pn || pn === cur.post_number || !byNumber.has(pn) || seen.has(pn)) {
+        root = cur.post_number
+        break
+      }
+      seen.add(pn)
+      depth++
+      cur = byNumber.get(pn)
+    }
+    if (root >= 0 && root !== p.post_number) {
+      rootOf.set(p.post_number, root)
+      depthOf.set(p.post_number, depth)
+    }
+  }
+  const items: TrunkItem[] = []
+  const indexOf = new Map<number, number>()
+  for (const p of posts) {
+    const root = rootOf.get(p.post_number)
+    if (root === undefined) {
+      indexOf.set(p.post_number, items.length)
+      items.push({ post: p, thread: [] })
+    } else {
+      // Discourse 保证 reply 楼号大于被回复楼，串根先于成员出现；脏数据兜底丢弃
+      const item = items[indexOf.get(root) ?? -1]
+      if (item) item.thread.push({ post: p, depth: Math.min(depthOf.get(p.post_number) ?? 1, THREAD_DEPTH_MAX) })
+    }
+  }
+  return { items, rootOf }
 }
 
 /** 解析 post 的点赞状态（Discourse actions_summary 中 id=2 为 like） */
@@ -100,47 +163,6 @@ export const useTopicStore = defineStore('topic', {
       const all = this.orderedPosts
       if (!this.onlyOp || !this.opUsername) return all
       return all.filter((p) => p.username === this.opUsername)
-    },
-    /**
-     * 树形视图渲染数组：在 visiblePosts（只看楼主过滤后集合）之上重建——
-     * children 表以 post_number 为键（reply_to_post_number 指向 post_number）；
-     * 根 = 无 reply 目标或父楼未加载（父楼随后加载，computed 自动重算归位，AC2）；
-     * DFS 输出，同层按 post_number 升序，渲染深度钳制 ≤3。
-     */
-    treePosts(): TreeItem[] {
-      const visible = this.visiblePosts
-      if (visible.length === 0) return []
-      const byNumber = new Map<number, DiscoursePost>()
-      for (const p of visible) byNumber.set(p.post_number, p)
-      // 自引用防御（reply_to 指向自己会成环）：归为根
-      const isChildOf = (p: DiscoursePost): number | null => {
-        const n = p.reply_to_post_number
-        return n && n !== p.post_number && byNumber.has(n) ? n : null
-      }
-      const children = new Map<number, DiscoursePost[]>()
-      const roots: DiscoursePost[] = []
-      for (const p of visible) {
-        const parent = isChildOf(p)
-        if (parent === null) roots.push(p)
-        else {
-          const list = children.get(parent)
-          if (list) list.push(p)
-          else children.set(parent, [p])
-        }
-      }
-      const byNum = (a: DiscoursePost, b: DiscoursePost): number => a.post_number - b.post_number
-      roots.sort(byNum)
-      for (const list of children.values()) list.sort(byNum)
-      const out: TreeItem[] = []
-      const visit = (posts: DiscoursePost[], depth: number): void => {
-        for (const p of posts) {
-          out.push({ post: p, depth: Math.min(depth, TREE_DEPTH_MAX) })
-          const kids = children.get(p.post_number)
-          if (kids) visit(kids, depth + 1)
-        }
-      }
-      visit(roots, 0)
-      return out
     }
   },
   actions: {

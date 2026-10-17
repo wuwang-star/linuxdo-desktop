@@ -1,0 +1,161 @@
+/* ============================================================
+   应用外框架壳（feishu-im-frame）：rail 布局 / RailNav / win-btns / 队列浮层 / 空态
+   配色走 tokens.css @scope: feishu-im-frame 变量组；视觉基准 research/feishu-im-frame-mockup.html
+   ============================================================ */
+
+/* ---------- 壳布局：rail + 主区，替代旧顶栏结构 ---------- */
+.app-shell {
+  display: flex; height: 100%; min-height: 0;
+  position: relative; overflow: hidden;
+  background: var(--im-rail-bg);
+}
+.shell-main {
+  flex: 1; min-width: 0; height: 100%;
+  background: var(--im-panel);
+}
+
+/* 拖拽区：rail 顶部（头像+搜索段）/ 中栏节头 / 内容区头部；
+   内部交互控件一律 no-drag（AC7 防误吞） */
+.rail-top, .ldd-sec-head, .ldd-t-head { -webkit-app-region: drag; }
+.rail-top button, .rail-top input,
+.ldd-sec-head button, .ldd-sec-head a,
+.ldd-t-head button, .ldd-t-head a, .ldd-t-head input, .ldd-t-head textarea {
+  -webkit-app-region: no-drag;
+}
+
+/* ---------- 左 rail（RailNav）：展开 184px / 收起 56px ---------- */
+.rail {
+  width: 184px; flex: none;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 8px 8px;
+  background: var(--im-rail-bg); border-right: 1px solid var(--im-line);
+  transition: width 0.18s ease;
+  position: relative; z-index: 5;
+}
+.rail.collapsed { width: 56px; }
+
+.rail-top { display: flex; align-items: center; gap: 8px; margin: 0 4px 10px; }
+.rail.collapsed .rail-top { justify-content: center; margin-bottom: 12px; }
+
+.rail-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  overflow: hidden; padding: 0; border: 0; cursor: pointer;
+  background: var(--im-accsoft); color: var(--im-acc);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 500; font-size: 14px;
+}
+.rail-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.rail-avatar.ghost { background: var(--im-hov); color: var(--im-tx2); }
+
+.rail-plus {
+  width: 22px; height: 22px; border-radius: 50%; flex: none; padding: 0;
+  border: 0; background: var(--im-hov); color: var(--im-tx2);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.rail-plus:hover { background: var(--im-accsoft); color: var(--im-acc); }
+.rail-plus svg { width: 13px; height: 13px; }
+.rail.collapsed .rail-plus { display: none; }
+
+.rail-search {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 4px 12px; padding: 7px 10px; border-radius: 8px;
+  background: var(--im-hov); color: var(--im-tx2);
+}
+.rail.collapsed .rail-search { display: none; }
+.rail-search svg { width: 15px; height: 15px; flex: none; }
+.rail-search input {
+  border: 0; background: none; outline: none; box-shadow: none;
+  font: inherit; font-size: 13px; color: var(--im-tx);
+  width: 100%; padding: 0; min-width: 0;
+}
+.rail-search input::placeholder { color: var(--im-tx2); }
+
+.rail-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  border: 0; background: none; padding-top: 8px; padding-bottom: 8px;
+  color: color-mix(in srgb, var(--im-tx) 62%, var(--im-tx2));
+  font-size: 13px; white-space: nowrap; cursor: pointer;
+  text-decoration: none; position: relative;
+}
+.rail-item svg { width: 20px; height: 20px; flex: none; }
+.rail-item:hover { background: var(--im-hov); color: var(--im-tx); }
+.rail-item.active { background: var(--im-accsoft); color: var(--im-acc); }
+.rail.collapsed .rail-item { justify-content: center; padding-left: 0; padding-right: 0; }
+.rail.collapsed .lbl { display: none; }
+
+.rail-badge {
+  margin-left: auto; flex: none;
+  background: var(--im-red); color: #fff;
+  border-radius: 999px; font-size: 11px; line-height: 16px; padding: 0 5px;
+}
+.rail.collapsed .rail-badge {
+  position: absolute; margin: 0; transform: translate(12px, -9px); padding: 0 4px;
+}
+
+.rail-spacer { flex: 1; }
+.rail-collapse {
+  border-top: 1px solid var(--im-line);
+  margin-top: 6px; padding-top: 8px;
+  border-radius: 0;
+}
+
+/* ---------- 自绘窗口钮：悬浮窗口右上（原顶栏尾段迁出） ---------- */
+.win-btns {
+  position: absolute; top: 10px; right: 12px; z-index: 60;
+  display: flex; align-items: center; gap: 2px;
+  -webkit-app-region: no-drag;
+}
+.win-btn {
+  width: 28px; height: 28px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--im-tx2);
+  border-radius: 6px; cursor: pointer;
+}
+.win-btn:hover { background: var(--im-hov); color: var(--im-tx); }
+.win-btn.close:hover { background: var(--im-red); color: #fff; }
+.win-btn svg { width: 14px; height: 14px; display: block; }
+
+/* ---------- 队列浮层：绝对定位于 rail 右侧（原 queue-panel 逻辑迁入 RailNav） ---------- */
+.queue-wrap { position: relative; }
+/* 队列按钮非 .rail 直接子级（包在 wrap 里），button 收缩为内容宽——强制与其他 rail 项同宽，选中蓝底才满宽 */
+.queue-wrap > .rail-item { width: 100%; }
+.queue-panel {
+  position: absolute; left: calc(100% + 10px); top: -6px; width: 320px; z-index: 70;
+  background: var(--im-panel); border: 1px solid var(--im-line); border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(31, 35, 41, 0.14);
+  padding: 8px; max-height: 420px; overflow-y: auto;
+  text-align: left;
+}
+.queue-panel h4 {
+  margin: 0; padding: 4px 8px 8px;
+  font-size: 12px; color: var(--im-tx2); font-weight: 400;
+}
+.queue-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; }
+.queue-item:hover { background: var(--im-hov); }
+.queue-item a {
+  flex: 1; min-width: 0; color: var(--im-tx); text-decoration: none;
+  font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.queue-item a:hover { color: var(--im-acc); }
+.queue-item button {
+  border: 0; background: none; padding: 0;
+  color: var(--im-tx2); font-size: 12px; flex: none; cursor: pointer;
+}
+.queue-item button:hover { color: var(--im-red); }
+.queue-empty { color: var(--im-tx2); font-size: 12px; padding: 8px; }
+.queue-foot { border-top: 1px solid var(--im-line); margin-top: 6px; padding: 8px 8px 2px; }
+.queue-foot button {
+  border: 0; background: none; padding: 0;
+  color: var(--im-tx2); font-size: 12px; cursor: pointer;
+}
+.queue-foot button:hover { color: var(--im-red); }
+
+/* ---------- 内容区空态（未选主题占位页） ---------- */
+.ldd-empty {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  color: var(--im-tx2);
+}
+.ldd-empty svg { width: 60px; height: 60px; color: var(--im-line); }
+.ldd-empty b { color: color-mix(in srgb, var(--im-tx) 70%, var(--im-tx2)); font-weight: 500; font-size: 15px; }

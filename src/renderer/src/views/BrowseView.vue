@@ -9,6 +9,12 @@ const route = useRoute()
 const router = useRouter()
 const browse = useBrowseStore()
 
+/** 空态占位 icon（行内 SVG，沿用项目 ICONS 模式；lucide laugh） */
+const ICONS = {
+  laugh:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13a4.5 4.5 0 0 0 8 0"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>'
+}
+
 // ---- 双栏判定：≥1200px（matchMedia listener 实时同步，跨阈值即时切换；拉宽恢复双栏且右栏保持当前主题 AC3） ----
 const mql = window.matchMedia('(min-width: 1200px)')
 const dual = ref(mql.matches)
@@ -61,10 +67,11 @@ const showReader = computed(() => dual.value || route.name === 'topic')
         :offline="browse.offlineFlag"
         :key="`${browse.selectedId}-${browse.offlineFlag}`"
       />
-      <!-- R4 右栏空态 -->
-      <div v-else class="reader-empty">
-        <div class="reader-empty-logo">LINUX<span>DO</span></div>
-        <p>从左侧选择主题</p>
+      <!-- R8：内容区即阅读位；未选主题时空态占位页（样式在 shell.css） -->
+      <div v-else class="ldd-empty">
+        <span class="ic" v-html="ICONS.laugh"></span>
+        <b>你的每一个好想法，都让人惊喜</b>
+        <span>从左侧列表选择主题开始阅读</span>
       </div>
     </section>
   </div>

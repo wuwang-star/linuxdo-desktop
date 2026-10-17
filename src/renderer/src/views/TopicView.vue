@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useTopicStore } from '../stores/topic'
+import { useTopicStore, clusterThreads } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
-import { relTime } from '../utils/format'
-import { loadPrefs, savePrefs, type ViewModePref } from '../utils/prefs'
+import { relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
@@ -36,13 +35,37 @@ const dotPct = computed(() => {
   return `${((cur - 1) / (n - 1)) * 100}%`
 })
 
-// ---- 视图模式（时间流/树形）：偏好存 ldd-reading（重启保留），即时生效 ----
-const viewMode = ref<ViewModePref>(loadPrefs().viewMode)
-function setViewMode(m: ViewModePref): void {
-  viewMode.value = m
-  // 读-改-写：不覆盖 ldd-reading 里的其他字段
-  savePrefs({ ...loadPrefs(), viewMode: m })
+// ---- 楼中楼（feishu-im-frame 唯一模式，默认展开三级回复）：聚类纯函数作用于 visiblePosts（只看楼主过滤后集合） ----
+const clustered = computed(() => clusterThreads(store.visiblePosts))
+/** 已收起串根集合（键 = 串根 post_number；默认全部展开，不持久化） */
+const folded = ref(new Set<number>())
+function toggleThread(rootNum: number): void {
+  if (folded.value.has(rootNum)) folded.value.delete(rootNum)
+  else folded.value.add(rootNum)
 }
+/** 楼主角标：楼号 1 或作者 = OP */
+function isOpPost(p: DiscoursePost): boolean {
+  return p.post_number === 1 || (store.opUsername !== null && p.username === store.opUsername)
+}
+/** 头部 meta 行创建时间 chip（24h 内相对，更早 M月D日） */
+const createdLabel = computed(() => rowTime(store.topic?.created_at))
+
+/** 行内 SVG 图标（沿用项目 ICONS 模式） */
+const ICONS = {
+  chat:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
+  user:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  plus:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  download:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+  chevR:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+}
+
 const timelineTicks = computed(() => {
   const n = total.value
   if (!n) return [] as number[]
@@ -59,6 +82,9 @@ async function consumePendingJump() {
   const target = store.pendingJump
   if (!target || !scroller.value) return
   store.pendingJump = 0
+  // 目标楼层在回复串内且串被收起 → 先展开该串再滚动
+  const root = clustered.value.rootOf.get(target)
+  if (root !== undefined) folded.value.delete(root)
   await nextTick()
   const el = document.getElementById(`post-${target}`)
   if (el) {
@@ -209,6 +235,13 @@ function go(postNumber: number): void {
 // 站内 /t/ 应用内打开（同主题跳楼层 / 异主题路由复用 ?pn 语义）；其余交系统浏览器（主进程 window-open handler 接走）
 function onCookedClick(e: MouseEvent): void {
   const el = e.target as Element | null
+  // 点图优先进灯箱：Discourse 图片外层包 <a href=原图>，不放行到下方链接拦截（会跳系统浏览器）
+  if (el instanceof HTMLImageElement && el.closest('.cooked') && el.getAttribute('src')) {
+    e.preventDefault()
+    lightbox.value = el.getAttribute('src')
+    lbZoom.value = false
+    return
+  }
   const a = el?.closest?.('a[href]')
   if (!a || !a.closest('.cooked')) return
   e.preventDefault()
@@ -283,50 +316,59 @@ function readOffline(): void {
 <template>
   <div class="topic-page">
     <div class="topic-main">
-    <!-- 固定顶栏（单行紧凑）：标题 + 图标化操作，悬停见提示 -->
-    <div v-if="store.topic" class="topic-head">
-      <span v-if="store.offline" class="offline-badge">离线</span>
-      <div class="th-title" :title="store.topic.title">{{ store.topic.title }}</div>
-      <div class="th-ops">
-        <button
-          class="ico"
-          :class="{ on: store.onlyOp }"
-          title="只看楼主"
-          @click="store.onlyOp = !store.onlyOp"
-        >👤</button>
-        <button
-          class="ico"
-          :class="{ on: viewMode === 'tree' }"
-          :title="viewMode === 'stream' ? '切换到树形视图' : '切换到时间流视图'"
-          @click="setViewMode(viewMode === 'stream' ? 'tree' : 'stream')"
-        >{{ viewMode === 'stream' ? '≡' : '🌳' }}</button>
-        <button
-          v-if="!store.offline"
-          class="ico"
-          :disabled="saving"
-          :title="saveLabel"
-          @click="doSaveOffline"
-        >⬇</button>
-        <button
-          v-if="!store.offline"
-          class="ico"
-          :class="{ on: store.topic.bookmarked }"
-          :disabled="bookmarking || store.topic.bookmarked"
-          :title="store.topic.bookmarked ? '已收藏' : '收藏'"
-          @click="doBookmark"
-        >{{ store.topic.bookmarked ? '★' : '☆' }}</button>
-        <button
-          class="ico"
-          :class="{ on: queue.has(topicId) }"
-          :title="queue.has(topicId) ? '从阅读队列移除' : '加入阅读队列'"
-          @click="toggleQueue"
-        >{{ queue.has(topicId) ? '✓' : '＋' }}</button>
-        <template v-if="queue.count > 0">
-          <button class="ico" :disabled="!queueNav.prev" title="上一贴" @click="goNeighbor('prev')">‹</button>
-          <button class="ico" :disabled="!queueNav.next" title="下一贴" @click="goNeighbor('next')">›</button>
-        </template>
+    <!-- 内容区头部（拖拽区 3）：标题 + meta 行 + 页签行/动作 -->
+    <div v-if="store.topic" class="ldd-t-head">
+      <div class="ldd-t-title-row">
+        <span v-if="store.offline" class="offline-badge">离线</span>
+        <div class="ldd-t-title" :title="store.topic.title">{{ store.topic.title }}</div>
+        <span v-if="saveResult" class="th-toast" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
       </div>
-      <span v-if="saveResult" class="th-toast" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
+      <div class="ldd-t-meta">
+        <span class="ldd-chip">{{ total }} 楼</span>
+        <span v-if="createdLabel" class="ldd-chip">创建于 {{ createdLabel }}</span>
+      </div>
+      <div class="ldd-t-bar">
+        <button class="ldd-ctab" :class="{ active: !store.onlyOp }" @click="store.onlyOp = false">
+          <span class="ic" v-html="ICONS.chat"></span>正文
+        </button>
+        <button class="ldd-ctab" :class="{ active: store.onlyOp }" @click="store.onlyOp = true">
+          <span class="ic" v-html="ICONS.user"></span>只看楼主
+        </button>
+        <div class="ldd-t-actions">
+          <button class="ldd-btn" @click="openComposer(null)">
+            <span class="ic" v-html="ICONS.chat"></span>回复
+          </button>
+          <button
+            class="ldd-ghost"
+            :class="{ on: queue.has(topicId) }"
+            :title="queue.has(topicId) ? '从阅读队列移除' : '加入阅读队列'"
+            @click="toggleQueue"
+          >
+            <span class="ic" v-html="queue.has(topicId) ? ICONS.check : ICONS.plus"></span>{{ queue.has(topicId) ? '已入队' : '入队' }}
+          </button>
+          <button
+            v-if="!store.offline"
+            class="ldd-ghost"
+            :disabled="saving"
+            :title="saveLabel"
+            @click="doSaveOffline"
+          >
+            <span class="ic" v-html="ICONS.download"></span>{{ saving ? saveLabel : '离线' }}
+          </button>
+          <button
+            v-if="!store.offline"
+            class="ldd-ghost"
+            :class="{ on: store.topic.bookmarked }"
+            :disabled="bookmarking || store.topic.bookmarked"
+            :title="store.topic.bookmarked ? '已收藏' : '收藏'"
+            @click="doBookmark"
+          >{{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}</button>
+          <template v-if="queue.count > 0">
+            <button class="ldd-ghost" :disabled="!queueNav.prev" title="上一贴" @click="goNeighbor('prev')">‹</button>
+            <button class="ldd-ghost" :disabled="!queueNav.next" title="下一贴" @click="goNeighbor('next')">›</button>
+          </template>
+        </div>
+      </div>
     </div>
     <div ref="scroller" class="topic-scroller" @click="onScrollerClick">
       <div v-if="store.loading" class="loading">加载中…</div>
@@ -347,39 +389,47 @@ function readOffline(): void {
 
         <div v-if="store.loadingOlder" class="loading">加载更早楼层…</div>
 
-        <!-- 时间流：纯楼层序（现状不变）；树形：楼中楼缩进+引导线，PostItem 原样复用 -->
-        <template v-if="viewMode === 'stream'">
+        <!-- 楼中楼（唯一模式，默认展开）：主干楼层 + 「收起 N 条回复」钮 + 原位缩进子楼
+             （2 级=根的直接回复，3 级=回复的回复；更深 reply 链平铺续接第 3 级，引用关系由「回复 #N」chip 表达；
+             loadOlder 增量后 computed 幂等重算） -->
+        <template v-for="item in clustered.items" :key="item.post.id">
           <PostItem
-            v-for="p in store.visiblePosts"
-            :key="p.id"
-            :post="p"
+            :post="item.post"
+            :is-op="isOpPost(item.post)"
             :offline="store.offline"
             @jump="go"
             @like="(id) => store.toggleLike(id)"
             @reply="openComposer"
             @edit="openEdit"
           />
-        </template>
-        <template v-else>
-          <div
-            v-for="item in store.treePosts"
-            :key="item.post.id"
-            class="reply-tree"
-            :class="{ 'thread-line': item.depth > 0 }"
-            :style="{ marginLeft: item.depth * 16 + 'px' }"
-          >
-            <PostItem
-              :post="item.post"
-              :offline="store.offline"
-              @jump="go"
-              @like="(id) => store.toggleLike(id)"
-              @reply="openComposer"
-              @edit="openEdit"
-            />
-          </div>
+          <template v-if="item.thread.length > 0">
+            <button
+              class="ldd-fold"
+              :aria-expanded="!folded.has(item.post.post_number)"
+              @click="toggleThread(item.post.post_number)"
+            >
+              <span class="ic fold-chev" :class="{ open: !folded.has(item.post.post_number) }" v-html="ICONS.chevR"></span>
+              {{ folded.has(item.post.post_number) ? `${item.thread.length} 条回复` : `收起 ${item.thread.length} 条回复` }}
+            </button>
+            <div v-show="!folded.has(item.post.post_number)" class="ldd-thread">
+              <PostItem
+                v-for="m in item.thread"
+                :key="m.post.id"
+                :post="m.post"
+                :is-op="isOpPost(m.post)"
+                compact
+                :class="{ 'post--depth3': m.depth > 1 }"
+                :offline="store.offline"
+                @jump="go"
+                @like="(id) => store.toggleLike(id)"
+                @reply="openComposer"
+                @edit="openEdit"
+              />
+            </div>
+          </template>
         </template>
 
-        <div v-if="store.visiblePosts.length === 0" class="loading">没有可见楼层</div>
+        <div v-if="clustered.items.length === 0" class="loading">没有可见楼层</div>
       </template>
     </div>
     </div>

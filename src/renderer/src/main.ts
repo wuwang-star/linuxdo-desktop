@@ -5,6 +5,7 @@ import router from './router'
 // 样式按部位拆分（assets/styles/），引入顺序即优先级
 import './assets/styles/tokens.css'
 import './assets/styles/base.css'
+import './assets/styles/shell.css'
 import './assets/styles/topbar.css'
 import './assets/styles/browse.css'
 import './assets/styles/home.css'
