@@ -587,3 +587,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 19 追记 6：全局 button 皮肤回归波及定尺寸图标钮
 
 用户报「添加到队列按钮 UI 有问题」。根因：settings-ui-fix 的裸 button 兜底带 padding:4px 10px，而定尺寸钮 .row-q（24px）/ .stepper button（26px）未声明 padding——类选择器只覆盖同名属性，padding 落进固定盒宽把图标挤出。全仓 sweep 确认仅此两处（.settings-nav/.win-btn/.act/.ico 均自带 padding）。修复：两处追加 padding:0，row-q 顺带 flex 居中。教训：全局元素选择器皮肤上线时要 sweep 所有元素级按钮的盒模型自洽性（width/height vs padding）。
+
+### Session 20（2026-10-18 凌晨）：用户身份流 UI（10-18-user-flow-ui）
+
+用户点名三条流（个人页/评论点击/头像悬浮卡）+ brainstorm/grill-me。Q1 给三选项带推荐，用户回「A /goal 后续以你推荐的选项走下去 要求完成度足够高」——决策权整体授权。落地：方案 A hover 卡体系（userCard 状态机 400ms/150ms/60s 缓存 + UserHoverCard 定位翻转组件 + 五触点统一 + modal 删除）、个人页升级（banner/8 统计/主题·回复 tab + user_actions 新端点四点布线，形态风险由降级文案兜底）、回复关系高亮（flashPn 1.6s）。过程：并行会话外框架改造（RailNav/顶栏删除）中途落树，App.vue 冲突两次——按铁律重读适配（顺带把 RailNav 头像触点也迁到方案 A）；HomeView 漏 router 补 import 被 typecheck 抓。typecheck+smoke 绿，AC1-6 待真机验收（user_actions 端点形态为重点观察项）。
