@@ -1,0 +1,385 @@
+<style>
+#ldd-ui-spec{
+  --sp-bg:#f2f3f5; --sp-panel:#ffffff; --sp-canvas:#fafbfc; --sp-quote:#f7f9fa;
+  --sp-line:#e7e8ea; --sp-tx:#1f2329; --sp-tx2:#8f959e; --sp-acc:#3370ff;
+  --sp-accsoft:rgba(51,112,255,.10); --sp-red:#f54a45; --sp-hov:rgba(31,35,41,.05);
+  --sp-green:#3ecf9a; --sp-orange:#ff7d00;
+  --sp-sh-1:0 1px 3px rgba(31,35,41,.06); --sp-sh-2:0 6px 20px rgba(31,35,41,.12); --sp-sh-3:0 12px 40px rgba(31,35,41,.2);
+  font:14px/1.6 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--sp-tx); background:var(--sp-bg); border-radius:12px; padding:24px 28px 48px;
+}
+#ldd-ui-spec *{box-sizing:border-box;margin:0;padding:0}
+#ldd-ui-spec button{font:inherit;cursor:pointer}
+#ldd-ui-spec[data-theme="dark"]{
+  --sp-bg:#17191d; --sp-panel:#1d2126; --sp-canvas:#1a1d21; --sp-quote:#22262c;
+  --sp-line:#2b3138; --sp-tx:#e6e8ea; --sp-tx2:#8b9198; --sp-acc:#457aff;
+  --sp-accsoft:rgba(69,122,255,.18); --sp-red:#f54a45; --sp-hov:rgba(230,232,234,.07);
+  --sp-green:#3ecf9a; --sp-orange:#ff9d4d;
+  --sp-sh-1:0 1px 3px rgba(0,0,0,.4); --sp-sh-2:0 6px 20px rgba(0,0,0,.5); --sp-sh-3:0 12px 40px rgba(0,0,0,.6);
+}
+.sp-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+#ldd-ui-spec h1{font-size:19px;font-weight:600}
+.sp-sub{color:var(--sp-tx2);font-size:12.5px;margin-bottom:20px;max-width:860px}
+.sp-toggle{margin-left:auto;display:flex;border:1px solid var(--sp-line);border-radius:8px;overflow:hidden;flex:none}
+.sp-toggle button{border:0;background:none;padding:5px 14px;font-size:12.5px;color:var(--sp-tx2)}
+.sp-toggle button.on{background:var(--sp-accsoft);color:var(--sp-acc)}
+#ldd-ui-spec h2{font-size:15px;font-weight:600;margin:30px 0 4px;padding-top:20px;border-top:1px solid var(--sp-line)}
+#ldd-ui-spec h2:first-of-type{border-top:0;padding-top:0}
+#ldd-ui-spec h3{font-size:12.5px;font-weight:500;color:var(--sp-tx2);margin:14px 0 8px}
+.sp-note{color:var(--sp-tx2);font-size:12px;margin-bottom:12px;max-width:900px}
+.sw-row{display:flex;gap:10px;flex-wrap:wrap}
+.sw{width:128px;border:1px solid var(--sp-line);border-radius:10px;overflow:hidden;background:var(--sp-panel)}
+.sw-chip{height:42px}
+.sw-meta{padding:6px 9px;font-size:11px}
+.sw-meta b{display:block;font-size:12px;font-weight:500}
+.sw-meta span{color:var(--sp-tx2);font-family:Consolas,monospace}
+.sw.old{position:relative}
+.sw.old .tag{position:absolute;top:4px;right:4px;background:var(--sp-red);color:#fff;font-size:10px;padding:0 5px;border-radius:4px}
+.type-row{display:flex;align-items:baseline;gap:14px;padding:7px 0;border-bottom:1px dashed var(--sp-line)}
+.type-row:last-child{border-bottom:0}
+.type-demo{width:340px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.type-meta{margin-left:auto;color:var(--sp-tx2);font-size:11px;font-family:Consolas,monospace;flex:none}
+.space-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;font-size:12px}
+.space-row b{width:64px;font-weight:500}
+.space-bar{height:14px;background:var(--sp-accsoft);border:1px solid var(--sp-acc);border-radius:3px}
+.space-meta{color:var(--sp-tx2);font-family:Consolas,monospace;font-size:11px}
+.rad-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.rad{width:84px;text-align:center;font-size:11px;color:var(--sp-tx2)}
+.rad-box{height:52px;background:var(--sp-panel);border:1.5px solid var(--sp-acc);margin-bottom:5px}
+.sh-row{display:flex;gap:22px;flex-wrap:wrap}
+.sh{width:150px;text-align:center;font-size:11px;color:var(--sp-tx2)}
+.sh-box{height:56px;background:var(--sp-panel);border-radius:10px;margin-bottom:6px}
+.zrow{display:flex;align-items:center;gap:12px;font-size:12.5px;padding:6px 10px;border-bottom:1px dashed var(--sp-line)}
+.zrow:last-child{border-bottom:0}
+.zrow code{width:90px;flex:none;font-family:Consolas,monospace;color:var(--sp-acc)}
+.zrow span{color:var(--sp-tx2)}
+.zrow b{width:170px;font-weight:500}
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.comp-col{min-width:0}
+.comp-col h3:first-child{margin-top:0}
+.sp-card{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:10px;padding:14px 16px}
+.sp-btn{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:6px 14px;font-size:13px;border:0;transition:transform 180ms cubic-bezier(.22,1,.36,1),box-shadow 180ms cubic-bezier(.22,1,.36,1)}
+.sp-btn.pri{background:var(--sp-acc);color:#fff}
+.sp-btn.pri:hover{transform:translateY(-1px);box-shadow:var(--sp-sh-2)}
+.sp-btn.pri:active{transform:none}
+.sp-btn.pri:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.sp-btn.gho{background:var(--sp-panel);border:1px solid var(--sp-line);color:var(--sp-tx2)}
+.sp-btn.gho:hover{border-color:var(--sp-acc);color:var(--sp-acc)}
+.sp-btn.gho:disabled{opacity:.4;cursor:not-allowed}
+.sp-chip{display:inline-flex;align-items:center;border-radius:999px;padding:4px 12px;font-size:12px;border:1px solid var(--sp-line);color:var(--sp-tx2);background:var(--sp-panel)}
+.sp-chip.on{background:var(--sp-accsoft);border-color:transparent;color:var(--sp-acc);font-weight:500}
+.sp-chip:hover{color:var(--sp-acc)}
+.sp-tag{display:inline-block;border-radius:4px;padding:0 6px;font-size:11px;background:var(--sp-accsoft);color:var(--sp-acc)}
+.sp-tag.neu{background:var(--sp-hov);color:var(--sp-tx2)}
+.sp-badge{display:inline-block;background:var(--sp-red);color:#fff;border-radius:999px;font-size:11px;line-height:16px;padding:0 6px}
+.st-grid{display:flex;flex-direction:column;gap:8px}
+.st-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sp-tx2)}
+.st-row .lbl{width:58px;flex:none}
+.sp-input{display:flex;align-items:center;gap:8px;background:var(--sp-hov);border-radius:6px;padding:7px 10px;color:var(--sp-tx2);font-size:13px}
+.sp-input input{border:0;background:none;outline:none;color:var(--sp-tx);font:inherit;font-size:13px;width:100%}
+.sp-input.focused{box-shadow:0 0 0 2px var(--sp-accsoft),0 0 0 1px var(--sp-acc)}
+.sp-input.disabled{opacity:.45;cursor:not-allowed}
+.sp-switch{width:34px;height:19px;border-radius:999px;background:var(--sp-line);position:relative;flex:none;cursor:pointer}
+.sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sp-switch.on{background:var(--sp-acc)}
+.sp-switch.on::after{left:17px}
+.sp-check{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--sp-tx2);flex:none;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:10px}
+.sp-check.on{background:var(--sp-acc);border-color:var(--sp-acc)}
+.sp-radio{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--sp-tx2);flex:none;display:inline-flex;align-items:center;justify-content:center}
+.sp-radio.on{border-color:var(--sp-acc)}
+.sp-radio.on::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--sp-acc)}
+.sp-select{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--sp-line);border-radius:6px;padding:5px 10px;font-size:13px;background:var(--sp-panel);min-width:150px;color:var(--sp-tx)}
+.sp-stepper{display:inline-flex;align-items:center;border:1px solid var(--sp-line);border-radius:6px;overflow:hidden}
+.sp-stepper button{border:0;background:none;width:26px;height:26px;color:var(--sp-tx2);font-size:14px}
+.sp-stepper span{width:36px;text-align:center;font-size:13px;border-left:1px solid var(--sp-line);border-right:1px solid var(--sp-line);align-self:stretch;display:flex;align-items:center;justify-content:center}
+.sp-range{width:170px;height:4px;border-radius:999px;background:var(--sp-line);position:relative}
+.sp-range::before{content:'';position:absolute;left:0;top:0;bottom:0;width:55%;border-radius:999px;background:var(--sp-acc)}
+.sp-range::after{content:'';position:absolute;left:55%;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:var(--sp-acc);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sp-floor{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--sp-line)}
+.sp-fav{width:40px;height:40px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--sp-acc),var(--sp-green));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500}
+.sp-fbody{flex:1;min-width:0}
+.sp-fhead{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sp-tx2);flex-wrap:wrap}
+.sp-fhead .nm{font-weight:600;font-size:13px;color:var(--sp-tx)}
+.sp-cooked{margin-top:6px;font-size:15.5px;line-height:1.6}
+.sp-cooked p{margin:4px 0}
+.sp-quote{background:var(--sp-quote);border-left:4px solid var(--sp-acc);border-radius:0 8px 8px 0;padding:10px 14px;margin:8px 0;color:var(--sp-tx)}
+.sp-quote p{margin:0;font-size:14px;color:var(--sp-tx2)}
+.sp-quotecard{background:var(--sp-panel);border:1px solid var(--sp-line);border-left:4px solid var(--sp-orange);border-radius:0 8px 8px 0;padding:8px 12px;margin:8px 0}
+.sp-quotecard p{margin:0;font-size:13.5px;color:var(--sp-tx2)}
+.sp-code{background:var(--sp-quote);border:1px solid var(--sp-line);border-radius:8px;padding:10px 14px;margin:8px 0;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;color:var(--sp-tx);overflow:hidden;white-space:pre}
+.sp-thread{margin:8px 0 0 32px;padding:2px 0 2px 16px;border-left:2px solid color-mix(in srgb,var(--sp-tx2) 45%,transparent)}
+.sp-titem{display:flex;gap:10px;padding:8px 0;font-size:14px}
+.sp-titem .fav2{width:26px;height:26px;border-radius:50%;flex:none;background:var(--sp-accsoft);color:var(--sp-acc);display:flex;align-items:center;justify-content:center;font-size:11px}
+.sp-titem .in3{margin-left:32px;padding-left:16px;border-left:2px solid color-mix(in srgb,var(--sp-tx2) 45%,transparent);display:flex;gap:10px}
+.sp-titem .fav3{width:22px;height:22px;border-radius:50%;flex:none;background:var(--sp-hov);color:var(--sp-tx2);display:flex;align-items:center;justify-content:center;font-size:10px}
+.sp-acts{display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--sp-tx2)}
+.sp-acts span{cursor:default}
+.sp-acts span:hover{color:var(--sp-acc)}
+.sp-acts .dim{opacity:.35}
+.sp-acts .dim:hover{opacity:1}
+.list-demo{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:10px;overflow:hidden}
+.lrow{display:flex;gap:10px;padding:10px 12px;align-items:flex-start}
+.lrow:hover{background:var(--sp-hov)}
+.lrow.sel{background:var(--sp-accsoft)}
+.lrow .av{width:36px;height:36px;border-radius:50%;flex:none;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+.lrow .mid{flex:1;min-width:0}
+.lrow .tl{display:flex;gap:8px;align-items:flex-start}
+.lrow .tt{flex:1;min-width:0;font-weight:500;font-size:13.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lrow.sel .tt{color:var(--sp-acc)}
+.lrow .tm{flex:none;font-size:12px;color:var(--sp-tx2)}
+.lrow .sn{font-size:12px;color:var(--sp-tx2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .mt{display:flex;gap:10px;align-items:center;margin-top:5px;font-size:12px;color:var(--sp-tx2)}
+.lrow .q{margin-left:auto;width:24px;height:24px;border-radius:6px;border:1px solid var(--sp-line);display:flex;align-items:center;justify-content:center;color:var(--sp-tx2);font-size:13px;flex:none}
+.float-grid{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.fmenu{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:10px;box-shadow:var(--sp-sh-2);padding:6px;width:200px}
+.fmenu .mi{padding:7px 10px;border-radius:6px;font-size:13px}
+.fmenu .mi:hover{background:var(--sp-hov)}
+.fmenu .mi.danger{color:var(--sp-red)}
+.fmenu .msep{height:1px;background:var(--sp-line);margin:4px 6px}
+.fdialog{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:12px;box-shadow:var(--sp-sh-3);padding:18px 20px;width:330px}
+.fdialog h4{font-size:15px;font-weight:500;margin-bottom:6px}
+.fdialog p{font-size:13px;color:var(--sp-tx2);margin-bottom:14px}
+.fdialog .fbtns{display:flex;justify-content:flex-end;gap:8px}
+.ftoast{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:999px;box-shadow:var(--sp-sh-2);padding:8px 18px;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+.fb-note{font-size:11px;color:var(--sp-tx2);margin-top:6px}
+.skel{background:var(--sp-hov);border-radius:6px;position:relative;overflow:hidden}
+.skel::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(31,35,41,.06),transparent);animation:sk 1.4s infinite}
+@keyframes sk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--sp-accsoft);border-top-color:var(--sp-acc);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fempty{border:1.5px dashed var(--sp-line);border-radius:12px;padding:26px;text-align:center;color:var(--sp-tx2);font-size:13px}
+.ferr{background:color-mix(in srgb,var(--sp-red) 8%,transparent);border:1px solid color-mix(in srgb,var(--sp-red) 35%,transparent);color:var(--sp-red);border-radius:8px;padding:8px 12px;font-size:12.5px;display:flex;gap:8px;align-items:center}
+.wire{border:1px solid var(--sp-line);border-radius:10px;overflow:hidden;background:var(--sp-panel);font-size:10px;color:var(--sp-tx2)}
+.wire .wz{display:flex;height:100%}
+.wire .wr{background:var(--sp-canvas);border-right:1px solid var(--sp-line);display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}
+.wire .wb{background:var(--sp-panel);border-right:1px solid var(--sp-line);display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}
+.wire .wc{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}
+.wire .drag{border-top:1.5px dashed var(--sp-acc);color:var(--sp-acc)}
+.icon-row{display:flex;gap:26px;align-items:flex-end;font-size:11px;color:var(--sp-tx2)}
+.icon-row .ic{text-align:center}
+.icon-row .box{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:var(--sp-tx)}
+.motion-demo{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.motion-demo .sp-btn:hover{transform:translateY(-2px);box-shadow:var(--sp-sh-2)}
+.sp-pop-d{background:var(--sp-panel);border:1px solid var(--sp-line);border-radius:10px;box-shadow:var(--sp-sh-2);padding:10px 14px;font-size:13px;width:210px;animation:specpop 240ms cubic-bezier(.22,1,.36,1)}
+@keyframes specpop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+.mtab{font-size:12px;color:var(--sp-tx2);align-self:center;max-width:330px}
+@media (prefers-reduced-motion:reduce){#ldd-ui-spec *{animation:none!important;transition:none!important}}
+</style>
+
+<div id="ldd-ui-spec" data-theme="light">
+  <div class="sp-top">
+    <h1>LinuxDo Desktop · UI 设计规范 v1（定稿待拍板）</h1>
+    <div class="sp-toggle">
+      <button class="on" id="sp-light">亮色</button>
+      <button id="sp-dark">暗色</button>
+    </div>
+  </div>
+  <p class="sp-sub">13 章：色板 / 字阶 / 间距 / 圆角 / 阴影与层级 / 控件全套（含状态矩阵）/ 列表行 / 楼层与富文本 / 浮层体系 / 反馈态 / 布局栅格与断点 / 图标 / 动效。每章 = 决策 + 活样本。拍板后建「全站校准」任务按此逐页落地。</p>
+
+  <h2>1 · 色板（单轨 9 槽位）</h2>
+  <p class="sp-note">决策：全站只引底座变量，--im-* 颜色槽位删除；旧社区绿 --accent 退役。暗色映射规则：底色越深越冷（bg #17191d → panel #1d2126），文本反转，主色提亮补偿（#3370ff→#457aff），透明度类按暗底加重 8→18%。</p>
+  <div class="sw-row">
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-bg)"></div><div class="sw-meta"><b>bg 页面底</b><span>--bg #f2f3f5 / #17191d</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-panel);border-bottom:1px solid var(--sp-line)"></div><div class="sw-meta"><b>panel 面板</b><span>#ffffff / #1d2126</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-canvas)"></div><div class="sw-meta"><b>canvas 内容底</b><span>#fafbfc / #1a1d21</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-tx)"></div><div class="sw-meta"><b>text 主文本</b><span>#1f2329 / #e6e8ea</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-tx2)"></div><div class="sw-meta"><b>muted 次文本</b><span>#8f959e / #8b9198</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-acc)"></div><div class="sw-meta"><b>accent 主色</b><span>#3370ff / #457aff</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-accsoft)"></div><div class="sw-meta"><b>accent-weak</b><span>α.10 / α.18</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--sp-red)"></div><div class="sw-meta"><b>bad 危险</b><span>#f54a45</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:repeating-linear-gradient(45deg,var(--sp-green) 0 6px,#fff0 6px 12px)"></div><div class="sw old"><span class="tag">退役</span></div><div class="sw-meta"><b>旧社区绿</b><span>仅皮肤可复活</span></div></div>
+  </div>
+
+  <h2>2 · 字阶（5+1 档 token 化，10/11px 全废）</h2>
+  <div class="type-row"><div class="type-demo" style="font-size:19px;font-weight:600">帖子标题 / 页面大标题</div><div class="type-meta">--font-xl 19px/600</div></div>
+  <div class="type-row"><div class="type-demo" style="font-size:17px;font-weight:500">页面标题：设置、通知</div><div class="type-meta">--font-lg 17px/500</div></div>
+  <div class="type-row"><div class="type-demo" style="font-size:15.5px;line-height:1.6">正文 cooked：阅读专用 15.5px/1.6，唯一长文</div><div class="type-meta">--font-body 15.5px/1.6</div></div>
+  <div class="type-row"><div class="type-demo" style="font-size:14px">子楼正文 / 按钮文字</div><div class="type-meta">--font-md 14px</div></div>
+  <div class="type-row"><div class="type-demo" style="font-size:13px">列表标题 / 输入框 / 浮层菜单</div><div class="type-meta">--font-base 13px</div></div>
+  <div class="type-row"><div class="type-demo" style="font-size:12px;color:var(--sp-tx2)">meta / caption 下限：时间、楼号、摘要、时间戳（原 10/11px 全部上收 12）</div><div class="type-meta">--font-sm 12px 下限 · muted</div></div>
+
+  <h2>3 · 间距尺（4px 网格 6 档）</h2>
+  <div class="space-row"><b>space-1 8px</b><div class="space-bar" style="width:8px"></div><span class="space-meta">组件内间隙（图标↔文字）</span></div>
+  <div class="space-row"><b>space-2 16px</b><div class="space-bar" style="width:16px"></div><span class="space-meta">行内边距 / 卡片内边距 / 引导轨距内容</span></div>
+  <div class="space-row"><b>space-3 24px</b><div class="space-bar" style="width:24px"></div><span class="space-meta">卡片间 / 区块间</span></div>
+  <div class="space-row"><b>space-4 32px</b><div class="space-bar" style="width:32px"></div><span class="space-meta">树形缩进步长 / 大分区</span></div>
+  <div class="space-row"><b>space-5 48px</b><div class="space-bar" style="width:48px"></div><span class="space-meta">页头下间距</span></div>
+
+  <h2>4 · 圆角阶（5 档）与阴影三档</h2>
+  <div class="comp-grid">
+    <div>
+      <h3>圆角：4 标签 · 6 控件 · 8 引用卡 · 10 卡片浮层 · 999 药丸（1/2/3px 全废）</h3>
+      <div class="rad-row">
+        <div class="rad"><div class="rad-box" style="border-radius:4px"></div>4 标签</div>
+        <div class="rad"><div class="rad-box" style="border-radius:6px"></div>6 控件</div>
+        <div class="rad"><div class="rad-box" style="border-radius:8px"></div>8 引用</div>
+        <div class="rad"><div class="rad-box" style="border-radius:10px"></div>10 卡片</div>
+        <div class="rad"><div class="rad-box" style="border-radius:999px"></div>999 药丸</div>
+      </div>
+    </div>
+    <div>
+      <h3>阴影：sh-1 楼层卡 · sh-2 浮层/菜单 · sh-3 对话框/灯箱</h3>
+      <div class="sh-row">
+        <div class="sh"><div class="sh-box" style="box-shadow:var(--sp-sh-1)"></div>sh-1</div>
+        <div class="sh"><div class="sh-box" style="box-shadow:var(--sp-sh-2)"></div>sh-2</div>
+        <div class="sh"><div class="sh-box" style="box-shadow:var(--sp-sh-3)"></div>sh-3</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>5 · 层级表（z-index 全站只此 6 层）</h2>
+  <div class="zrow"><code>0</code><b>页面内容</b><span>列表 / 阅读页 / 设置页</span></div>
+  <div class="zrow"><code>5</code><b>rail 导航</b><span>压过内容滚动，不压浮层</span></div>
+  <div class="zrow"><code>10</code><b>吸顶工具条</b><span>中栏节头 sticky</span></div>
+  <div class="zrow"><code>60</code><b>窗口钮</b><span>悬浮右上，no-drag</span></div>
+  <div class="zrow"><code>70</code><b>浮层（队列/菜单/下拉）</b><span>fast 入场</span></div>
+  <div class="zrow"><code>80</code><b>对话框 / 灯箱</b><span>模态，遮罩 sh-3</span></div>
+  <div class="zrow"><code>90</code><b>toast</b><span>最上，自动消失</span></div>
+
+  <h2>6 · 控件全套 + 状态矩阵</h2>
+  <p class="sp-note">每控件必备五态：默认 / hover / active(按住) / disabled / 选中。disabled 一律 opacity .4 + not-allowed，不做换色。</p>
+  <div class="comp-grid">
+    <div class="comp-col">
+      <h3>按钮（primary / ghost）</h3>
+      <div class="st-grid">
+        <div class="st-row"><span class="lbl">默认</span><button class="sp-btn pri">回复</button><button class="sp-btn gho">入队</button></div>
+        <div class="st-row"><span class="lbl">hover</span><button class="sp-btn pri" style="transform:translateY(-1px);box-shadow:var(--sp-sh-2)">回复</button><button class="sp-btn gho" style="border-color:var(--sp-acc);color:var(--sp-acc)">入队</button></div>
+        <div class="st-row"><span class="lbl">active</span><button class="sp-btn pri" style="transform:none">回复</button></div>
+        <div class="st-row"><span class="lbl">disabled</span><button class="sp-btn pri" disabled>回复</button><button class="sp-btn gho" disabled>入队</button></div>
+      </div>
+      <h3>chips（单选工具条）与标签 / 徽标</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><span class="sp-chip on">最新</span><span class="sp-chip">最热</span><span class="sp-chip">Top ▾</span><span class="sp-chip">离线</span></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="sp-tag">楼主</span><span class="sp-tag neu">置顶</span><span class="sp-tag neu">已关闭</span><span class="sp-badge">7</span><span style="font-size:12px;color:var(--sp-tx2)">功能标签=蓝软底 · 状态标签=灰软底 · 计数=红药丸</span></div>
+    </div>
+    <div class="comp-col">
+      <h3>输入框 / 开关 / 勾选 / 单选 / 下拉 / 步进器 / 滑杆</h3>
+      <div class="st-grid">
+        <div class="st-row"><span class="lbl">输入</span><div class="sp-input" style="flex:1"><input placeholder="搜索…" readonly></div></div>
+        <div class="st-row"><span class="lbl">焦点</span><div class="sp-input focused" style="flex:1"><input value="clash" readonly></div></div>
+        <div class="st-row"><span class="lbl">禁用</span><div class="sp-input disabled" style="flex:1"><input value="不可用" readonly disabled></div></div>
+        <div class="st-row"><span class="lbl">开关</span><span class="sp-switch on"></span><span class="sp-switch"></span><span style="color:var(--sp-tx2)">DoH / 通知开关</span></div>
+        <div class="st-row"><span class="lbl">勾选</span><span class="sp-check on">✓</span><span class="sp-check"></span><span style="color:var(--sp-tx2)">回复串默认展开</span></div>
+        <div class="st-row"><span class="lbl">单选</span><span class="sp-radio on"></span><span class="sp-radio"></span><span style="color:var(--sp-tx2)">主题模式</span></div>
+        <div class="st-row"><span class="lbl">下拉</span><span class="sp-select"><span>亮色</span><span style="color:var(--sp-tx2)">▾</span></span></div>
+        <div class="st-row"><span class="lbl">步进</span><span class="sp-stepper"><button>−</button><span>15.5</span><button>+</button></span></div>
+        <div class="st-row"><span class="lbl">滑杆</span><div class="sp-range"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>7 · 列表行 anatomy（中栏帖子行，含三态）</h2>
+  <p class="sp-note">决策：标题最多两行截断；时间悬首行右上；摘要+标签+@OP+入队钮全部沉底；行 hover=灰底渐显、选中=蓝软底；入队钮已入队变 ✓ 常蓝。</p>
+  <div class="list-demo">
+    <div class="lrow">
+      <div class="av" style="background:#34c724">V</div>
+      <div class="mid">
+        <div class="tl"><span class="tt">Clash Verge 更新后 TUN 模式频繁掉线，排查思路分享（这行最多两行，两行截断）</span><span class="tm">03:18</span></div>
+        <div class="sn"><b>jbro:</b> gvisor 稳，mixed 在 UDP 场景偶尔丢包 · 7 回复 · 12 赞</div>
+        <div class="mt"><span class="sp-tag neu">置顶</span><span>@Rem</span><span class="q">＋</span></div>
+      </div>
+    </div>
+    <div class="lrow sel">
+      <div class="av" style="background:#722ed1">m</div>
+      <div class="mid">
+        <div class="tl"><span class="tt">自托管 RSS 方案：FreshRSS + Docker Compose 一键部署</span><span class="tm">昨天</span></div>
+        <div class="sn"><b>osi:</b> 建议再挂个 cron 容器定时刷新 · 5 回复 · 8 赞</div>
+        <div class="mt"><span>@miu</span><span class="q" style="background:var(--sp-accsoft);border-color:transparent;color:var(--sp-acc)">✓</span></div>
+      </div>
+    </div>
+    <div class="lrow">
+      <div class="av" style="background:#f53f3f">b</div>
+      <div class="mid">
+        <div class="tl"><span class="tt">GLM-5.3 Flash 写代码体感如何？和 4.7 比提升大吗</span><span class="tm">10月15日</span></div>
+        <div class="sn"><b>jbro:</b> 体感提升最大的是多文件改动的稳定性 · 12 回复 · 46 赞</div>
+        <div class="mt"><span class="sp-tag neu">已关闭</span><span>@bit</span><span class="q">＋</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="fb-note">hover（悬停变灰）把鼠标移上去试 · sel 选中=蓝软底+标题变蓝 · 时间今天=时刻/更早=「10月15日」</p>
+
+  <h2>8 · 楼层与富文本</h2>
+  <div class="sp-card">
+    <div class="sp-floor" style="border-bottom:0;padding-top:0">
+      <div class="sp-fav">R</div>
+      <div class="sp-fbody">
+        <div class="sp-fhead"><span class="nm">@Rem</span><span class="sp-tag">楼主</span><span class="sp-tag" style="background:var(--sp-accsoft);color:var(--sp-acc);font-family:Consolas,monospace">#1</span><span>10:24</span></div>
+        <div class="sp-cooked">
+          <p>正文 15.5px/1.6。富文本元素规范如下：</p>
+          <div class="sp-code">npm run typecheck && npm run build
+# 代码块：quote 底 + 1px 线 + 圆角 8 + 等宽 12.5px</div>
+          <div class="sp-quote"><p>站内引用（bare blockquote）：浅灰底 + accent 左色条 4px + 圆角 8，超 220px 折叠。</p></div>
+          <div class="sp-quotecard"><p>引用楼（aside.quote）：白卡 + 状态色左条 4px（这里橙色示意）+ 楼层头。</p></div>
+          <p>行内 <span style="background:var(--sp-quote);border:1px solid var(--sp-line);border-radius:4px;padding:0 5px;font-size:13px">code</span> 与 <b>加粗</b>、<i>斜体</i>、<span style="color:var(--sp-acc)">链接色同 accent</span>。</p>
+        </div>
+        <div class="sp-acts"><span>♥ 12</span><span class="dim">💬 回复</span><span class="dim">译</span></div>
+        <div class="sp-thread">
+          <div class="sp-titem"><div class="fav2">n</div><div><b style="font-size:13px">@neo</b> <span style="font-size:12px;color:var(--sp-tx2);background:var(--sp-accsoft);color:var(--sp-acc);border-radius:4px;padding:0 5px">#3</span><span style="font-size:12px;color:var(--sp-tx2)"> · 10:31</span><div>二级：右移 32px + 引导轨，正文 14px，动作行同规则。</div>
+            <div class="sp-thread" style="margin-top:6px"><div class="sp-titem"><div class="in3"><div class="fav3">j</div><div><b style="font-size:13px">@jbro</b> <span style="font-size:12px;color:var(--sp-tx2)">#4 · 三级再右移 32px，正文 13.5px。</span></div></div></div></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>9 · 浮层体系（四级，入场动效逐级加强）</h2>
+  <div class="float-grid">
+    <div><h3>菜单 menu · fast 120ms</h3><div class="fmenu"><div class="mi">打开原帖</div><div class="mi">复制链接</div><div class="msep"></div><div class="mi danger">移除</div></div><p class="fb-note">菜单项 hover=灰底；危险项红字。z-70。</p></div>
+    <div><h3>popover 队列 · fast 120ms</h3><div class="sp-pop-d"><b style="font-size:13px">队列 · 3</b><div style="font-size:12px;color:var(--sp-tx2);margin-top:6px">fade + 上移4px + scale .98<br>transform-origin 朝锚点</div></div><p class="fb-note">点外部关闭；Esc 关闭。z-70。</p></div>
+    <div><h3>对话框 dialog · base 180ms</h3><div class="fdialog"><h4>清空阅读队列？</h4><p>将移除全部 7 个已排队主题，此操作不可撤销。</p><div class="fbtns"><button class="sp-btn gho">取消</button><button class="sp-btn pri" style="background:var(--sp-red)">清空</button></div></div><p class="fb-note">遮罩黑 α.4 + sh-3；危险动作主按钮红。z-80。</p></div>
+    <div><h3>toast · slow 240ms</h3><span class="ftoast">✓ 已加入阅读队列</span><p class="fb-note">底部居中悬浮，2.5s 自动消失。z-90。</p></div>
+  </div>
+
+  <h2>10 · 反馈态（加载 / 空 / 错误）</h2>
+  <div class="comp-grid">
+    <div class="comp-col"><h3>骨架屏（列表首载，≥300ms 才显示）</h3>
+      <div class="sp-card"><div style="display:flex;gap:10px;margin-bottom:12px"><div class="skel" style="width:36px;height:36px;border-radius:50%"></div><div style="flex:1"><div class="skel" style="height:12px;width:80%;margin-bottom:6px"></div><div class="skel" style="height:10px;width:55%"></div></div></div><div style="display:flex;gap:10px"><div class="skel" style="width:36px;height:36px;border-radius:50%"></div><div style="flex:1"><div class="skel" style="height:12px;width:65%;margin-bottom:6px"></div><div class="skel" style="height:10px;width:40%"></div></div></div></div>
+    </div>
+    <div class="comp-col"><h3>加载更多 / 空 / 错误</h3>
+      <div class="sp-card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:6px"><span class="spin"></span><span style="font-size:12.5px;color:var(--sp-tx2)">加载中…（预取 900px 提前触发）</span></div></div>
+      <div class="fempty" style="margin-bottom:10px">还没有离线存档，打开主题后点「离线保存」</div>
+      <div class="ferr"><span>⚠</span><span>加载失败：HTTP 403 — 点击重试</span></div>
+    </div>
+  </div>
+
+  <h2>11 · 布局栅格与断点（含拖拽区标注）</h2>
+  <div class="wire" style="height:150px;margin-bottom:10px">
+    <div class="wz" style="height:100%">
+      <div class="wr" style="width:184px">rail 184<br>（收起 56）<br>z-5<br>顶部=拖拽区1</div>
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div class="wb" style="height:34px" class2="drag">中栏节头 = 拖拽区2（右端留 112px 窗口钮安全区）</div>
+        <div class="wb" style="flex:1;border-right:1px solid var(--sp-line)">中栏 312px<br>搜索+工具条吸顶<br>列表行（两行标题）</div>
+      </div>
+      <div class="wc drag" style="width:420px">内容区 flex·1<br>正文列 max 720 居中<br>页签行下拖拽区3<br>窗口钮悬浮右上 z-60</div>
+    </div>
+  </div>
+  <p class="sp-note">断点：≥1200 双栏（中栏+内容区），&lt;1200 单栏 route 切换。窗口 min 960×640。蓝色虚线边 = 拖拽区（rail 顶 / 中栏节头 / 内容页签行），内部控件一律 no-drag。</p>
+
+  <h2>12 · 图标尺寸（3 档，stroke 线性一致）</h2>
+  <div class="icon-row">
+    <div class="ic"><div class="box" style="width:20px;height:20px;font-size:13px">▲</div>rail 导航 20px</div>
+    <div class="ic"><div class="box" style="width:16px;height:16px;font-size:10px">▲</div>行内动作 16px</div>
+    <div class="ic"><div class="box" style="width:13px;height:13px;font-size:9px">▲</div>文本内 13px（.ic 基准盒）</div>
+    <div class="ic"><div class="box" style="width:20px;height:20px;font-size:12px;color:var(--sp-acc)">✓</div>彩色语义图标=accent</div>
+  </div>
+
+  <h2>13 · 动效（三档时长 + 单曲线 + 全局降级）</h2>
+  <div class="motion-demo">
+    <button class="sp-btn pri">hover：上浮 1px + sh-2</button>
+    <div class="sp-pop-d">浮层：fast 120ms fade+上移+scale .98</div>
+    <span class="mtab">fast 120ms = 控件反馈/浮层 · base 180ms = 展开/路由/rail · slow 240ms = 灯箱/toast<br>曲线唯一：cubic-bezier(.22,1,.36,1) · 只动 opacity/transform · prefers-reduced-motion 全关</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.getElementById('ldd-ui-spec')
+  document.getElementById('sp-light').addEventListener('click', function(){
+    root.setAttribute('data-theme','light')
+    this.classList.add('on'); document.getElementById('sp-dark').classList.remove('on')
+  })
+  document.getElementById('sp-dark').addEventListener('click', function(){
+    root.setAttribute('data-theme','dark')
+    this.classList.add('on'); document.getElementById('sp-light').classList.remove('on')
+  })
+})()
+</script>

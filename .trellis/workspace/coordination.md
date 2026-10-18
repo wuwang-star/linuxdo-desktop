@@ -45,6 +45,7 @@
 | 10-17 02:3x | 主会话（feishu-im-frame，用户拍板顶栏删除） | 公用 App.vue（topbar 段重构为 rail 壳——用户拍板例外）、main.ts（引入新建 shell.css）；新建 components/RailNav.vue + styles/shell.css；分区 B TopicView.vue/topic.css（thread 折叠+删 viewMode）；分区 C HomeView.vue/home.css/BrowseView.vue（列表飞书化+白底通铺）；topbar.css 置 deprecated；tokens.css 尾部追加变量组 | 在途（.trellis/tasks/10-17-feishu-im-frame） |
 | 10-17 05:0x | 主会话（feishu-im-frame 验收排障，越界说明见下） | **分区 D assets/themes/feishu.ts**：删 `.browse::before` 假 rail 块（56px 圆点条，新框架下顶列表+假栏真身）+删 reader-pane 灰底（违 R3 白底通铺），版本 0.1.0→0.1.1。D 区属主题工坊会话，因其皮肤在用户侧激活且与新框架结构性冲突，紧急适配；皮肤整体重制仍归 D 区后续 | 已提交（3756602 随 feishu-im-frame 批次） |
 | 10-17 05:4x | 主会话（feishu-im-frame R12 动效，越界说明见下） | **分区 D lightbox.css**：尾部 @scope 追加开合动效（遮罩渐显+图片缩放入场，animation-only 不动既有规则）。R12 动效 tokens（--motion-*）+队列浮层/thread 展开/整宽页路由切换/rail 收起动画在 shell.css+topic.css+App.vue（Transition 包 RouterView）；整宽页右上安全区 112px | 已提交 |
+| 10-18 0x:xx | 主会话（**ui-spec-calibration 全站样式校准**，用户拍板规范稿） | **跨 A-F 区全部 styles 文件 + 底座 tokens.css/base.css 结构性修改（用户拍板单轨化唯一破例）**：底座换规范 9+4 槽位、--im-* 颜色槽位删除、字号/圆角/阴影/z-index 归档、控件五态、浮层/反馈态壳。零功能逻辑改动；.queue-panel 等皮肤类名保证存活。任务 .trellis/tasks/10-18-ui-spec-calibration | 在途 |
 
 ## 待用户决策
 

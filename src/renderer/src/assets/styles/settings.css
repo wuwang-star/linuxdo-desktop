@@ -10,36 +10,36 @@
 .settings-banner {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px;
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
-  background: var(--accent-weak); font-size: 12px;
+  background: var(--accent-weak); font-size: var(--font-sm);
 }
 .banner-icon { flex: none; }
 .theme-actions { display: flex; gap: 8px; margin-top: 8px; }
-.settings-version { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; }
+.settings-version { font-size: var(--font-sm); color: var(--muted); text-align: center; margin-top: 12px; }
 
 /* DoH 诊断 */
 .diag { font-family: var(--font-mono); }
 .diag-row {
-  display: flex; gap: 8px; font-size: 12px;
+  display: flex; gap: 8px; font-size: var(--font-sm);
   padding: 2px 0; border-bottom: 1px dashed var(--border);
 }
 .diag-row .time { color: var(--muted); }
 .diag-row .method { color: var(--accent); font-weight: 600; }
-.dns-result { font-size: 12px; padding: 4px 0; }
+.dns-result { font-size: var(--font-sm); padding: 4px 0; }
 .method { color: var(--accent); font-weight: 600; }
-.url { font-family: var(--font-mono); font-size: 11px; word-break: break-all; }
+.url { font-family: var(--font-mono); font-size: var(--font-sm); word-break: break-all; }
 .ms { color: var(--muted); }
 .st { color: var(--muted); }
-.diag-row.bad .st { color: #e5484d; font-weight: 600; }
+.diag-row.bad .st { color: var(--bad); font-weight: 600; }
 
 /* @scope: settings-ui-fix — 导航项激活态 / 快捷键徽标（拆分时 .accel 断链，此处补回） */
 .settings-nav button {
   text-align: left; border-color: transparent; background: transparent;
-  padding: 7px 10px; font-size: 13px;
+  padding: 7px 10px; font-size: var(--font-base);
 }
 .settings-nav button:hover { background: var(--accent-weak); color: var(--accent); border-color: transparent; }
 .settings-nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
 code.accel {
-  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  font-family: var(--font-mono); font-size: var(--font-sm); font-weight: 400;
   background: var(--accent-weak); color: var(--accent);
-  border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+  border-radius: var(--radius-xs); padding: 1px 6px; margin-left: 6px;
 }

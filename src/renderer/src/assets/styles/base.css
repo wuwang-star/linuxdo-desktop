@@ -1,43 +1,72 @@
 /* ============================================================
    公用控件层：按钮 / 卡片 / 浮层 / 表单控件 / 徽标（全应用共享）
+   控件五态按规范 ch6：默认 / hover / active / disabled（opacity .4 + not-allowed）/ 选中
    ============================================================ */
 
 /* ---------- 按钮 ---------- */
 .act {
   border: 1px solid var(--border); background: var(--panel); color: var(--text);
-  border-radius: var(--radius-sm); padding: 4px 10px; font-size: 12px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-sm); cursor: pointer;
 }
 .act:hover { border-color: var(--accent); color: var(--accent); }
-.act:disabled { opacity: 0.45; cursor: default; }
+.act:disabled { opacity: 0.4; cursor: not-allowed; }
 .act.acted { color: var(--accent); border-color: var(--accent); }
 .primary {
   border: none; background: var(--accent); color: #fff;
-  border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px;
+  border-radius: var(--radius-sm); padding: 8px 16px; font-size: var(--font-base);
   cursor: pointer; font-weight: 600;
 }
 .primary:hover { filter: brightness(1.08); }
-.primary:disabled { opacity: 0.45; cursor: default; }
+.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+/* 危险动作主钮（对话框确认级，规范 ch9）：红底白字 */
+.primary.danger { background: var(--bad); }
 
 /* ---------- 反馈 ---------- */
-.error { color: #e5484d; padding: 12px; }
-.error-inline { color: #e5484d; font-size: 12px; margin: 0 0 10px; }
+.error {
+  color: var(--bad); padding: 8px 12px;
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent);
+  border-radius: var(--radius-md); font-size: var(--font-sm);
+}
+.error-inline { color: var(--bad); font-size: var(--font-sm); margin: 0 0 10px; }
 .loading { color: var(--muted); padding: 24px; text-align: center; }
-.sentinel { color: var(--muted); text-align: center; padding: 16px; font-size: 12px; }
-.hint { color: var(--muted); font-size: 12px; }
-.save-err { color: #e5484d; font-size: 12px; }
-.message { font-size: 12px; margin-top: 6px; }
-.tip { font-size: 12px; color: var(--muted); }
-.danger { color: #e5484d; }
+.sentinel { color: var(--muted); text-align: center; padding: 16px; font-size: var(--font-sm); }
+.hint { color: var(--muted); font-size: var(--font-sm); }
+.save-err { color: var(--bad); font-size: var(--font-sm); }
+.message { font-size: var(--font-sm); margin-top: 6px; }
+.tip { font-size: var(--font-sm); color: var(--muted); }
+.danger { color: var(--bad); }
 .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+
+/* 反馈态样式壳（规范 ch10）：骨架屏 shimmer / spinner / 空态虚线框（宿主接入后续批） */
+.skel {
+  background: var(--hover); border-radius: var(--radius-sm); position: relative; overflow: hidden;
+}
+.skel::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 6%, transparent), transparent);
+  animation: skel-shimmer 1.4s infinite;
+}
+@keyframes skel-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%; flex: none; display: inline-block;
+  border: 2px solid var(--accent-weak); border-top-color: var(--accent);
+  animation: spinner-rotate 1s linear infinite;
+}
+@keyframes spinner-rotate { to { transform: rotate(360deg); } }
+.empty-box {
+  border: 1.5px dashed var(--border); border-radius: var(--radius-lg);
+  padding: 26px; text-align: center; color: var(--muted); font-size: var(--font-base);
+}
 
 /* ---------- 徽标 ---------- */
 .badge {
   position: absolute; top: -4px; right: -8px; min-width: 16px; height: 16px;
-  background: #e5484d; color: #fff; font-size: 10px; line-height: 16px;
-  border-radius: 999px; padding: 0 4px; text-align: center; font-style: normal;
+  background: var(--bad); color: #fff; font-size: var(--font-sm); line-height: 16px;
+  border-radius: var(--radius-pill); padding: 0 4px; text-align: center; font-style: normal;
 }
 .row-tag {
-  display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px;
+  display: inline-block; font-size: var(--font-sm); padding: 1px 6px; border-radius: var(--radius-xs);
   background: var(--accent-weak); color: var(--accent);
   border: 1px solid transparent; white-space: nowrap;
 }
@@ -49,21 +78,30 @@
 /* ---------- 卡片与浮层 ---------- */
 .card {
   background: var(--panel); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px;
 }
-.card-hero { border-color: var(--accent); box-shadow: var(--shadow); }
+.card-hero { border-color: var(--accent); box-shadow: var(--shadow-1); }
 .card-badge {
-  display: inline-block; font-size: 10px; padding: 1px 8px; border-radius: 999px;
+  display: inline-block; font-size: var(--font-sm); padding: 1px 8px; border-radius: var(--radius-pill);
   background: var(--accent-weak); color: var(--accent);
   margin-left: 8px; vertical-align: 2px;
 }
 .card-badge.off { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+/* 对话框级浮层（规范 ch9）：遮罩黑 α.4 + sh-3，z-80 */
 .overlay {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0, 0, 0, 0.45);
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(0, 0, 0, 0.4);
   display: flex; align-items: center; justify-content: center;
 }
-.overlay .card { width: 480px; max-width: 92vw; max-height: 86vh; overflow-y: auto; }
+.overlay .card { width: 480px; max-width: 92vw; max-height: 86vh; overflow-y: auto; box-shadow: var(--shadow-3); }
+/* toast 样式壳（规范 ch9）：底部居中药丸，z-90，slow 入场（宿主暂缺，备用） */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 90;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2); padding: 8px 18px; font-size: var(--font-base);
+  display: inline-flex; align-items: center; gap: 8px;
+  animation: im-pop-in var(--motion-slow) var(--ease-out);
+}
 
 /* ---------- 表单控件（field-row） ---------- */
 .field-row {
@@ -71,8 +109,8 @@
   padding: 10px 4px; border-bottom: 1px solid var(--border);
 }
 .field-main { flex: 1; min-width: 0; }
-.field-label { font-size: 13px; font-weight: 600; }
-.field-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.field-label { font-size: var(--font-base); font-weight: 600; }
+.field-desc { font-size: var(--font-sm); color: var(--muted); margin-top: 2px; }
 .field-control { flex: none; display: flex; align-items: center; gap: 8px; }
 
 /* 开关 */
@@ -80,21 +118,22 @@
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .switch-track {
   position: absolute; inset: 0; background: var(--border);
-  border-radius: 999px; transition: background 0.15s;
+  border-radius: var(--radius-pill); transition: background 0.15s;
 }
 .switch-thumb {
   position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
   background: #fff; border-radius: 50%;
-  transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s; box-shadow: var(--shadow-1);
 }
 .switch input:checked ~ .switch-track { background: var(--accent); }
 .switch input:checked ~ .switch-thumb { transform: translateX(16px); }
+.switch input:disabled ~ .switch-track { opacity: 0.4; cursor: not-allowed; }
 
 /* 分段选择 */
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .seg-opt {
   border: 0; background: transparent; color: var(--muted);
-  padding: 4px 12px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  padding: 4px 12px; font-size: var(--font-sm); cursor: pointer; white-space: nowrap;
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--border); }
 .seg-opt.on, .seg-opt.current { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
@@ -106,7 +145,7 @@
 }
 .stepper button { border: 0; background: var(--panel); color: var(--text); width: 26px; height: 24px; cursor: pointer; }
 .stepper button:hover { background: var(--accent-weak); }
-.stepper-val { min-width: 52px; text-align: center; font-size: 12px; }
+.stepper-val { min-width: 52px; text-align: center; font-size: var(--font-sm); }
 
 /* ---------- 图标（v-html svg 容器） ---------- */
 .ic { display: inline-flex; width: 13px; height: 13px; vertical-align: -2px; }
@@ -114,23 +153,23 @@
 .ico {
   width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
   border: none; background: transparent; color: var(--text);
-  border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; padding: 0;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-base); padding: 0;
 }
 .ico:hover { background: var(--accent-weak); }
 .ico.on { color: var(--accent); background: var(--accent-weak); }
-.ico:disabled { opacity: 0.35; cursor: default; }
+.ico:disabled { opacity: 0.4; cursor: not-allowed; }
 .ico:disabled:hover { background: transparent; }
 
 /* ---------- 翻译块（登录页测试 / 帖内译文共用） ---------- */
 .tr-block { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
-.tr-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.tr-text { font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
-.tr-error { color: #e5484d; font-size: 12px; }
+.tr-label { font-size: var(--font-sm); color: var(--muted); margin-bottom: 4px; }
+.tr-text { font-size: var(--font-base); line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.tr-error { color: var(--bad); font-size: var(--font-sm); }
 
 /* ---------- 入口链接 ---------- */
 .settings-entry {
   display: inline-block; margin-top: 8px;
-  color: var(--accent); text-decoration: none; font-size: 12px;
+  color: var(--accent); text-decoration: none; font-size: var(--font-sm);
 }
 .settings-entry:hover { text-decoration: underline; }
 
@@ -142,23 +181,26 @@
    .act/.primary/.ico/.stepper button 等类选择器特异性更高，各自规则不受影响） */
 button {
   border: 1px solid var(--border); background: var(--panel); color: var(--text);
-  border-radius: var(--radius-sm); padding: 4px 10px; font-size: 12px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-sm); cursor: pointer;
   font-family: inherit;
 }
 button:hover { border-color: var(--accent); color: var(--accent); }
-button:disabled { opacity: 0.45; cursor: default; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 input:not([type='checkbox']):not([type='radio']),
 select,
 textarea {
   border: 1px solid var(--border); background: var(--panel); color: var(--text);
-  border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; font-family: inherit;
+  border-radius: var(--radius-sm); padding: 5px 10px; font-size: var(--font-base); font-family: inherit;
 }
+/* 焦点蓝圈（规范 ch6 输入框）：accent 边 + accent-weak 光环 */
 input:not([type='checkbox']):not([type='radio']):focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-weak);
 }
-.card h2 { margin: 0 0 10px; font-size: 15px; }
+input:disabled, select:disabled, textarea:disabled { opacity: 0.4; cursor: not-allowed; }
+.card h2 { margin: 0 0 10px; font-size: var(--font-body); }
 .card-badge.reco { background: var(--accent); color: #fff; }
 /* 定尺寸图标钮不吃全局 button padding（24/26px 盒子会被 4px 10px 撑爆）：.row-q 在 home.css 同理 */
 .stepper button { padding: 0; }

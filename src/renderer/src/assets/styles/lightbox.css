@@ -2,7 +2,7 @@
    图片灯箱
    ============================================================ */
 .lightbox-ov {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: 80;
   background: rgba(0, 0, 0, 0.82);
   display: flex; align-items: center; justify-content: center;
   cursor: zoom-out;
@@ -16,13 +16,13 @@
   position: absolute; top: 18px; right: 24px;
   border: 0; background: rgba(255, 255, 255, 0.12); color: #fff;
   width: 34px; height: 34px; border-radius: 50%;
-  font-size: 16px; cursor: pointer;
+  font-size: var(--font-md); cursor: pointer;
 }
 .lb-close:hover { background: rgba(255, 255, 255, 0.25); }
 .lb-tip {
   position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.85); font-size: 12px;
-  background: rgba(0, 0, 0, 0.45); padding: 4px 12px; border-radius: 999px;
+  color: rgba(255, 255, 255, 0.85); font-size: var(--font-sm);
+  background: rgba(0, 0, 0, 0.45); padding: 4px 12px; border-radius: var(--radius-pill);
 }
 
 /* @scope: feishu-im-frame R12 — 灯箱开合动效（遮罩渐显 + 图片微缩放入场） */

@@ -1,27 +1,63 @@
 /* ============================================================
-   设计 tokens 与主题组（真源：--accent / --border / --panel）
+   设计 tokens 与主题组（真源：.trellis/tasks/10-18-ui-spec-calibration/research/ui-design-spec.html）
+   单轨 9+4 颜色槽位（亮/暗双态）+ 结构 token；--im-* 双轨槽位已删除，
+   全站只引本文件变量；主题包（prefs 基础 → 主题包覆盖）覆盖同名变量即生效。
    ============================================================ */
 :root {
-  --bg: #f6f7f9;
+  /* 9 槽位（规范 ch1） */
+  --bg: #f2f3f5;
   --panel: #ffffff;
-  --text: #1b1f24;
-  --muted: #6b7280;
-  --accent: #1a7f64;
+  --canvas: #fafbfc;
+  --text: #1f2329;
+  --muted: #8f959e;
+  --border: #e7e8ea;
+  --accent: #3370ff;
+  --accent-weak: rgba(51, 112, 255, 0.1);
+  --bad: #f54a45;
+  /* 4 补充槽位 */
+  --quote-bg: #f7f9fa;
+  --hover: rgba(31, 35, 41, 0.05);
+  --selected: #e8effd;
+  --rail-bg: #f5f6f7;
+
+  /* 兼容别名（旧引用渐进迁移，新代码勿用） */
   --brand: var(--accent);
-  --accent-weak: #e6f2ee;
   --brand-weak: var(--accent-weak);
-  --border: #e5e7eb;
   --line: var(--border);
-  --radius: 14px;
-  --radius-sm: 8px;
+  --radius: var(--radius-lg);
+  --shadow: var(--shadow-2);
+
+  /* 字阶（规范 ch2，7 token；10/11px 全废，--font-sm 12px 为下限） */
+  --font-xl: 19px;
+  --font-lg: 17px;
+  --font-body: 15.5px;
+  --font-md: 14px;
+  --font-base: 13px;
+  --font-sm: 12px;
+  --font-md-nested: 13.5px; /* 树形三级正文特例 */
+
+  /* 间距（规范 ch3：4px 网格 5 档；树形缩进步长/引导轨距） */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 48px;
+  --indent-step: 32px;
+  --rail-gap: 16px;
+
+  /* 圆角五档（规范 ch4：4 标签 / 6 控件 / 8 引用卡 / 10 卡片浮层 / 999 药丸） */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
   --radius-pill: 999px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
+
+  /* 阴影三档（规范 ch4：sh-1 楼层卡 / sh-2 浮层菜单 / sh-3 对话框灯箱） */
+  --shadow-1: 0 1px 3px rgba(31, 35, 41, 0.06);
+  --shadow-2: 0 6px 20px rgba(31, 35, 41, 0.12);
+  --shadow-3: 0 12px 40px rgba(31, 35, 41, 0.2);
+
   --font-mono: Consolas, 'Courier New', monospace;
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 
   /* 阅读排版（由 utils/prefs.ts 驱动） */
   --reading-font-size: 16px;
@@ -31,14 +67,22 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #16191d;
+  --bg: #17191d;
   --panel: #1d2126;
+  --canvas: #1a1d21;
   --text: #e6e8ea;
   --muted: #8b9198;
-  --accent: #3ecf9a;
-  --accent-weak: #1d2b26;
   --border: #2b3138;
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --accent: #457aff;
+  --accent-weak: rgba(69, 122, 255, 0.18);
+  --bad: #f54a45;
+  --quote-bg: #22262c;
+  --hover: rgba(230, 232, 234, 0.07);
+  --selected: rgba(69, 122, 255, 0.22);
+  --rail-bg: #17191d;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
 /* ---------- 基础 ---------- */
@@ -46,7 +90,7 @@
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg); color: var(--text);
-  font-family: var(--reading-font-family); font-size: 14px;
+  font-family: var(--reading-font-family); font-size: var(--font-md);
   transition: background-color 0.2s, color 0.2s;
   overflow: hidden;
 }
@@ -58,44 +102,15 @@ img { max-width: 100%; }
 /* 主题跟随系统由 prefs.ts 写 data-theme；此处兜底无属性时按系统 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #16191d; --panel: #1d2126; --text: #e6e8ea; --muted: #8b9198;
-    --accent: #3ecf9a; --accent-weak: #1d2b26; --border: #2b3138;
+    --bg: #17191d; --panel: #1d2126; --canvas: #1a1d21;
+    --text: #e6e8ea; --muted: #8b9198; --border: #2b3138;
+    --accent: #457aff; --accent-weak: rgba(69, 122, 255, 0.18); --bad: #f54a45;
+    --quote-bg: #22262c; --hover: rgba(230, 232, 234, 0.07);
+    --selected: rgba(69, 122, 255, 0.22); --rail-bg: #17191d;
+    --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6);
   }
-}
-
-/* 窗口拖拽区（顶栏）由 topbar.css 声明 */
-
-/* @scope: feishu-im-frame — 外框架配色（临时方案，用户后续会改）。
-   只追加不覆盖：既有 --panel/--line/--text 等底座变量不动，本组用 im- 前缀独立槽位，
-   亮色取群公告页色调（mockup 基准），暗色同槽位映射现有暗色底，保证切换不炸。 */
-:root {
-  --im-rail-bg: #f5f6f7;
-  --im-panel: #ffffff;
-  --im-canvas: #fafbfc;
-  --im-quote-bg: #f7f9fa;
-  --im-line: #e7e8ea;
-  --im-tx: #1f2329;
-  --im-tx2: #8f959e;
-  --im-acc: #3370ff;
-  --im-accsoft: rgba(51, 112, 255, 0.1);
-  --im-red: #f54a45;
-  --im-hov: rgba(31, 35, 41, 0.05);
-  --im-sel: #e8effd;
-}
-
-:root[data-theme='dark'] {
-  --im-rail-bg: #17191d;
-  --im-panel: #1d2126;
-  --im-canvas: #1a1d21;
-  --im-quote-bg: #22262c;
-  --im-line: #2b3138;
-  --im-tx: #e6e8ea;
-  --im-tx2: #8b9198;
-  --im-acc: #457aff;
-  --im-accsoft: rgba(69, 122, 255, 0.18);
-  --im-red: #f54a45;
-  --im-hov: rgba(230, 232, 234, 0.07);
-  --im-sel: rgba(69, 122, 255, 0.22);
 }
 
 /* R12 动效：三档时长 + 单一 ease-out 曲线（无弹跳无循环）；prefers-reduced-motion 由 shell.css 全局降级 */
@@ -104,15 +119,4 @@ img { max-width: 100%; }
   --motion-base: 180ms;
   --motion-slow: 240ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* R13 间距规则化：4px 网格 + 树形缩进步长/轨距统一，禁止散数
-   楼中楼规则：每级缩进 = --im-indent-step（32px）；引导轨到内容 = --im-rail-gap（16px） */
-:root {
-  --im-space-2: 8px;
-  --im-space-3: 12px;
-  --im-space-4: 16px;
-  --im-space-6: 24px;
-  --im-indent-step: 32px;
-  --im-rail-gap: 16px;
 }
