@@ -63,6 +63,8 @@ const api = {
   themesRemove: (id: string) => ipcRenderer.invoke('themes:remove', id),
   getUser: (username: string) => ipcRenderer.invoke('user:get', username),
   getUserSummary: (username: string) => ipcRenderer.invoke('user:summary', username),
+  getUserActions: (username: string, filter?: number, offset?: number) =>
+    ipcRenderer.invoke('user:actions', username, filter, offset),
   // WebDAV 手动同步（配置/测试/推送/拉取）
   getWebdavConfig: () => ipcRenderer.invoke('webdav:getConfig'),
   setWebdavConfig: (server: string, username: string, remoteDir: string, password?: string) =>

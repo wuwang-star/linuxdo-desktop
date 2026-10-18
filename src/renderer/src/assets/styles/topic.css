@@ -360,3 +360,13 @@
   from { opacity: 0; transform: translateY(2px); }
   to { opacity: 1; transform: none; }
 }
+
+/* @scope: user-flow-ui — 回复关系：跳转目标楼高亮 1.6s；引用楼头像/@mention 触点手型 */
+.post.flash { animation: post-flash 1.6s ease-out; }
+@keyframes post-flash {
+  0%, 55% { background: var(--accent-weak); box-shadow: inset 3px 0 0 var(--accent); }
+  100% { background: transparent; box-shadow: none; }
+}
+.cooked aside.quote .title img.avatar,
+.cooked aside.quote .title a,
+.cooked a.mention { cursor: pointer; }

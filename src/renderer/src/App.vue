@@ -6,7 +6,7 @@ import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { applyPrefs, loadPrefs, watchSystemTheme } from './utils/prefs'
 import { applyThemeById, loadSelectedThemeId } from './utils/themes'
 import RailNav from './components/RailNav.vue'
-import UserCard from './components/UserCard.vue'
+import UserHoverCard from './components/UserHoverCard.vue'
 
 const auth = useAuthStore()
 const queue = useQueueStore()
@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
           <component :is="Component" />
         </Transition>
       </RouterView>
-      <UserCard />
+      <UserHoverCard />
     </main>
     <!-- 自绘窗口钮（原生 overlay 已移除）：关闭=隐藏到托盘；双击拖拽区同样可最大化 -->
     <div class="win-btns" data-nodrag>

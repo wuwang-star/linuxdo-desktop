@@ -58,7 +58,7 @@ import { showPushNotification } from './notify'
 import { getShortcutsStatus, setShortcutsEnabled, type ShortcutKind } from './api/shortcuts'
 import { saveTopic, listTopics, getTopic, removeTopic } from './api/offline'
 import { listThemes, getTheme, importTheme, exportThemeData, removeTheme } from './themes'
-import { fetchUser, fetchUserSummary } from './api/client'
+import { fetchUser, fetchUserSummary, fetchUserActions } from './api/client'
 import {
   getWebdavConfig,
   setWebdavConfig,
@@ -223,6 +223,10 @@ export function registerIpc(): void {
   // ---------- 用户卡/详情页（Discourse 核心端点） ----------
   ipcMain.handle('user:get', (_e, username: string) => fetchUser(username))
   ipcMain.handle('user:summary', (_e, username: string) => fetchUserSummary(username))
+  // 用户动作流（个人页「回复」tab）：filter 归一默认 5=回复，offset 默认 0
+  ipcMain.handle('user:actions', (_e, username: string, filter?: number, offset?: number) =>
+    fetchUserActions(String(username ?? ''), Number(filter ?? 5), Number(offset ?? 0))
+  )
 
   // ---------- WebDAV 手动同步（推送/拉取 + 进度/偏好的 main↔renderer 交换） ----------
   // renderer 应答通道一次性注册（progress/prefs 请求经 token 匹配，见 syncdata.ts askRenderer）

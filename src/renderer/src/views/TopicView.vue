@@ -5,6 +5,7 @@ import { useTopicStore, clusterThreads } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
 import { relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
+import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
@@ -196,6 +197,8 @@ onMounted(() => {
   })
   scroller.value?.addEventListener('scroll', onScroll, { passive: true })
   scroller.value?.addEventListener('click', onCookedClick, true)
+  scroller.value?.addEventListener('mouseover', onCookedHover, true)
+  scroller.value?.addEventListener('mouseout', onCookedHoverOut, true)
   window.addEventListener('keydown', onLightboxKey)
   void nextTick().then(() => void consumePendingJump())
 })
@@ -203,6 +206,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   scroller.value?.removeEventListener('scroll', onScroll)
   scroller.value?.removeEventListener('click', onCookedClick, true)
+  scroller.value?.removeEventListener('mouseover', onCookedHover, true)
+  scroller.value?.removeEventListener('mouseout', onCookedHoverOut, true)
   window.removeEventListener('keydown', onLightboxKey)
   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
 })
@@ -228,7 +233,35 @@ function onLightboxKey(e: KeyboardEvent): void {
 }
 
 function go(postNumber: number): void {
-  void store.jumpTo(postNumber)
+  void store.jumpTo(postNumber).then(() => store.flashPost(postNumber))
+}
+
+// ---- 身份触点委托（10-18-user-flow-ui）：cooked 内引用楼头像/@mention hover 出悬浮卡 ----
+/** 从元素向上找用户名：引用楼 title 容器取其内 /u/ 链接，mention 取自身 href */
+function usernameOf(el: Element): string | null {
+  const scope = el.closest('aside.quote .title') ?? el.closest('a.mention') ?? el.closest('a[href*="/u/"]')
+  if (!scope) return null
+  const a = (scope instanceof HTMLAnchorElement ? scope : scope.querySelector('a[href*="/u/"]')) ?? scope
+  const href = a.getAttribute('href') ?? ''
+  const m = /\/u\/([^/?#]+)/.exec(href)
+  return m ? decodeURIComponent(m[1]) : null
+}
+
+function onCookedHover(e: MouseEvent): void {
+  const t = e.target
+  if (!(t instanceof Element) || !t.closest('.cooked')) return
+  const u = usernameOf(t)
+  if (u) hoverUser(u, e)
+}
+
+function onCookedHoverOut(e: MouseEvent): void {
+  const t = e.target
+  if (!(t instanceof Element) || !t.closest('.cooked')) return
+  if (!usernameOf(t)) return
+  // 移向同触点内部（子元素间 crossing）不取消
+  const related = e.relatedTarget
+  if (related instanceof Element && usernameOf(related)) return
+  cancelUser()
 }
 
 // ---- 正文内链跳转：cooked 内所有 <a> 一律拦截（capture，含 quote 引用块）----
@@ -246,6 +279,13 @@ function onCookedClick(e: MouseEvent): void {
   if (!a || !a.closest('.cooked')) return
   e.preventDefault()
   const href = a.getAttribute('href') ?? ''
+  // /u/ 用户页内链（mention/引用楼作者）：应用内路由直达（仅相对路径或 linux.do 域名，10-18-user-flow-ui）
+  const um = /^(?:https?:\/\/linux\.do)?\/u\/([^/?#]+)/.exec(href)
+  if (um) {
+    hideNow()
+    void router.push(`/u/${decodeURIComponent(um[1])}`)
+    return
+  }
   const link = parseSiteTopicLink(href)
   if (!link) {
     window.open(href, '_blank')
@@ -397,6 +437,7 @@ function readOffline(): void {
             :post="item.post"
             :is-op="isOpPost(item.post)"
             :offline="store.offline"
+            :flash="store.flashPn === item.post.post_number"
             @jump="go"
             @like="(id) => store.toggleLike(id)"
             @reply="openComposer"
@@ -420,6 +461,7 @@ function readOffline(): void {
                 compact
                 :class="m.depth > 1 ? 'post--depth3' : 'post--depth2'"
                 :offline="store.offline"
+                :flash="store.flashPn === m.post.post_number"
                 @jump="go"
                 @like="(id) => store.toggleLike(id)"
                 @reply="openComposer"

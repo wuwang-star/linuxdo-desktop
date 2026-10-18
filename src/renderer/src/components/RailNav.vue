@@ -6,7 +6,7 @@ import { useQueueStore } from '../stores/queue'
 import { useSearchStore } from '../stores/search'
 import { avatarUrl } from '../utils/format'
 import { loadPrefs, savePrefs } from '../utils/prefs'
-import { openUserCard } from '../utils/userCard'
+import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 
 /** 左 rail 全局导航（feishu-im-frame）：头像/登录 → 搜索 → 最新/队列/通知 → 设置/收起 */
 const auth = useAuthStore()
@@ -25,8 +25,13 @@ const unread = computed(() => {
 })
 
 function onAvatar(): void {
-  if (who.value) openUserCard(who.value)
-  else void router.push('/login')
+  // 方案 A（10-18-user-flow-ui）：点击直达主页；hover 悬浮卡
+  if (who.value) {
+    hideNow()
+    void router.push(`/u/${who.value}`)
+  } else {
+    void router.push('/login')
+  }
 }
 
 // ---- 收起/展开：状态存 ldd-reading prefs（重启保留），读-改-写不覆盖其他字段 ----
@@ -95,7 +100,9 @@ const ICONS = {
         class="rail-avatar"
         :class="{ ghost: !who }"
         :title="who ? `@${who} · 用户卡片` : '未登录，去登录'"
-        :aria-label="who ? '打开用户卡片' : '去登录'"
+        :aria-label="who ? '打开用户主页' : '去登录'"
+        @mouseenter="who && hoverUser(who, $event)"
+        @mouseleave="cancelUser"
         @click="onAvatar"
       >
         <img v-if="avatar" :src="avatar" alt="" />

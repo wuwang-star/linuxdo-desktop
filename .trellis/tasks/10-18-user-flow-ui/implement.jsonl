@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/ipc-bridge-guidelines.md", "reason": "user_actions 新端点走 IPC 四点布线契约"}
+{"file": ".trellis/workspace/coordination.md", "reason": "多会话铁律：分区 B/C/D 触点登记、公用文件只追加"}

@@ -9,7 +9,8 @@ import type {
   TopPeriod,
   DiagEntry,
   UserResponse,
-  UserSummaryResponse
+  UserSummaryResponse,
+  UserActionsResponse
 } from '../main/api/client'
 import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
@@ -87,9 +88,10 @@ export interface ApiBridge {
   themesImport(): Promise<ImportResult>
   themesExportData(theme: ThemePackage): Promise<ExportResult>
   themesRemove(id: string): Promise<boolean>
-  /** 用户卡/详情页（Discourse /u/:username） */
+  /** 用户卡/详情页（Discourse /u/:username）；actions 为动作流（filter 5=回复，个人页 tab 用） */
   getUser(username: string): Promise<UserResponse>
   getUserSummary(username: string): Promise<UserSummaryResponse>
+  getUserActions(username: string, filter?: number, offset?: number): Promise<UserActionsResponse>
   /** WebDAV 手动同步：配置（password 留空=不修改）、测试连接（needMkCol=目录不存在可自动创建）、推送/拉取 */
   getWebdavConfig(): Promise<WebdavConfig>
   setWebdavConfig(server: string, username: string, remoteDir: string, password?: string): Promise<WebdavConfig>

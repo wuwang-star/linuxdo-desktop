@@ -121,7 +121,11 @@ export interface TopicState {
   hasOffline: boolean
   /** 最近一次 open 的主题 id（retry 用：open 失败时 topic 为 null，不能从 topic 读） */
   lastOpenedId: number | null
+  /** 回复关系跳转的目标楼层高亮（10-18-user-flow-ui，1.6s 自清） */
+  flashPn: number
 }
+
+let flashTimer: number | undefined
 
 export const useTopicStore = defineStore('topic', {
   state: (): TopicState => ({
@@ -140,7 +144,8 @@ export const useTopicStore = defineStore('topic', {
     offline: false,
     offlineSavedAt: '',
     hasOffline: false,
-    lastOpenedId: null
+    lastOpenedId: null,
+    flashPn: 0
   }),
   getters: {
     opUsername(state): string | null {
@@ -278,6 +283,15 @@ export const useTopicStore = defineStore('topic', {
       } finally {
         this.loadingOlder = false
       }
+    },
+    /** 回复关系跳转的目标楼层高亮 1.6s（重复调用重置计时，10-18-user-flow-ui） */
+    flashPost(postNumber: number): void {
+      this.flashPn = postNumber
+      if (flashTimer !== undefined) window.clearTimeout(flashTimer)
+      flashTimer = window.setTimeout(() => {
+        this.flashPn = 0
+        flashTimer = undefined
+      }, 1600)
     },
     /** 跳到指定楼层：未加载则先加载该楼层所在分块 */
     async jumpTo(postNumber: number): Promise<void> {

@@ -42,6 +42,7 @@
 | 10-16 18:2x | 主会话（window-btns-remove，用户拍板） | main/index.ts 窗口选项段、main/win.ts 删 overlay 段、topbar.css 去回 WCO 块、preload 注释 | 已提交（见 git log） |
 | 10-16 18:4x | 主会话（win-btns，用户拍板「加」） | 公用 App.vue 顶栏尾段追加 win-btns 组；ipc.ts/preload 两件/topbar.css 追加 | 已提交（见 git log） |
 | 10-17 01:3x | 主会话（row-q-fix） | 分区 C home.css 尾部 @scope 追加 .row-q 补丁；base.css 尾部 .stepper button padding:0（settings-ui-fix 全局皮肤回归） | 已提交（见 git log） |
+| 10-18 02:3x | 主会话（user-flow-ui，用户点名） | 分区 D 接管（UserCard 删/UserHoverCard 新建/UserProfileView/user.css）；分区 B/C 触点 PostItem/TopicView/HomeView/RailNav；公用 client/ipc/preload 追加 user:actions | 在途 |
 | 10-17 02:3x | 主会话（feishu-im-frame，用户拍板顶栏删除） | 公用 App.vue（topbar 段重构为 rail 壳——用户拍板例外）、main.ts（引入新建 shell.css）；新建 components/RailNav.vue + styles/shell.css；分区 B TopicView.vue/topic.css（thread 折叠+删 viewMode）；分区 C HomeView.vue/home.css/BrowseView.vue（列表飞书化+白底通铺）；topbar.css 置 deprecated；tokens.css 尾部追加变量组 | 在途（.trellis/tasks/10-17-feishu-im-frame） |
 | 10-17 05:0x | 主会话（feishu-im-frame 验收排障，越界说明见下） | **分区 D assets/themes/feishu.ts**：删 `.browse::before` 假 rail 块（56px 圆点条，新框架下顶列表+假栏真身）+删 reader-pane 灰底（违 R3 白底通铺），版本 0.1.0→0.1.1。D 区属主题工坊会话，因其皮肤在用户侧激活且与新框架结构性冲突，紧急适配；皮肤整体重制仍归 D 区后续 | 已提交（3756602 随 feishu-im-frame 批次） |
 | 10-17 05:4x | 主会话（feishu-im-frame R12 动效，越界说明见下） | **分区 D lightbox.css**：尾部 @scope 追加开合动效（遮罩渐显+图片缩放入场，animation-only 不动既有规则）。R12 动效 tokens（--motion-*）+队列浮层/thread 展开/整宽页路由切换/rail 收起动画在 shell.css+topic.css+App.vue（Transition 包 RouterView）；整宽页右上安全区 112px | 已提交 |

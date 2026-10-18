@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import type { DiscoursePost } from '../../../main/api/client'
 import { avatarUrl, relTime } from '../utils/format'
 import { likeInfo } from '../stores/topic'
-import { openUserCard } from '../utils/userCard'
+import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 
-const props = defineProps<{ post: DiscoursePost; offline?: boolean; isOp?: boolean; compact?: boolean }>()
+const props = defineProps<{ post: DiscoursePost; offline?: boolean; isOp?: boolean; compact?: boolean; flash?: boolean }>()
 const emit = defineEmits<{
   (e: 'jump', postNumber: number): void
   (e: 'like', postId: number): void
@@ -15,6 +16,13 @@ const emit = defineEmits<{
 
 const like = computed(() => likeInfo(props.post))
 const floor = computed(() => `#${props.post.post_number}`)
+const router = useRouter()
+
+/** 作者身份触点：hover 悬浮卡，点击直达主页（方案 A） */
+function goUser(): void {
+  hideNow()
+  void router.push(`/u/${props.post.username}`)
+}
 
 // ---- 翻译（localStorage 缓存 + 按需调用） ----
 const trKey = computed(() => `ldd:tr:${props.post.id}`)
@@ -80,11 +88,26 @@ watch(
 </script>
 
 <template>
-  <article class="post" :class="{ 'post--compact': compact }" :id="`post-${post.post_number}`">
-    <img class="avatar clickable" :src="avatarUrl(post.avatar_template)" alt="" loading="lazy" title="查看用户卡片" @click="openUserCard(post.username)" />
+  <article class="post" :class="{ 'post--compact': compact, flash }" :id="`post-${post.post_number}`">
+    <img
+      class="avatar clickable"
+      :src="avatarUrl(post.avatar_template)"
+      alt=""
+      loading="lazy"
+      title="查看主页"
+      @mouseenter="hoverUser(post.username, $event)"
+      @mouseleave="cancelUser"
+      @click="goUser"
+    />
     <div class="post-body">
       <header class="post-head">
-        <span class="author clickable" title="查看用户卡片" @click="openUserCard(post.username)">@{{ post.username }}</span>
+        <span
+          class="author clickable"
+          title="查看主页"
+          @mouseenter="hoverUser(post.username, $event)"
+          @mouseleave="cancelUser"
+          @click="goUser"
+        >@{{ post.username }}</span>
         <!-- 楼主角标：楼号 1 或作者 = OP（feishu-im-frame R4） -->
         <span v-if="isOp" class="op-badge">楼主</span>
         <span class="floor">{{ floor }}</span>

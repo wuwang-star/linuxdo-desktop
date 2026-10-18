@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTopicListStore } from '../stores/topicList'
 import { useQueueStore } from '../stores/queue'
 import { useBrowseStore } from '../stores/browse'
 import { useSearchStore } from '../stores/search'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
-import { openUserCard } from '../utils/userCard'
+import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 import type { DiscourseTopicLite, TopPeriod } from '../../../main/api/client'
 
 // pane=true：作为双栏左栏嵌入（点击行走 browse.select，URL 由 BrowseView 统一同步）；缺省为整页模式
 const props = defineProps<{ pane?: boolean }>()
+const router = useRouter()
 const store = useTopicListStore()
 const queue = useQueueStore()
 const browse = useBrowseStore()
@@ -89,10 +91,12 @@ function opOf(topic: DiscourseTopicLite) {
   return first !== undefined ? store.usersById.get(first) : undefined
 }
 
-/** 打开首楼作者用户卡 */
-function showUser(t: DiscourseTopicLite): void {
+/** 首楼作者：hover 悬浮卡，点击直达主页（方案 A，10-18-user-flow-ui） */
+function goUser(t: DiscourseTopicLite): void {
   const u = opOf(t)
-  if (u) openUserCard(u.username)
+  if (!u) return
+  hideNow()
+  void router.push(`/u/${u.username}`)
 }
 
 /** 删除离线存档后重读 index */
@@ -237,7 +241,16 @@ onMounted(() => {
     </template>
     <template v-else>
       <article v-for="t in store.topics" :key="t.id" class="topic-row" :class="{ sel: browse.selectedId === t.id }">
-        <img class="avatar" :src="avatarUrl(opOf(t)?.avatar_template ?? '')" alt="" loading="lazy" @click.stop="showUser(t)" />
+        <img
+          class="avatar clickable"
+          :src="avatarUrl(opOf(t)?.avatar_template ?? '')"
+          alt=""
+          loading="lazy"
+          title="查看主页"
+          @mouseenter.stop="opOf(t) && hoverUser(opOf(t)!.username, $event)"
+          @mouseleave.stop="cancelUser"
+          @click.stop="goUser(t)"
+        />
         <div class="topic-main">
           <div class="topic-title-line">
             <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">{{ t.title }}</RouterLink>
@@ -249,7 +262,14 @@ onMounted(() => {
           <div class="topic-meta">
             <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin"></span>置顶</span>
             <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock"></span>已关闭</span>
-            <span v-if="opOf(t)" class="u" title="查看用户卡片" @click.stop="showUser(t)">@{{ opOf(t)?.username }}</span>
+            <span
+              v-if="opOf(t)"
+              class="u"
+              title="查看主页"
+              @mouseenter.stop="hoverUser(opOf(t)!.username, $event)"
+              @mouseleave.stop="cancelUser"
+              @click.stop="goUser(t)"
+            >@{{ opOf(t)?.username }}</span>
             <button
               class="row-q"
               :class="{ acted: queue.has(t.id) }"

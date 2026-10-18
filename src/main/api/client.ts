@@ -299,6 +299,8 @@ export interface DiscourseUserInfo {
   admin?: boolean
   created_at?: string
   last_seen_at?: string
+  /** 资料卡背景图（upload 模板路径，可能含 {size} 占位）；无则 UI 兜底渐变 */
+  card_background?: string
 }
 
 export interface UserResponse {
@@ -333,6 +335,27 @@ export function fetchUser(username: string): Promise<UserResponse> {
 
 export function fetchUserSummary(username: string): Promise<UserSummaryResponse> {
   return discourseRequest<UserSummaryResponse>(`/u/${encodeURIComponent(username)}/summary.json`)
+}
+
+/** /user_actions.json 条目（用户主页「回复」tab 用；字段按可选消费，形态待真机核验） */
+export interface UserActionItem {
+  action_type?: number
+  topic_id?: number
+  title?: string
+  excerpt?: string
+  post_number?: number
+  created_at?: string
+}
+
+export interface UserActionsResponse {
+  user_actions?: UserActionItem[]
+}
+
+/** 用户动作流：filter=5 为回复（Discourse 惯例 4=主题 5=回复）；query 经 URLSearchParams 编码，勿手工 escape */
+export function fetchUserActions(username: string, filter = 5, offset = 0): Promise<UserActionsResponse> {
+  return discourseRequest<UserActionsResponse>('/user_actions.json', {
+    query: { username, filter, offset }
+  })
 }
 
 export function fetchCategories(): Promise<CategoryListResponse> {
