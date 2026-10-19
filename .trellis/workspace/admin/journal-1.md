@@ -603,3 +603,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 22（2026-10-19）：ech-engine P1——Go ECH 网关原型验收通过
 
 用户三连追问（Rust 作框架语言？风险？猫鼠游戏？每请求都过 Go？）后拍板做 ECH 引擎。先决实验补全：Bun（内置 ECH）直连 linux.do 仍 RST（对照组 cloudflare.com 200——Bun 未查 HTTPS RR 拿不到 echconfig，排除「现成客户端白嫖」路径）；Go 1.26 手工原型（DoH type 65 → ech SvcParam → crypto/tls EncryptedClientHelloConfigList）：明文 SNI RST / **ECH OK TLS1.3 ECHAccepted=true**——证伪 10-18「GFW 针对 CF ECH」猜测，用户判断成立。P1 落地 ech-gateway/main.go（~370 行）：本地 CA 生成/按需签发、CONNECT MITM、ReverseProxy + ECH Transport、RR 缓存 60s、stdout 端口协议。standalone 验收：curl --proxy 过网关，日志 `out linux.do:443 via 172.64.229.235 TLS=TLS 1.3 ECHAccepted=true`，HTTP 403（匿名正常拒绝=穿透证明）。坑：`-C` 使 go build -o 相对模块目录（exe 落嵌套目录）；Go 1.26 ECH API 名 = EncryptedClientHelloConfigList；命名返回值与 `:=` 冲突两处；ZCode shell hook 相对 cwd 解析，子目录运行会砖死（需在该路径放 hook 副本解锁——已记）。P2 清单：sidecar 生命周期/setCertificateVerifyProc/设置档 ECH 直连/降级协议解析。
+
+### Session 22 续：ech-engine P2 集成落地
+
+用户批「开始」。P2 全量：ProxyMode 加 'ech'（白名单/归一）、echGateway.ts sidecar 生命周期（二进制双路径 dev=仓库/packaged=resources、stdout {"port":N} 协议 6s 超时、before-quit 回收）、setCertificateVerifyProc（req.certificate.data 才是 PEM——Electron Certificate 结构体；公共链 verificationResult==='net::OK' 直接放行不扩信任面）、applyDohRuntime 上游链 ech→manual→system→off + 网关失败降级 manual、设置页四档 seg、build:gw 脚本（无 Go 跳过）+ dist 前置 + extraResources。坑：go.mod 在 ech-gateway/ 子目录（脚本须 cwd 进去）；Go build -o 相对 cwd；ts ProxyMode 四档同步 ref 类型。typecheck+SMOKE_OK+网关 exe 7MB 构建过。端到端待真机：重启 dev → 网络 → ECH 直连 → 保存 → 诊断「经上游转发 127.0.0.1:<gw>」。Clash 可关——这是整条任务线的终点形态。
