@@ -301,6 +301,12 @@ export interface DiscourseUserInfo {
   last_seen_at?: string
   /** 资料卡背景图（upload 模板路径，可能含 {size} 占位）；无则 UI 兜底渐变 */
   card_background?: string
+  /** 以下均为 user serializer 可选输出，悬浮卡对齐 Discourse 原生卡消费（缺省隐藏） */
+  bio_excerpt?: string
+  location?: string
+  website?: string
+  last_posted_at?: string
+  badge_count?: number
 }
 
 export interface UserResponse {
