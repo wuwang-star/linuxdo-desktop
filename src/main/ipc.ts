@@ -34,12 +34,15 @@ import {
   setTranslateConfig,
   getDohConfig,
   setDohConfig,
+  getNetworkConfig,
+  setNetworkConfig,
   getNotificationConfig,
   setNotificationConfig,
-  type DohMode
+  type DohMode,
+  type ProxyMode
 } from './api/settings'
 import { translatePostText } from './api/translate'
-import { applyDohRuntime, diagResolve, hasUpstreamProxy, isDohProxyActive, upstreamProxyLabel } from './api/dohProxy'
+import { applyDohRuntime, diagResolve, hasUpstreamProxy, isDohProxyActive, testUpstream, upstreamProxyLabel } from './api/dohProxy'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
   messageBusStart,
@@ -139,6 +142,19 @@ export function registerIpc(): void {
     }
     return cfg
   })
+  // ---------- 上游代理（10-18 网络设置 FluxDO 化：手动配置最可靠，保存即时生效） ----------
+  ipcMain.handle('settings:getNetwork', () => getNetworkConfig())
+  ipcMain.handle('settings:setNetwork', async (_e, mode: ProxyMode, host: string, port: number) => {
+    const cfg = setNetworkConfig(mode, String(host ?? ''), Number(port ?? 0))
+    try {
+      await applyDohRuntime()
+    } catch {
+      /* 启停失败不回滚已保存配置，下次启动重试 */
+    }
+    return cfg
+  })
+  ipcMain.handle('net:testUpstream', (_e, host: string, port: number) => testUpstream(String(host ?? ''), Number(port ?? 0)))
+
   // ---------- 原生通知开关（内存即时生效，notify.ts 发送前读取） ----------
   ipcMain.handle('settings:getNotification', () => getNotificationConfig())
   ipcMain.handle('settings:setNotification', (_e, enabled: boolean) => setNotificationConfig(enabled))

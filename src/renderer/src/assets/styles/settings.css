@@ -43,3 +43,7 @@ code.accel {
   background: var(--accent-weak); color: var(--accent);
   border-radius: var(--radius-xs); padding: 1px 6px; margin-left: 6px;
 }
+
+/* @scope: net-settings — 上游代理地址/端口输入宽度 */
+.proxy-host { width: 140px; }
+.proxy-port { width: 84px; }

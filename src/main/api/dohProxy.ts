@@ -15,7 +15,7 @@ import http from 'node:http'
 import net from 'node:net'
 import dns from 'node:dns'
 import { randomInt } from 'node:crypto'
-import { getDohConfig, type DohConfig } from './settings'
+import { getDohConfig, getNetworkConfig, type DohConfig } from './settings'
 
 interface CacheEntry {
   ips: string[]
@@ -187,14 +187,12 @@ async function resolveHost(cfg: DohConfig, host: string): Promise<{ ips: string[
 
 // ---------- CONNECT 隧道 ----------
 
-/** 经系统代理建立隧道：CONNECT 发给上游（远程解析，本地 DoH 不参与），等 2xx 后交出 socket。 */
-function chainConnect(authority: string): Promise<net.Socket> {
+type Upstream = { host: string; port: number }
+
+/** 经上游代理建立隧道：CONNECT 发给上游（远程解析，本地 DoH 不参与），等 2xx 后交出 socket。 */
+function chainConnect(authority: string, up: Upstream): Promise<net.Socket> {
   return new Promise((resolve, reject) => {
-    if (!upstream) {
-      reject(new Error('无上游代理'))
-      return
-    }
-    const s = net.connect({ host: upstream.host, port: upstream.port })
+    const s = net.connect({ host: up.host, port: up.port })
     let buf = ''
     const fail = (e: Error): void => {
       clearTimeout(timer)
@@ -259,8 +257,10 @@ async function handleConnect(cfg: DohConfig, req: http.IncomingMessage, client: 
     const host = m?.[1] ?? ''
     const port = m?.[2] ? Number(m[2]) : 443
     if (!host) throw new Error(`非法 CONNECT 目标：${authority}`)
-    // 有系统代理 → 链式转发（上游远程解析，SNI 阻断网络下 DoH 直连无解）；无 → DoH 解析直连
-    const sock = upstream ? await chainConnect(`${host}:${port}`) : await connectAny((await resolveHost(cfg, host)).ips, port)
+    // 有上游代理 → 链式转发（上游远程解析，SNI 阻断网络下 DoH 直连无解）；无 → DoH 解析直连
+    const sock = upstream
+      ? await chainConnect(`${host}:${port}`, upstream)
+      : await connectAny((await resolveHost(cfg, host)).ips, port)
     client.write('HTTP/1.1 200 Connection Established\r\n\r\n')
     if (head.length) sock.write(head)
     const cleanup = (): void => {
@@ -357,19 +357,25 @@ export const dohReady = new Promise<void>((resolve) => {
 
 /**
  * 读配置启停代理并接管/还原 defaultSession 代理（app ready 与设置保存两处共用）。
- * 接管前先 resolveProxy 探测系统代理（Clash 等）：有则 CONNECT 链式转发（上游远程解析，
- * SNI 阻断网络下 DoH 直连必死，2026-10-17 实测），无则 DoH 解析直连。
- * 已接管状态下 resolveProxy 只返回自身端口，此时沿用上次捕获值；系统代理变更后需重新保存开关。
+ * 上游代理解析顺序（10-18 网络设置 FluxDO 化）：manual=显式配置（最可靠）→
+ * system=resolveProxy 探测（已接管态只返回自身端口，沿用上次捕获值）→ off=不链，DoH 直连。
  */
 export async function applyDohRuntime(): Promise<void> {
   try {
     const cfg = getDohConfig()
+    const net = getNetworkConfig()
     if (cfg.enabled) {
-      const via = await session.defaultSession.resolveProxy('https://linux.do').catch(() => 'DIRECT')
-      const m = /PROXY\s+([^\s;]+)/i.exec(via)
-      const cand = m ? parseUpstream(m[1]) : null
-      if (cand && !(cand.host === '127.0.0.1' && cand.port === ownPort)) upstream = cand
-      else if (!m) upstream = null
+      if (net.proxyMode === 'manual') {
+        upstream = { host: net.proxyHost, port: net.proxyPort }
+      } else if (net.proxyMode === 'off') {
+        upstream = null
+      } else {
+        const via = await session.defaultSession.resolveProxy('https://linux.do').catch(() => 'DIRECT')
+        const m = /PROXY\s+([^\s;]+)/i.exec(via)
+        const cand = m ? parseUpstream(m[1]) : null
+        if (cand && !(cand.host === '127.0.0.1' && cand.port === ownPort)) upstream = cand
+        else if (!m) upstream = null
+      }
       const port = await startDohProxy(cfg)
       await session.defaultSession.setProxy({
         proxyRules: `127.0.0.1:${port}`,
@@ -383,6 +389,19 @@ export async function applyDohRuntime(): Promise<void> {
   } finally {
     readyResolve?.()
     readyResolve = null
+  }
+}
+
+/** 测试上游代理可达性：CONNECT linux.do:443 走一遍（设置页「测试上游」用），返回耗时。 */
+export async function testUpstream(host: string, port: number): Promise<{ ok: boolean; ms: number; error?: string }> {
+  const t0 = Date.now()
+  try {
+    const s = await chainConnect('linux.do:443', { host, port })
+    const ms = Date.now() - t0
+    s.destroy()
+    return { ok: true, ms }
+  } catch (e) {
+    return { ok: false, ms: Date.now() - t0, error: e instanceof Error ? e.message : String(e) }
   }
 }
 

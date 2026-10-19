@@ -65,6 +65,10 @@ const api = {
   getUserSummary: (username: string) => ipcRenderer.invoke('user:summary', username),
   getUserActions: (username: string, filter?: number, offset?: number) =>
     ipcRenderer.invoke('user:actions', username, filter, offset),
+  // 上游代理（网络设置）：读/存（保存即时生效）/测试上游 CONNECT linux.do
+  getNetworkConfig: () => ipcRenderer.invoke('settings:getNetwork'),
+  setNetworkConfig: (mode: string, host: string, port: number) => ipcRenderer.invoke('settings:setNetwork', mode, host, port),
+  testUpstream: (host: string, port: number) => ipcRenderer.invoke('net:testUpstream', host, port),
   // WebDAV 手动同步（配置/测试/推送/拉取）
   getWebdavConfig: () => ipcRenderer.invoke('webdav:getConfig'),
   setWebdavConfig: (server: string, username: string, remoteDir: string, password?: string) =>

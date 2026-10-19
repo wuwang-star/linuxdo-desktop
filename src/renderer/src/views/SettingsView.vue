@@ -209,6 +209,43 @@ async function saveTranslate(): Promise<void> {
   }
 }
 
+// ---- 上游代理（10-18 网络设置 FluxDO 化：manual 显式配置最可靠，保存即时生效） ----
+const proxyMode = ref<'system' | 'manual' | 'off'>('system')
+const proxyHost = ref('127.0.0.1')
+const proxyPort = ref(7890)
+const proxySaving = ref(false)
+const proxyMessage = ref('')
+const proxyTesting = ref(false)
+const proxyTestMsg = ref('')
+
+async function saveNetwork(): Promise<void> {
+  if (proxySaving.value) return
+  proxySaving.value = true
+  proxyMessage.value = ''
+  try {
+    await window.api.setNetworkConfig(proxyMode.value, proxyHost.value.trim(), Number(proxyPort.value) || 0)
+    proxyMessage.value = '已保存并即时生效'
+  } catch (e) {
+    proxyMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    proxySaving.value = false
+  }
+}
+
+async function testProxy(): Promise<void> {
+  if (proxyTesting.value) return
+  proxyTesting.value = true
+  proxyTestMsg.value = ''
+  try {
+    const res = await window.api.testUpstream(proxyHost.value.trim(), Number(proxyPort.value) || 0)
+    proxyTestMsg.value = res.ok ? `✅ 经 ${proxyHost.value.trim()}:${proxyPort.value} 连接 linux.do 可达（${res.ms}ms）` : `❌ ${res.error ?? '不可达'}`
+  } catch (e) {
+    proxyTestMsg.value = `❌ ${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    proxyTesting.value = false
+  }
+}
+
 // ---- DoH 加密 DNS ----
 const dohPresets = [
   'https://edge.1molchuan.top/linuxdo',
@@ -421,6 +458,10 @@ onMounted(async () => {
     dohTemplate.value = 'custom'
     dohCustom.value = doh.template
   }
+  const net = await window.api.getNetworkConfig()
+  proxyMode.value = net.proxyMode
+  proxyHost.value = net.proxyHost
+  proxyPort.value = net.proxyPort
   const notif = await window.api.getNotificationConfig()
   notifEnabled.value = notif.enabled
   const sc = await window.api.getShortcutsStatus()
@@ -624,14 +665,65 @@ onMounted(async () => {
 
       <!-- 网络 -->
       <template v-else-if="active === 'network'">
+        <!-- 上游代理（FluxDO network/proxy 同款能力：手动配置最可靠，系统探测易随 Clash 开关漂移） -->
+        <section class="card">
+          <h2>上游代理</h2>
+          <div class="settings-banner">
+            <span class="banner-icon">🛰️</span>
+            <span>
+              应用出站统一经本机代理转发。SNI 阻断网络下 DoH 直连不可达（实测 2026-10-17），
+              <strong>推荐「手动」模式显式填 Clash 的混合端口</strong>（如 127.0.0.1:7897），不再依赖系统代理开关。
+            </span>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">代理来源</div>
+              <div class="field-desc">手动：固定用下方地址端口（Clash 开关变化不受影响） · 跟随系统：探测系统代理 · 关闭：仅 DoH 直连（纯 DNS 污染网络用）</div>
+            </div>
+            <div class="seg field-control">
+              <label class="seg-opt">
+                <input type="radio" value="manual" v-model="proxyMode" />
+                <span>手动</span>
+              </label>
+              <label class="seg-opt">
+                <input type="radio" value="system" v-model="proxyMode" />
+                <span>跟随系统</span>
+              </label>
+              <label class="seg-opt">
+                <input type="radio" value="off" v-model="proxyMode" />
+                <span>关闭</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">代理地址</div>
+              <div class="field-desc">HTTP CONNECT 上游（Clash 混合端口/V2Ray HTTP 均可），仅「手动」模式生效</div>
+            </div>
+            <div class="field-control">
+              <input v-model="proxyHost" class="proxy-host" placeholder="127.0.0.1" :disabled="proxyMode !== 'manual'" />
+              <input v-model="proxyPort" class="proxy-port" type="number" min="1" max="65535" placeholder="7890" :disabled="proxyMode !== 'manual'" />
+            </div>
+          </div>
+          <div class="row">
+            <button class="primary" :disabled="proxySaving" @click="saveNetwork">
+              {{ proxySaving ? '保存中…' : '保存' }}
+            </button>
+            <button :disabled="proxyTesting || proxyMode === 'off'" @click="testProxy">
+              {{ proxyTesting ? '测试中…' : '测试上游连通' }}
+            </button>
+          </div>
+          <p v-if="proxyMessage" class="message">{{ proxyMessage }}</p>
+          <p v-if="proxyTestMsg" class="tip dns-result">{{ proxyTestMsg }}</p>
+        </section>
+
         <section class="card">
           <h2>加密 DNS（DoH）</h2>
           <div class="settings-banner">
             <span class="banner-icon">🔒</span>
             <span>
               <strong>本地代理解析已生效</strong>：开启后应用流量统一经本机代理出站（保存即时生效，无需重启）。
-              检测到系统代理（Clash 等）时自动经其转发；无系统代理才用 DoH 解析直连。
-              系统代理开关变更后，重新保存本开关以重新探测。
+              链路=上方「上游代理」配置（经其远程解析）；无上游时用 DoH 解析直连（纯 DNS 污染网络适用）。
             </span>
           </div>
           <div class="field-row">

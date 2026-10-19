@@ -12,7 +12,7 @@ import type {
   UserSummaryResponse,
   UserActionsResponse
 } from '../main/api/client'
-import type { TranslateConfig, DohConfig, DohMode, NotificationConfig } from '../main/api/settings'
+import type { TranslateConfig, DohConfig, DohMode, NetworkConfig, ProxyMode, NotificationConfig } from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
@@ -59,6 +59,10 @@ export interface ApiBridge {
   setTranslateConfig(baseUrl: string, model: string, key?: string): Promise<TranslateConfig>
   getDohConfig(): Promise<DohConfig>
   setDohConfig(enabled: boolean, mode: DohMode, template: string): Promise<DohConfig>
+  /** 上游代理（网络设置）：manual=显式 host:port 最可靠；保存即时生效；testUpstream 实测 CONNECT linux.do */
+  getNetworkConfig(): Promise<NetworkConfig>
+  setNetworkConfig(mode: ProxyMode, host: string, port: number): Promise<NetworkConfig>
+  testUpstream(host: string, port: number): Promise<{ ok: boolean; ms: number; error?: string }>
   getNotificationConfig(): Promise<NotificationConfig>
   setNotificationConfig(enabled: boolean): Promise<NotificationConfig>
   resolveDns(): Promise<{

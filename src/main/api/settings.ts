@@ -12,6 +12,15 @@ export interface TranslateConfig {
 /** DoH 模式：secure=只用加密解析（失败即断）；auto=加密优先、失败回退系统 DNS */
 export type DohMode = 'secure' | 'auto'
 
+/** 上游代理模式（10-18 网络设置 FluxDO 化）：manual=显式配置最可靠；system=探测系统代理；off=仅 DoH 直连 */
+export type ProxyMode = 'system' | 'manual' | 'off'
+
+export interface NetworkConfig {
+  proxyMode: ProxyMode
+  proxyHost: string
+  proxyPort: number
+}
+
 export interface DohConfig {
   enabled: boolean
   mode: DohMode
@@ -49,6 +58,9 @@ interface StoredConfig {
   dohEnabled: boolean
   dohMode: DohMode
   dohTemplate: string
+  proxyMode: ProxyMode
+  proxyHost: string
+  proxyPort: number
   notificationEnabled: boolean
   bridgeEnabled: boolean
   bridgePairCode: string
@@ -91,6 +103,18 @@ function dohFieldsOf(raw: Partial<StoredConfig>): {
   }
 }
 
+const NETWORK_DEFAULT: NetworkConfig = { proxyMode: 'system', proxyHost: '127.0.0.1', proxyPort: 7890 }
+
+/** 上游代理三字段提取（归一：mode 白名单/host 非空/port 1-65535，脏数据回默认） */
+function networkFieldsOf(raw: Partial<StoredConfig> | null): NetworkConfig {
+  const port = Number(raw?.proxyPort)
+  return {
+    proxyMode: raw?.proxyMode === 'manual' || raw?.proxyMode === 'off' ? raw.proxyMode : 'system',
+    proxyHost: typeof raw?.proxyHost === 'string' && raw.proxyHost.trim() ? raw.proxyHost.trim() : NETWORK_DEFAULT.proxyHost,
+    proxyPort: Number.isInteger(port) && port > 0 && port < 65536 ? port : NETWORK_DEFAULT.proxyPort
+  }
+}
+
 /** 桥接两字段提取（旧配置文件无字段时取默认值：关闭 + 空码） */
 function bridgeFieldsOf(c: StoredConfig | null): { bridgeEnabled: boolean; bridgePairCode: string } {
   return {
@@ -129,6 +153,7 @@ function loadOnce(): void {
         baseUrl: raw.baseUrl ?? '',
         model: raw.model ?? '',
         ...dohFieldsOf(raw),
+        ...networkFieldsOf(raw),
         // 旧配置文件无此字段（p2a 之前）→ 默认开启；其余值 Boolean 强转防脏数据
         notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled),
         bridgeEnabled: raw.bridgeEnabled === undefined ? false : Boolean(raw.bridgeEnabled),
@@ -165,6 +190,7 @@ export function setTranslateConfig(baseUrl: string, model: string, key?: string)
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    ...networkFieldsOf(cache),
     notificationEnabled: cache?.notificationEnabled ?? true,
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -224,6 +250,35 @@ export function getDohConfig(): DohConfig {
   }
 }
 
+export function getNetworkConfig(): NetworkConfig {
+  loadOnce()
+  return networkFieldsOf(cache)
+}
+
+/** 保存上游代理配置（manual 的 host:port 归一）。代理启停由 ipc 层保存后即时应用（applyDohRuntime）。 */
+export function setNetworkConfig(mode: ProxyMode, host: string, port: number): NetworkConfig {
+  loadOnce()
+  cache = {
+    baseUrl: cache?.baseUrl ?? '',
+    model: cache?.model ?? '',
+    dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
+    dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
+    dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    proxyMode: mode === 'manual' || mode === 'off' ? mode : 'system',
+    proxyHost: host.trim() || NETWORK_DEFAULT.proxyHost,
+    proxyPort: Number.isInteger(port) && port > 0 && port < 65536 ? port : NETWORK_DEFAULT.proxyPort,
+    notificationEnabled: cache?.notificationEnabled ?? true,
+    ...bridgeFieldsOf(cache),
+    ...shortcutFieldsOf(cache)
+  }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 配置写失败不阻塞，内存态仍生效 */
+  }
+  return networkFieldsOf(cache)
+}
+
 /**
  * 保存 DoH 配置（明文 JSON，与 translate 配置同文件、无敏感数据）。
  * mode 只认 secure/auto；模板非法静默回退默认。代理启停由 ipc 层保存后即时应用（applyDohRuntime）。
@@ -236,6 +291,7 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     dohEnabled: Boolean(enabled),
     dohMode: mode === 'auto' ? 'auto' : 'secure',
     dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template,
+    ...networkFieldsOf(cache),
     notificationEnabled: cache?.notificationEnabled ?? true,
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -265,6 +321,7 @@ export function setNotificationConfig(enabled: boolean): NotificationConfig {
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    ...networkFieldsOf(cache),
     notificationEnabled: Boolean(enabled),
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -307,6 +364,7 @@ export function setBridgeEnabled(enabled: boolean): BridgeConfig {
     dohEnabled: DOH_DEFAULT.enabled,
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
+    ...networkFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',
@@ -333,6 +391,7 @@ export function regenBridgePair(): BridgeConfig {
     dohEnabled: DOH_DEFAULT.enabled,
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
+    ...networkFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',
@@ -366,6 +425,7 @@ export function setShortcutEnabled(kind: 'callWindow' | 'nextTopic', enabled: bo
     dohEnabled: DOH_DEFAULT.enabled,
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
+    ...networkFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',
