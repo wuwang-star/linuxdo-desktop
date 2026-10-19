@@ -138,6 +138,25 @@ function kbWrite(body: Record<string, unknown>): unknown {
   return { file: name }
 }
 
+// ---------- 礼貌节流（kb-api 防封号）：AI 请求串行 + 最小间隔，量级贴近正常人浏览 ----------
+
+let reqChain: Promise<void> = Promise.resolve()
+let lastReqAt = 0
+const MIN_REQ_GAP_MS = 350
+
+function throttled<T>(fn: () => Promise<T>): Promise<T> {
+  const gate = reqChain.then(async () => {
+    const wait = lastReqAt + MIN_REQ_GAP_MS - Date.now()
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait))
+    lastReqAt = Date.now()
+  })
+  reqChain = gate.then(
+    () => {},
+    () => {}
+  )
+  return gate.then(fn)
+}
+
 // ---------- 路由 ----------
 
 async function route(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> {
@@ -178,7 +197,7 @@ function startServer(port: number, token: string): Promise<void> {
             sendJson(res, 401, { error: 'X-KB-Token 不匹配（设置→AI 接口 查看）' })
             return
           }
-          await route(req, res, new URL(req.url ?? '/', 'http://127.0.0.1'))
+          await throttled(() => route(req, res, new URL(req.url ?? '/', 'http://127.0.0.1')))
         } catch (e) {
           sendJson(res, 500, { error: e instanceof Error ? e.message : String(e) })
         }
