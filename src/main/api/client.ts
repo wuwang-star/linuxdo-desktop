@@ -224,6 +224,8 @@ export interface DiscourseTopic {
   title: string
   fancy_title?: string
   posts_count: number
+  like_count?: number
+  views?: number
   created_at?: string
   details?: {
     created_by?: DiscourseUserLite

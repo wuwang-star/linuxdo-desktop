@@ -31,6 +31,8 @@ export interface ReadingPrefs {
   listStyle: ListStylePref
   /** 外框架左 rail 是否收起（feishu-im-frame：收起 56px 纯 icon） */
   railCollapsed: boolean
+  /** 中栏列表宽度（px，240–520 拖拽可调） */
+  listWidth?: number
 }
 
 export const DEFAULT_PREFS: ReadingPrefs = {
@@ -41,7 +43,8 @@ export const DEFAULT_PREFS: ReadingPrefs = {
   theme: 'system',
   viewMode: 'stream',
   listStyle: 'float',
-  railCollapsed: false
+  railCollapsed: false,
+  listWidth: 312
 }
 
 const STORAGE_KEY = 'ldd-reading'
@@ -90,8 +93,9 @@ export function normalizePrefs(raw: unknown): ReadingPrefs {
     ? (r.listStyle as ListStylePref)
     : d.listStyle
   const railCollapsed = r.railCollapsed === true
+  const listWidth = typeof r.listWidth === 'number' && r.listWidth >= 240 && r.listWidth <= 520 ? Math.round(r.listWidth) : 312
 
-  return { fontSize, lineHeight, fontFamily, width, theme, viewMode, listStyle, railCollapsed }
+  return { fontSize, lineHeight, fontFamily, width, theme, viewMode, listStyle, railCollapsed, listWidth }
 }
 
 export function loadPrefs(): ReadingPrefs {

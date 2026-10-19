@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import HomeView from './HomeView.vue'
 import TopicView from './TopicView.vue'
 import { useBrowseStore } from '../stores/browse'
+import { loadPrefs, savePrefs } from '../utils/prefs'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,30 @@ const ICONS = {
 }
 
 // ---- 双栏判定：≥1200px（matchMedia listener 实时同步，跨阈值即时切换；拉宽恢复双栏且右栏保持当前主题 AC3） ----
+// ---- 中栏宽度拖拽（R: 列表宽可调）：prefs 持久化，240–520 夹取，拖拽实时跟手 ----
+const listW = ref(loadPrefs().listWidth ?? 312)
+let resizing = false
+function onResizeStart(e: MouseEvent): void {
+  e.preventDefault()
+  resizing = true
+  const startX = e.clientX
+  const startW = listW.value
+  const move = (ev: MouseEvent): void => {
+    if (!resizing) return
+    listW.value = Math.min(520, Math.max(240, startW + ev.clientX - startX))
+  }
+  const up = (): void => {
+    resizing = false
+    window.removeEventListener('mousemove', move)
+    window.removeEventListener('mouseup', up)
+    document.body.style.cursor = ''
+    savePrefs({ ...loadPrefs(), listWidth: listW.value })
+  }
+  document.body.style.cursor = 'col-resize'
+  window.addEventListener('mousemove', move)
+  window.addEventListener('mouseup', up)
+}
+
 const mql = window.matchMedia('(min-width: 1200px)')
 const dual = ref(mql.matches)
 function onMqlChange(e: MediaQueryListEvent): void {
@@ -56,8 +81,16 @@ const showReader = computed(() => dual.value || route.name === 'topic')
 
 <template>
   <div class="browse" :data-dual="dual">
-    <aside v-show="showList" class="list-pane">
+    <aside v-show="showList" class="list-pane" :style="dual ? { width: listW + 'px' } : undefined">
       <HomeView :pane="true" />
+      <!-- 宽度拖拽手柄（双栏才可拖；窄屏单栏无意义） -->
+      <span
+        v-if="dual"
+        class="list-resizer"
+        :class="{ resizing }"
+        title="拖拽调整列表宽度"
+        @mousedown="onResizeStart"
+      ></span>
     </aside>
     <section v-show="showReader" class="reader-pane">
       <!-- :key 换主题/离线态切换时强制重建（store.open 幂等，重建最省心） -->

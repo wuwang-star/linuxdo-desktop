@@ -9,3 +9,13 @@
 }
 .reader-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; background: var(--canvas); }
 .reader-pane > * { flex: 1; min-height: 0; }
+
+/* @scope: feishu-im-frame — 中栏宽度拖拽手柄（贴 list-pane 右缘，压在内容上） */
+.list-pane { position: relative; }
+.list-resizer {
+  position: absolute; top: 0; right: -3px; width: 6px; height: 100%;
+  cursor: col-resize; z-index: 12;
+}
+.list-resizer:hover, .list-resizer.resizing {
+  background: var(--accent-weak);
+}

@@ -3,7 +3,7 @@ import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore, clusterThreads } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
-import { relTime, rowTime } from '../utils/format'
+import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 import { startReadTracking } from '../utils/readTiming'
@@ -51,9 +51,18 @@ function isOpPost(p: DiscoursePost): boolean {
 }
 /** 头部 meta 行创建时间 chip（24h 内相对，更早 M月D日） */
 const createdLabel = computed(() => rowTime(store.topic?.created_at))
+/** 楼主头像（一楼作者），头部展示用 */
+const opAvatar = computed(() => {
+  const first = store.orderedPosts.find((p) => p.post_number === 1) ?? store.orderedPosts[0]
+  return store.opUsername && first?.avatar_template ? avatarUrl(first.avatar_template, 96) : ''
+})
 
 /** 行内 SVG 图标（沿用项目 ICONS 模式） */
 const ICONS = {
+  heart:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+  eye:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>',
   chat:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
   user:
@@ -373,12 +382,24 @@ function readOffline(): void {
     <!-- 内容区头部（拖拽区 3）：标题 + meta 行 + 页签行/动作 -->
     <div v-if="store.topic" class="ldd-t-head">
       <div class="ldd-t-title-row">
+        <img
+          v-if="opAvatar"
+          class="ldd-t-ava clickable"
+          :src="opAvatar"
+          alt=""
+          :title="store.opUsername ? `@${store.opUsername}` : ''"
+          @mouseenter.stop="store.opUsername && hoverUser(store.opUsername, $event)"
+          @mouseleave.stop="cancelUser"
+        />
         <span v-if="store.offline" class="offline-badge">离线</span>
         <div class="ldd-t-title" :title="store.topic.title">{{ store.topic.title }}</div>
         <span v-if="saveResult" class="th-toast" :class="saveResult.ok ? 'hint' : 'save-err'">{{ saveResult.text }}</span>
       </div>
       <div class="ldd-t-meta">
+        <span v-if="store.opUsername" class="ldd-chip">@{{ store.opUsername }}</span>
         <span class="ldd-chip">{{ total }} 楼</span>
+        <span v-if="store.topic.views" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.eye"></span> {{ store.topic.views }}</span>
+        <span v-if="store.topic.like_count" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.heart"></span> {{ store.topic.like_count }}</span>
         <span v-if="createdLabel" class="ldd-chip">创建于 {{ createdLabel }}</span>
       </div>
       <div class="ldd-t-bar">
