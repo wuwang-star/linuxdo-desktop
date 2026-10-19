@@ -16,6 +16,7 @@ import net from 'node:net'
 import dns from 'node:dns'
 import { randomInt } from 'node:crypto'
 import { getDohConfig, getNetworkConfig, type DohConfig } from './settings'
+import { ensureRunning as ensureGwRunning, installCertTrust, stopGateway } from './echGateway'
 
 interface CacheEntry {
   ips: string[]
@@ -357,15 +358,26 @@ export const dohReady = new Promise<void>((resolve) => {
 
 /**
  * 读配置启停代理并接管/还原 defaultSession 代理（app ready 与设置保存两处共用）。
- * 上游代理解析顺序（10-18 网络设置 FluxDO 化）：manual=显式配置（最可靠）→
- * system=resolveProxy 探测（已接管态只返回自身端口，沿用上次捕获值）→ off=不链，DoH 直连。
+ * 上游代理解析顺序（10-19 ech-engine）：ech=本地 Go 网关（DoH+HTTPS RR+ECH 出站，根治 SNI）→
+ * manual=显式配置 → system=resolveProxy 探测（已接管态只返回自身端口，沿用上次捕获值）→
+ * off=不链，DoH 直连。ECH 网关启动失败自动降级 manual（诊断面板可见上游地址）。
  */
 export async function applyDohRuntime(): Promise<void> {
   try {
     const cfg = getDohConfig()
     const net = getNetworkConfig()
     if (cfg.enabled) {
-      if (net.proxyMode === 'manual') {
+      if (net.proxyMode === 'ech') {
+        try {
+          const port = await ensureGwRunning(cfg.template)
+          upstream = { host: '127.0.0.1', port }
+          installCertTrust() // 网关已生成 ca.pem，接入 MITM 证书信任（幂等）
+        } catch (e) {
+          // 降级：网关不可用（二进制缺失/启动失败）→ manual host/port（用户既有 Clash 配置）
+          upstream = { host: net.proxyHost, port: net.proxyPort }
+          console.warn(`[ech-gateway] 降级 manual: ${e instanceof Error ? e.message : String(e)}`)
+        }
+      } else if (net.proxyMode === 'manual') {
         upstream = { host: net.proxyHost, port: net.proxyPort }
       } else if (net.proxyMode === 'off') {
         upstream = null
@@ -383,6 +395,7 @@ export async function applyDohRuntime(): Promise<void> {
       })
     } else {
       upstream = null
+      stopGateway()
       await stopDohProxy()
       await session.defaultSession.setProxy({ mode: 'system' })
     }

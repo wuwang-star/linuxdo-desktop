@@ -210,7 +210,7 @@ async function saveTranslate(): Promise<void> {
 }
 
 // ---- 上游代理（10-18 网络设置 FluxDO 化：manual 显式配置最可靠，保存即时生效） ----
-const proxyMode = ref<'system' | 'manual' | 'off'>('system')
+const proxyMode = ref<'ech' | 'manual' | 'system' | 'off'>('system')
 const proxyHost = ref('127.0.0.1')
 const proxyPort = ref(7890)
 const proxySaving = ref(false)
@@ -294,7 +294,7 @@ async function testDns(): Promise<void> {
         : res.via === 'fallback'
           ? 'DoH 失败回退系统'
           : res.via === 'upstream'
-            ? `经系统代理转发（测试连接上游 ${res.addresses?.[0] ?? ''}）`
+            ? `经上游转发（${res.addresses?.[0] ?? ''}）`
             : '系统 DNS'
     dnsResult.value = res.ok
       ? `链路正常 · ${label}${res.via === 'upstream' ? '' : `：${res.addresses?.join(', ') || '（无地址）'}`}`
@@ -671,16 +671,24 @@ onMounted(async () => {
           <div class="settings-banner">
             <span class="banner-icon">🛰️</span>
             <span>
-              应用出站统一经本机代理转发。SNI 阻断网络下 DoH 直连不可达（实测 2026-10-17），
-              <strong>推荐「手动」模式显式填 Clash 的混合端口</strong>（如 127.0.0.1:7897），不再依赖系统代理开关。
+              应用出站统一经本机代理转发（保存即时生效）。
+              <strong>ECH 直连</strong>：本地网关加密 SNI 出站，不开 Clash 也能穿 SNI 阻断（实测 2026-10-19）；
+              「手动」填 Clash 混合端口（如 127.0.0.1:7897）为降级备选。
             </span>
           </div>
           <div class="field-row">
             <div class="field-main">
               <div class="field-label">代理来源</div>
-              <div class="field-desc">手动：固定用下方地址端口（Clash 开关变化不受影响） · 跟随系统：探测系统代理 · 关闭：仅 DoH 直连（纯 DNS 污染网络用）</div>
+              <div class="field-desc">
+                ECH 直连：本地网关加密 SNI 出站，不开 Clash 根治 SNI 阻断（推荐） · 手动：固定地址端口（Clash 混合口） ·
+                跟随系统：探测系统代理 · 关闭：仅 DoH 直连（无 SNI 阻断的纯污染网络用）
+              </div>
             </div>
             <div class="seg field-control">
+              <label class="seg-opt">
+                <input type="radio" value="ech" v-model="proxyMode" />
+                <span>ECH 直连</span>
+              </label>
               <label class="seg-opt">
                 <input type="radio" value="manual" v-model="proxyMode" />
                 <span>手动</span>
@@ -698,7 +706,7 @@ onMounted(async () => {
           <div class="field-row">
             <div class="field-main">
               <div class="field-label">代理地址</div>
-              <div class="field-desc">HTTP CONNECT 上游（Clash 混合端口/V2Ray HTTP 均可），仅「手动」模式生效</div>
+              <div class="field-desc">HTTP CONNECT 上游（Clash 混合端口/V2Ray HTTP 均可），仅「手动」模式生效；ECH 直连档失败时自动降级到该地址</div>
             </div>
             <div class="field-control">
               <input v-model="proxyHost" class="proxy-host" placeholder="127.0.0.1" :disabled="proxyMode !== 'manual'" />

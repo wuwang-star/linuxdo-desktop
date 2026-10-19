@@ -12,8 +12,8 @@ export interface TranslateConfig {
 /** DoH 模式：secure=只用加密解析（失败即断）；auto=加密优先、失败回退系统 DNS */
 export type DohMode = 'secure' | 'auto'
 
-/** 上游代理模式（10-18 网络设置 FluxDO 化）：manual=显式配置最可靠；system=探测系统代理；off=仅 DoH 直连 */
-export type ProxyMode = 'system' | 'manual' | 'off'
+/** 上游代理模式（10-18 网络设置 FluxDO 化 + 10-19 ech-engine）：ech=本地 Go 网关 ECH 直连（根治 SNI）；manual=显式配置；system=探测系统代理；off=仅 DoH 直连 */
+export type ProxyMode = 'ech' | 'manual' | 'system' | 'off'
 
 export interface NetworkConfig {
   proxyMode: ProxyMode
@@ -109,7 +109,8 @@ const NETWORK_DEFAULT: NetworkConfig = { proxyMode: 'system', proxyHost: '127.0.
 function networkFieldsOf(raw: Partial<StoredConfig> | null): NetworkConfig {
   const port = Number(raw?.proxyPort)
   return {
-    proxyMode: raw?.proxyMode === 'manual' || raw?.proxyMode === 'off' ? raw.proxyMode : 'system',
+    proxyMode:
+      raw?.proxyMode === 'ech' || raw?.proxyMode === 'manual' || raw?.proxyMode === 'off' ? raw.proxyMode : 'system',
     proxyHost: typeof raw?.proxyHost === 'string' && raw.proxyHost.trim() ? raw.proxyHost.trim() : NETWORK_DEFAULT.proxyHost,
     proxyPort: Number.isInteger(port) && port > 0 && port < 65536 ? port : NETWORK_DEFAULT.proxyPort
   }
@@ -264,7 +265,7 @@ export function setNetworkConfig(mode: ProxyMode, host: string, port: number): N
     dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
-    proxyMode: mode === 'manual' || mode === 'off' ? mode : 'system',
+    proxyMode: mode === 'ech' || mode === 'manual' || mode === 'off' ? mode : 'system',
     proxyHost: host.trim() || NETWORK_DEFAULT.proxyHost,
     proxyPort: Number.isInteger(port) && port > 0 && port < 65536 ? port : NETWORK_DEFAULT.proxyPort,
     notificationEnabled: cache?.notificationEnabled ?? true,

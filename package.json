@@ -10,7 +10,8 @@
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false && vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "smoke": "electron-vite build && electron ./out/main/index.js --smoke",
-    "dist": "electron-vite build && electron-builder"
+    "build:gw": "node scripts/build-ech-gateway.mjs",
+    "dist": "node scripts/build-ech-gateway.mjs && electron-vite build && electron-builder"
   },
   "dependencies": {
     "electron-updater": "^6.8.9"

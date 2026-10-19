@@ -16,6 +16,9 @@ extraResources:
   # 伴生扩展（R6 安装向导）：打包态位于 resources/extension，向导把该路径复制进剪贴板
   - from: extension
     to: extension
+  # ECH 直连网关（10-19-ech-engine）：打包态 resources/ech-gateway.exe，由 scripts/build-ech-gateway.mjs 产出
+  - from: ech-gateway/ech-gateway.exe
+    to: ech-gateway.exe
 win:
   target:
     - nsis
