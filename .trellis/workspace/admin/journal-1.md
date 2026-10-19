@@ -599,3 +599,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 21（2026-10-19）：网络设置 FluxDO 化 + 断网根因闭环
 
 用户报 user:get/summary ERR_TUNNEL_CONNECTION_FAILED + 点名「DOH 页面和网络设置页面参考 FluxDO 已有功能开发」。诊断：Clash 在跑（7897 监听、curl 经它 403=链路通）但系统代理注册表键消失（Clash 开关漂移）→「跟随系统」探测拿 DIRECT → secure 直连撞 SNI。修复按 FluxDO network 页能力对齐：NetworkConfig{manual|system|off, host, port} 持久化（7 setter 透传）、applyDohRuntime 上游顺序 manual→system→off、testUpstream 计时、设置页「上游代理」卡（seg+host/port+测试按钮）保存即时生效。手动模式下 Clash 开关漂移免疫。「打不开队列」判断为同因（网络断致主题加载失败），随本修复验收。用户操作指引：网络→上游代理→手动 127.0.0.1:7897→保存。
+
+### Session 22（2026-10-19）：ech-engine P1——Go ECH 网关原型验收通过
+
+用户三连追问（Rust 作框架语言？风险？猫鼠游戏？每请求都过 Go？）后拍板做 ECH 引擎。先决实验补全：Bun（内置 ECH）直连 linux.do 仍 RST（对照组 cloudflare.com 200——Bun 未查 HTTPS RR 拿不到 echconfig，排除「现成客户端白嫖」路径）；Go 1.26 手工原型（DoH type 65 → ech SvcParam → crypto/tls EncryptedClientHelloConfigList）：明文 SNI RST / **ECH OK TLS1.3 ECHAccepted=true**——证伪 10-18「GFW 针对 CF ECH」猜测，用户判断成立。P1 落地 ech-gateway/main.go（~370 行）：本地 CA 生成/按需签发、CONNECT MITM、ReverseProxy + ECH Transport、RR 缓存 60s、stdout 端口协议。standalone 验收：curl --proxy 过网关，日志 `out linux.do:443 via 172.64.229.235 TLS=TLS 1.3 ECHAccepted=true`，HTTP 403（匿名正常拒绝=穿透证明）。坑：`-C` 使 go build -o 相对模块目录（exe 落嵌套目录）；Go 1.26 ECH API 名 = EncryptedClientHelloConfigList；命名返回值与 `:=` 冲突两处；ZCode shell hook 相对 cwd 解析，子目录运行会砖死（需在该路径放 hook 副本解锁——已记）。P2 清单：sidecar 生命周期/setCertificateVerifyProc/设置档 ECH 直连/降级协议解析。
