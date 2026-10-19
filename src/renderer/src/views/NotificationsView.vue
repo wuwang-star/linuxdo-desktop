@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import PageShell from '../layouts/PageShell.vue'
 import { useAuthStore } from '../stores/auth'
 import { relTime } from '../utils/format'
 import type { DiscourseNotification } from '../../../main/api/client'
@@ -68,11 +69,11 @@ onMounted(() => void load())
 </script>
 
 <template>
-  <div class="notif-page">
-    <div class="notif-head">
-      <h2>通知</h2>
+  <!-- notif-page 类经透传保留（notifications.css 皮肤钩子），页壳 padding/head 由 PageShell 提供 -->
+  <PageShell title="通知" class="notif-page">
+    <template #actions>
       <button class="act" :disabled="marking" @click="markAllRead">{{ marking ? '处理中…' : '全部已读' }}</button>
-    </div>
+    </template>
     <div v-if="loading" class="loading">加载中…</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="items.length === 0" class="loading">暂无通知（未登录时不可见）</div>
@@ -92,5 +93,5 @@ onMounted(() => void load())
       </span>
       <span class="time">{{ relTime(n.created_at) }}</span>
     </button>
-  </div>
+  </PageShell>
 </template>

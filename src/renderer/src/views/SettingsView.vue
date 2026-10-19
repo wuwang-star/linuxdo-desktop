@@ -575,12 +575,7 @@ onMounted(async () => {
         <section class="card">
           <h2>阅读</h2>
           <FieldRow label="列表样式" desc="左侧帖子列表的行形态：悬浮行（默认）/ 卡片流 / 紧凑密排，即时生效">
-            <SegGroup
-              class="field-control"
-              :options="listStyles"
-              :model-value="reading.listStyle"
-              @update:model-value="updateReading({ listStyle: $event })"
-            />
+            <SegGroup class="field-control" :options="listStyles" :model-value="reading.listStyle" @update:model-value="updateReading({ listStyle: $event })" />
           </FieldRow>
           <FieldRow label="正文字号" desc="正文与主题标题的基础字号（14–20px）">
             <div class="stepper field-control">
@@ -602,28 +597,13 @@ onMounted(async () => {
             </div>
           </FieldRow>
           <FieldRow label="行距" desc="正文行高倍数">
-            <SegGroup
-              class="field-control"
-              :options="lineHeights"
-              :model-value="reading.lineHeight"
-              @update:model-value="updateReading({ lineHeight: $event })"
-            />
+            <SegGroup class="field-control" :options="lineHeights" :model-value="reading.lineHeight" @update:model-value="updateReading({ lineHeight: $event })" />
           </FieldRow>
           <FieldRow label="正文字体族" desc="仅作用于正文渲染区（代码块保持等宽字体）">
-            <SegGroup
-              class="field-control"
-              :options="fontFamilies"
-              :model-value="reading.fontFamily"
-              @update:model-value="updateReading({ fontFamily: $event })"
-            />
+            <SegGroup class="field-control" :options="fontFamilies" :model-value="reading.fontFamily" @update:model-value="updateReading({ fontFamily: $event })" />
           </FieldRow>
           <FieldRow label="阅读宽度" desc="主题页内容列最大宽度，居中显示（时间轴不参与）">
-            <SegGroup
-              class="field-control"
-              :options="widths"
-              :model-value="reading.width"
-              @update:model-value="updateReading({ width: $event })"
-            />
+            <SegGroup class="field-control" :options="widths" :model-value="reading.width" @update:model-value="updateReading({ width: $event })" />
           </FieldRow>
           <div class="row">
             <button @click="resetReading">恢复默认</button>

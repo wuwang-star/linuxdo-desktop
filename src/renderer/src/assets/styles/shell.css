@@ -199,3 +199,11 @@
 .page-fade-leave-to {
   opacity: 0;
 }
+
+/* @scope: PageShell — 整宽页通用页壳（layouts/PageShell.vue）：标题行 + 右上动作 + 滚动容器。
+   安全区 112px 同上方 .notif-page 等约定；接入页经透传 class 挂页面专属钩子时（如 .notif-page），
+   notifications.css 的同值规则后加载仍按原级联生效，视觉与迁移前逐像素一致。 */
+.page-shell { height: 100%; overflow-y: auto; padding: 14px 16px; padding-right: 112px; }
+.page-shell-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.page-shell-head h2 { margin: 0; font-size: var(--font-lg); }
+.page-shell-actions { display: flex; align-items: center; gap: 8px; }

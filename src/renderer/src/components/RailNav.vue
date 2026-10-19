@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useQueueStore } from '../stores/queue'
 import { useSearchStore } from '../stores/search'
+import QueuePanel from './QueuePanel.vue'
 import { avatarUrl } from '../utils/format'
 import { loadPrefs, savePrefs } from '../utils/prefs'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
@@ -135,17 +136,8 @@ const ICONS = {
         <span class="ic" v-html="ICONS.inbox"></span><span class="lbl">队列</span>
         <span v-if="queue.count > 0" class="rail-badge">{{ queue.count > 99 ? '99+' : queue.count }}</span>
       </button>
-      <div v-if="queueOpen" class="queue-panel">
-        <h4>队列 · {{ queue.count }}</h4>
-        <div v-if="queue.count === 0" class="queue-empty">队列为空：在列表或主题页点「＋」入队（悬停看提示）</div>
-        <div v-for="item in queue.items" :key="item.id" class="queue-item">
-          <RouterLink :to="`/t/${item.id}`" @click="queueOpen = false">{{ item.title }}</RouterLink>
-          <button @click="queue.remove(item.id)">移除</button>
-        </div>
-        <div v-if="queue.count > 0" class="queue-foot">
-          <button @click="queue.clear()">清空队列</button>
-        </div>
-      </div>
+      <!-- 队列浮层整体迁至 components/QueuePanel.vue（store 自取），此处只留挂载点 -->
+      <QueuePanel v-if="queueOpen" @close="queueOpen = false" />
     </div>
 
     <RouterLink to="/notifications" class="rail-item" :class="{ active: router.currentRoute.value.name === 'notifications' }" title="通知">
