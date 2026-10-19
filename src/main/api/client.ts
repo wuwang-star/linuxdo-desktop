@@ -111,6 +111,10 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
         continue
       }
       if (!res.ok) {
+        // CF 托管挑战（cf_clearance 过期/出口 IP 变化后必然出现）：给可行动的指引而非裸状态码
+        if (res.status === 403 && res.headers.get('cf-mitigated') === 'challenge') {
+          throw new Error('Cloudflare 盾需要重新验证：到登录页点「浏览器登录」，让页面完整加载一次后回来刷新')
+        }
         throw new Error(`HTTP ${res.status} ${res.statusText} <- ${url}`)
       }
       return (await res.json()) as T
