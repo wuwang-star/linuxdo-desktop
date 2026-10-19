@@ -595,3 +595,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 20 追记：悬浮卡对齐 linux.do 原生卡
 
 用户要求悬浮卡参考参考项目和 linux.do 原站。取证路径：zread 挖 FluxDO/Discourse 均无卡片模板直接命中 → 尝试探 linux.do /u/neo.json 被 403（匿名，符合 SPEC）→ GitHub tree API 截断 → 落回「Discourse 用户卡结构多年稳定 + user serializer 标准字段」常识实现：banner 压顶+头像叠压+bio_excerpt 优先+location/website+「最近发帖/加入」元数据+徽章数。全部条件渲染，字段缺失自动隐藏；形态真机验收确认。教训：匿名 403 挡住一手核实，此类「登录态字段形态」排查可待应用运行时抓（后续可加 dev 诊断日志）。
+
+### Session 21（2026-10-19）：网络设置 FluxDO 化 + 断网根因闭环
+
+用户报 user:get/summary ERR_TUNNEL_CONNECTION_FAILED + 点名「DOH 页面和网络设置页面参考 FluxDO 已有功能开发」。诊断：Clash 在跑（7897 监听、curl 经它 403=链路通）但系统代理注册表键消失（Clash 开关漂移）→「跟随系统」探测拿 DIRECT → secure 直连撞 SNI。修复按 FluxDO network 页能力对齐：NetworkConfig{manual|system|off, host, port} 持久化（7 setter 透传）、applyDohRuntime 上游顺序 manual→system→off、testUpstream 计时、设置页「上游代理」卡（seg+host/port+测试按钮）保存即时生效。手动模式下 Clash 开关漂移免疫。「打不开队列」判断为同因（网络断致主题加载失败），随本修复验收。用户操作指引：网络→上游代理→手动 127.0.0.1:7897→保存。
