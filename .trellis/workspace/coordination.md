@@ -46,6 +46,7 @@
 | 10-19 01:3x | 主会话（net-settings，用户点名 FluxDO 化） | settings.ts 网络三字段全 setter 透传；dohProxy 手动上游+testUpstream；ipc/preload 四点；SettingsView 上游代理卡（分区 F 网络） | 提交（见 git log） |
 | 10-19 09:4x | 主会话（ech-engine P1，用户拍板） | 新目录 ech-gateway/（Go sidecar，独立语言栈归主会话）；协议边界冻结（design.md） | 已提交（见 git log） |
 | 10-19 10:3x | 主会话（ech-engine P2） | echGateway.ts 新建（分区A）；settings/dohProxy/SettingsView ech 档；scripts/+builder 接线 | 已提交（见 git log） |
+| 10-19 12:3x | 主会话（kb-api，用户点名） | externalApi.ts 新建（分区A）；settings 三字段透传；SettingsView 新 AI 接口分类；docs/ai-api.md | 已提交（见 git log） |
 | 10-19 11:3x | 主会话（ux-batch） | tokens/shell/base @scope 动效段；TopicView 回传接线；UserProfileView 进度卡；client/ipc/preload timings 四点；新 utils/readTiming.ts | 已提交（见 git log） |
 | 10-17 02:3x | 主会话（feishu-im-frame，用户拍板顶栏删除） | 公用 App.vue（topbar 段重构为 rail 壳——用户拍板例外）、main.ts（引入新建 shell.css）；新建 components/RailNav.vue + styles/shell.css；分区 B TopicView.vue/topic.css（thread 折叠+删 viewMode）；分区 C HomeView.vue/home.css/BrowseView.vue（列表飞书化+白底通铺）；topbar.css 置 deprecated；tokens.css 尾部追加变量组 | 在途（.trellis/tasks/10-17-feishu-im-frame） |
 | 10-17 05:0x | 主会话（feishu-im-frame 验收排障，越界说明见下） | **分区 D assets/themes/feishu.ts**：删 `.browse::before` 假 rail 块（56px 圆点条，新框架下顶列表+假栏真身）+删 reader-pane 灰底（违 R3 白底通铺），版本 0.1.0→0.1.1。D 区属主题工坊会话，因其皮肤在用户侧激活且与新框架结构性冲突，紧急适配；皮肤整体重制仍归 D 区后续 | 已提交（3756602 随 feishu-im-frame 批次） |
@@ -56,3 +57,4 @@
 
 - GitHub 仓库（owner/repo）→ 接通自动更新 AC5
 - DoH 真实现立项（本地 DoH 代理方案）
+| 10-19 0x:xx | 主会话（frontend-componentization P1+P2，用户拍板） | **跨 B/C/D 触达**：新建 layouts/AppShell.vue+PageShell.vue（App.vue 模板迁出）；components/FieldRow.vue+SegGroup.vue（SettingsView 替换）+QueuePanel.vue（RailNav 迁出）。纯结构重构零行为变化，类名全保活（.queue-panel 等）。任务 .trellis/tasks/10-19-frontend-componentization | 在途 |

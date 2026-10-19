@@ -615,3 +615,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 22 续 3：ux-batch（动效/阅读回传/等级进度）
 
 用户点名 Q弹动效缺失、配置页 UI 待 v2、子系统/升级条件/进度/「应用内阅读是否计入升级」。关键回答：posts_read 依赖 /topics/timings 回传而应用从未实现＝**读帖不计入 TL 进度**（真缺陷）→ 本批修复：readTiming util（IO 记可见楼层+5s 节流+终 flush+离线跳过）走 IPC 桥 topic:timings；等级进度卡（TL2 Discourse 默认阈值标注参考值，站点自定义阈值不暴露 API）；Q弹动效（--spring 过冲曲线+页面 scale 弹入+按压微弹）。**事故自纠**：readTiming 运行时 import client.ts 把 electron 链拖进浏览器 bundle（vite externalized 报错抓到）——renderer 对 main 模块值导入即违规（铁律此前只防「pull electron 报错」，type-only 擦除让日常无感，本次是首个值导入点）；修正=走 window.api。配置页 v2 记 PRD 下轮。子系统答案：connect.linux.do 已接 OAuth，同 zone 子域 ECH 网关天然可达（应用层无功能页面则仅「可达」）。
+
+### Session 23（2026-10-19 午后）：kb-api——AI 数据接口 + 本地知识库
+
+用户点名「外暴露功能让 AI 刷总榜/了解排序规则/建本地知识库/总结归纳分类」。架构定调：应用=登录态数据源（本机 AI 直连 linux.do 必 403，应用有 cookie+ECH 链路），KB=userData/kb/ Markdown 目录约定（AI 原生读写），总结归纳=AI 的活。落地 externalApi.ts：回环 HTTP（默认 17367）+ X-KB-Token（bridge 弱凭据模式），端点 health/top/topic?format=text（cooked 转纯文本）/search/me/kb GET+POST；设置页新「AI 接口」分类；docs/ai-api.md 面向 AI 直接可喂。坑：setNetworkConfig 手写字面量漏 externalApi 透传被 TS 抓（新增字段必须走 fieldsOf 模式，手写字面量必漏）；Electron setCertificateVerifyProc 前例之外新坑无。排序规则答复：top.json 周期综合得分（系数不公开），AI 数据反推即「了解规则」的正确姿势。
