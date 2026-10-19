@@ -607,3 +607,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 22 续：ech-engine P2 集成落地
 
 用户批「开始」。P2 全量：ProxyMode 加 'ech'（白名单/归一）、echGateway.ts sidecar 生命周期（二进制双路径 dev=仓库/packaged=resources、stdout {"port":N} 协议 6s 超时、before-quit 回收）、setCertificateVerifyProc（req.certificate.data 才是 PEM——Electron Certificate 结构体；公共链 verificationResult==='net::OK' 直接放行不扩信任面）、applyDohRuntime 上游链 ech→manual→system→off + 网关失败降级 manual、设置页四档 seg、build:gw 脚本（无 Go 跳过）+ dist 前置 + extraResources。坑：go.mod 在 ech-gateway/ 子目录（脚本须 cwd 进去）；Go build -o 相对 cwd；ts ProxyMode 四档同步 ref 类型。typecheck+SMOKE_OK+网关 exe 7MB 构建过。端到端待真机：重启 dev → 网络 → ECH 直连 → 保存 → 诊断「经上游转发 127.0.0.1:<gw>」。Clash 可关——这是整条任务线的终点形态。
+
+### Session 22 续 2：P3 打包验收 + 用户端 -100 定性
+
+用户报仍 -100 并问 Go 层是否完成——Go 层 P1/P2 早已提交；查配置实锤 `"proxyMode": "system"` 从未切换 + ech-gateway 进程从未拉起（userData 无 ech-ca 目录）=「跟随系统」+ Clash 系统代理关 → 按设计直连撞 SNI。dev 实例大概率陈旧（P2 前 UI 无 ECH 档）。已给操作序列：重启 dev → 网络 → ECH 直连 → 保存。P3：dist 首跑 electron-builder 拉 GitHub 资源 ETIMEDOUT（无代理直连），挂 HTTPS_PROXY=7897 重跑成功——`dist/LinuxDo Desktop-0.1.0-setup.exe` 产出、`win-unpacked/resources/ech-gateway.exe` 7MB 在包（AC5 ✓）。注意：electron-builder 下载类失败先试代理重跑。
