@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { DiagEntry } from '../../../main/api/client'
 import type { TranslateConfig } from '../../../main/api/settings'
 import type { ThemeMeta } from '../../../main/themes'
+import FieldRow from '../components/FieldRow.vue'
+import SegGroup from '../components/SegGroup.vue'
 import {
   DEFAULT_PREFS,
   applyPrefs,
@@ -26,6 +28,7 @@ const sections = [
   { key: 'network', label: '网络' },
   { key: 'translate', label: '翻译' },
   { key: 'sync', label: '同步' },
+  { key: 'ai', label: 'AI 接口' },
   { key: 'shortcuts', label: '快捷键' },
   { key: 'logs', label: '日志' },
   { key: 'about', label: '关于' }
@@ -211,6 +214,12 @@ async function saveTranslate(): Promise<void> {
 
 // ---- 上游代理（10-18 网络设置 FluxDO 化：manual 显式配置最可靠，保存即时生效） ----
 const proxyMode = ref<'ech' | 'manual' | 'system' | 'off'>('system')
+const proxyModes: { value: 'ech' | 'manual' | 'system' | 'off'; label: string }[] = [
+  { value: 'ech', label: 'ECH 直连' },
+  { value: 'manual', label: '手动' },
+  { value: 'system', label: '跟随系统' },
+  { value: 'off', label: '关闭' }
+]
 const proxyHost = ref('127.0.0.1')
 const proxyPort = ref(7890)
 const proxySaving = ref(false)
@@ -255,6 +264,10 @@ const dohPresets = [
 ]
 const dohEnabled = ref(true)
 const dohMode = ref<'secure' | 'auto'>('secure')
+const dohModes: { value: 'secure' | 'auto'; label: string }[] = [
+  { value: 'secure', label: 'secure' },
+  { value: 'auto', label: 'auto' }
+]
 const dohTemplate = ref(dohPresets[0])
 const dohCustom = ref('')
 const dohSaving = ref(false)
@@ -408,6 +421,28 @@ async function saveShortcut(kind: ShortcutKind): Promise<void> {
   }
 }
 
+// ---- AI 数据接口（kb-api） ----
+const extEnabled = ref(false)
+const extPort = ref(17367)
+const extToken = ref('')
+const extSaving = ref(false)
+const extMessage = ref('')
+
+async function saveExternal(): Promise<void> {
+  if (extSaving.value) return
+  extSaving.value = true
+  extMessage.value = ''
+  try {
+    const res = await window.api.setExternalApiConfig(extEnabled.value, Number(extPort.value) || 0)
+    extToken.value = res.token
+    extMessage.value = '已保存并即时生效'
+  } catch (e) {
+    extMessage.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    extSaving.value = false
+  }
+}
+
 // ---- 日志：请求诊断 ----
 const diag = ref<DiagEntry[]>([])
 
@@ -462,6 +497,10 @@ onMounted(async () => {
   proxyMode.value = net.proxyMode
   proxyHost.value = net.proxyHost
   proxyPort.value = net.proxyPort
+  const ext = await window.api.getExternalApiConfig()
+  extEnabled.value = ext.enabled
+  extPort.value = ext.port
+  extToken.value = ext.token
   const notif = await window.api.getNotificationConfig()
   notifEnabled.value = notif.enabled
   const sc = await window.api.getShortcutsStatus()
@@ -491,20 +530,12 @@ onMounted(async () => {
       <template v-if="active === 'appearance'">
         <section class="card">
           <h2>外观</h2>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">主题模式</div>
-              <div class="field-desc">
-                跟随系统：系统切换亮暗时实时跟随；亮 / 暗：手动覆盖。全部页面即时生效，无需保存。
-              </div>
-            </div>
-            <div class="seg field-control">
-              <label v-for="t in themes" :key="t.value" class="seg-opt">
-                <input type="radio" :value="t.value" v-model="themePref" @change="applyThemePref" />
-                <span>{{ t.label }}</span>
-              </label>
-            </div>
-          </div>
+          <FieldRow
+            label="主题模式"
+            desc="跟随系统：系统切换亮暗时实时跟随；亮 / 暗：手动覆盖。全部页面即时生效，无需保存。"
+          >
+            <SegGroup v-model="themePref" class="field-control" :options="themes" @change="applyThemePref" />
+          </FieldRow>
         </section>
 
         <!-- 主题工坊：皮肤导入/导出/管理 -->
@@ -517,23 +548,21 @@ onMounted(async () => {
               主题面向应用内部样式约定编写，应用大版本更新可能使第三方主题错位。
             </span>
           </div>
-          <div v-for="row in themeRows" :key="row.id || 'default'" class="field-row">
-            <div class="field-main">
-              <div class="field-label">
-                {{ row.name }}
-                <span v-if="currentThemeId === row.id" class="card-badge reco">当前</span>
-              </div>
-              <div class="field-desc">
-                {{ row.author ? `${row.author} · ` : '' }}v{{ row.version }} ·
-                {{ row.builtin ? '内置' : '已导入' }}
-              </div>
-            </div>
+          <FieldRow v-for="row in themeRows" :key="row.id || 'default'">
+            <template #label>
+              {{ row.name }}
+              <span v-if="currentThemeId === row.id" class="card-badge reco">当前</span>
+            </template>
+            <template #desc>
+              {{ row.author ? `${row.author} · ` : '' }}v{{ row.version }} ·
+              {{ row.builtin ? '内置' : '已导入' }}
+            </template>
             <div class="field-control theme-actions">
               <button v-if="currentThemeId !== row.id" @click="selectTheme(row.id)">应用</button>
               <button @click="exportTheme(row)">导出</button>
               <button v-if="!row.builtin" class="danger" @click="removeTheme(row)">删除</button>
             </div>
-          </div>
+          </FieldRow>
           <div class="row">
             <button class="primary" @click="importTheme">导入主题…</button>
           </div>
@@ -545,28 +574,15 @@ onMounted(async () => {
       <template v-else-if="active === 'reading'">
         <section class="card">
           <h2>阅读</h2>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">列表样式</div>
-              <div class="field-desc">左侧帖子列表的行形态：悬浮行（默认）/ 卡片流 / 紧凑密排，即时生效</div>
-            </div>
-            <div class="seg field-control">
-              <label v-for="l in listStyles" :key="l.value" class="seg-opt">
-                <input
-                  type="radio"
-                  :value="l.value"
-                  :checked="reading.listStyle === l.value"
-                  @change="updateReading({ listStyle: l.value })"
-                />
-                <span>{{ l.label }}</span>
-              </label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">正文字号</div>
-              <div class="field-desc">正文与主题标题的基础字号（14–20px）</div>
-            </div>
+          <FieldRow label="列表样式" desc="左侧帖子列表的行形态：悬浮行（默认）/ 卡片流 / 紧凑密排，即时生效">
+            <SegGroup
+              class="field-control"
+              :options="listStyles"
+              :model-value="reading.listStyle"
+              @update:model-value="updateReading({ listStyle: $event })"
+            />
+          </FieldRow>
+          <FieldRow label="正文字号" desc="正文与主题标题的基础字号（14–20px）">
             <div class="stepper field-control">
               <button
                 :disabled="reading.fontSize <= 14"
@@ -584,58 +600,31 @@ onMounted(async () => {
                 ＋
               </button>
             </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">行距</div>
-              <div class="field-desc">正文行高倍数</div>
-            </div>
-            <div class="seg field-control">
-              <label v-for="l in lineHeights" :key="l.value" class="seg-opt">
-                <input
-                  type="radio"
-                  :value="l.value"
-                  :checked="reading.lineHeight === l.value"
-                  @change="updateReading({ lineHeight: l.value })"
-                />
-                <span>{{ l.label }}</span>
-              </label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">正文字体族</div>
-              <div class="field-desc">仅作用于正文渲染区（代码块保持等宽字体）</div>
-            </div>
-            <div class="seg field-control">
-              <label v-for="f in fontFamilies" :key="f.value" class="seg-opt">
-                <input
-                  type="radio"
-                  :value="f.value"
-                  :checked="reading.fontFamily === f.value"
-                  @change="updateReading({ fontFamily: f.value })"
-                />
-                <span>{{ f.label }}</span>
-              </label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">阅读宽度</div>
-              <div class="field-desc">主题页内容列最大宽度，居中显示（时间轴不参与）</div>
-            </div>
-            <div class="seg field-control">
-              <label v-for="w in widths" :key="String(w.value)" class="seg-opt">
-                <input
-                  type="radio"
-                  :value="w.value"
-                  :checked="reading.width === w.value"
-                  @change="updateReading({ width: w.value })"
-                />
-                <span>{{ w.label }}</span>
-              </label>
-            </div>
-          </div>
+          </FieldRow>
+          <FieldRow label="行距" desc="正文行高倍数">
+            <SegGroup
+              class="field-control"
+              :options="lineHeights"
+              :model-value="reading.lineHeight"
+              @update:model-value="updateReading({ lineHeight: $event })"
+            />
+          </FieldRow>
+          <FieldRow label="正文字体族" desc="仅作用于正文渲染区（代码块保持等宽字体）">
+            <SegGroup
+              class="field-control"
+              :options="fontFamilies"
+              :model-value="reading.fontFamily"
+              @update:model-value="updateReading({ fontFamily: $event })"
+            />
+          </FieldRow>
+          <FieldRow label="阅读宽度" desc="主题页内容列最大宽度，居中显示（时间轴不参与）">
+            <SegGroup
+              class="field-control"
+              :options="widths"
+              :model-value="reading.width"
+              @update:model-value="updateReading({ width: $event })"
+            />
+          </FieldRow>
           <div class="row">
             <button @click="resetReading">恢复默认</button>
           </div>
@@ -646,19 +635,16 @@ onMounted(async () => {
       <template v-else-if="active === 'notifications'">
         <section class="card">
           <h2>原生通知</h2>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">系统通知</div>
-              <div class="field-desc">
-                收到论坛新通知时弹系统原生通知，点击跳转对应楼层；关闭后仅更新应用内徽标，不再打扰桌面（即时生效，无需重启）。
-              </div>
-            </div>
+          <FieldRow
+            label="系统通知"
+            desc="收到论坛新通知时弹系统原生通知，点击跳转对应楼层；关闭后仅更新应用内徽标，不再打扰桌面（即时生效，无需重启）。"
+          >
             <label class="switch field-control">
               <input type="checkbox" v-model="notifEnabled" :disabled="notifSaving" @change="saveNotification" />
               <span class="switch-track"></span>
               <span class="switch-thumb"></span>
             </label>
-          </div>
+          </FieldRow>
           <p v-if="notifMessage" class="message">{{ notifMessage }}</p>
         </section>
       </template>
@@ -676,43 +662,21 @@ onMounted(async () => {
               「手动」填 Clash 混合端口（如 127.0.0.1:7897）为降级备选。
             </span>
           </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">代理来源</div>
-              <div class="field-desc">
-                ECH 直连：本地网关加密 SNI 出站，不开 Clash 根治 SNI 阻断（推荐） · 手动：固定地址端口（Clash 混合口） ·
-                跟随系统：探测系统代理 · 关闭：仅 DoH 直连（无 SNI 阻断的纯污染网络用）
-              </div>
-            </div>
-            <div class="seg field-control">
-              <label class="seg-opt">
-                <input type="radio" value="ech" v-model="proxyMode" />
-                <span>ECH 直连</span>
-              </label>
-              <label class="seg-opt">
-                <input type="radio" value="manual" v-model="proxyMode" />
-                <span>手动</span>
-              </label>
-              <label class="seg-opt">
-                <input type="radio" value="system" v-model="proxyMode" />
-                <span>跟随系统</span>
-              </label>
-              <label class="seg-opt">
-                <input type="radio" value="off" v-model="proxyMode" />
-                <span>关闭</span>
-              </label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">代理地址</div>
-              <div class="field-desc">HTTP CONNECT 上游（Clash 混合端口/V2Ray HTTP 均可），仅「手动」模式生效；ECH 直连档失败时自动降级到该地址</div>
-            </div>
+          <FieldRow
+            label="代理来源"
+            desc="ECH 直连：本地网关加密 SNI 出站，不开 Clash 根治 SNI 阻断（推荐） · 手动：固定地址端口（Clash 混合口） · 跟随系统：探测系统代理 · 关闭：仅 DoH 直连（无 SNI 阻断的纯污染网络用）"
+          >
+            <SegGroup v-model="proxyMode" class="field-control" :options="proxyModes" />
+          </FieldRow>
+          <FieldRow
+            label="代理地址"
+            desc="HTTP CONNECT 上游（Clash 混合端口/V2Ray HTTP 均可），仅「手动」模式生效；ECH 直连档失败时自动降级到该地址"
+          >
             <div class="field-control">
               <input v-model="proxyHost" class="proxy-host" placeholder="127.0.0.1" :disabled="proxyMode !== 'manual'" />
               <input v-model="proxyPort" class="proxy-port" type="number" min="1" max="65535" placeholder="7890" :disabled="proxyMode !== 'manual'" />
             </div>
-          </div>
+          </FieldRow>
           <div class="row">
             <button class="primary" :disabled="proxySaving" @click="saveNetwork">
               {{ proxySaving ? '保存中…' : '保存' }}
@@ -734,40 +698,26 @@ onMounted(async () => {
               链路=上方「上游代理」配置（经其远程解析）；无上游时用 DoH 解析直连（纯 DNS 污染网络适用）。
             </span>
           </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">启用 DoH</div>
-              <div class="field-desc">
-                默认关闭。用加密解析绕过 DNS 污染（linux.do 位于 Cloudflare，部分网络直连不稳）；关闭则与系统默认行为一致。
-              </div>
-            </div>
+          <FieldRow
+            label="启用 DoH"
+            desc="默认关闭。用加密解析绕过 DNS 污染（linux.do 位于 Cloudflare，部分网络直连不稳）；关闭则与系统默认行为一致。"
+          >
             <label class="switch field-control">
               <input type="checkbox" v-model="dohEnabled" />
               <span class="switch-track"></span>
               <span class="switch-thumb"></span>
             </label>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">解析模式</div>
-              <div class="field-desc">secure：只用加密 DNS，解析失败即断 · auto：加密优先，失败回退系统 DNS（DoH 域被墙的网络选 auto）</div>
-            </div>
-            <div class="seg field-control">
-              <label class="seg-opt">
-                <input type="radio" value="secure" v-model="dohMode" :disabled="!dohEnabled" />
-                <span>secure</span>
-              </label>
-              <label class="seg-opt">
-                <input type="radio" value="auto" v-model="dohMode" :disabled="!dohEnabled" />
-                <span>auto</span>
-              </label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">解析器模板</div>
-              <div class="field-desc">DoH 服务端地址；自定义需 https:// 开头，非法值保存时自动回退默认</div>
-            </div>
+          </FieldRow>
+          <FieldRow
+            label="解析模式"
+            desc="secure：只用加密 DNS，解析失败即断 · auto：加密优先，失败回退系统 DNS（DoH 域被墙的网络选 auto）"
+          >
+            <SegGroup v-model="dohMode" class="field-control" :options="dohModes" :disabled="!dohEnabled" />
+          </FieldRow>
+          <FieldRow
+            label="解析器模板"
+            desc="DoH 服务端地址；自定义需 https:// 开头，非法值保存时自动回退默认"
+          >
             <div class="field-control">
               <select v-model="dohTemplate" :disabled="!dohEnabled">
                 <option value="https://edge.1molchuan.top/linuxdo">默认（edge.1molchuan.top）</option>
@@ -783,7 +733,7 @@ onMounted(async () => {
                 :disabled="!dohEnabled"
               />
             </div>
-          </div>
+          </FieldRow>
           <div class="row">
             <button class="primary" :disabled="dohSaving" @click="saveDoh">
               {{ dohSaving ? '保存中…' : '保存' }}
@@ -853,6 +803,56 @@ onMounted(async () => {
         </section>
       </template>
 
+      <!-- AI 数据接口（kb-api） -->
+      <template v-else-if="active === 'ai'">
+        <section class="card">
+          <h2>AI 数据接口</h2>
+          <div class="settings-banner">
+            <span class="banner-icon">🤖</span>
+            <span>
+              把应用的登录态出口暴露为本机 HTTP API，供本机 AI 拉总榜/读帖/搜索/查进度，配合
+              <code>userData/kb/</code> Markdown 知识库做「刷榜→总结→沉淀」。仅回环绑定 + token 弱凭据。
+              接口文档：<code>docs/ai-api.md</code>（可直接喂给 AI）。
+            </span>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">启用接口</div>
+              <div class="field-desc">默认关闭；保存后即时生效（无需重启）</div>
+            </div>
+            <label class="switch field-control">
+              <input type="checkbox" v-model="extEnabled" />
+              <span class="switch-track"></span>
+              <span class="switch-thumb"></span>
+            </label>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">端口</div>
+              <div class="field-desc">仅绑定 127.0.0.1；冲突时保存会报错</div>
+            </div>
+            <div class="field-control">
+              <input v-model="extPort" type="number" min="1025" max="65535" style="width: 110px" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-main">
+              <div class="field-label">访问令牌</div>
+              <div class="field-desc">请求头 X-KB-Token；首次启用保存时自动生成；给 AI 时连同端口号一起给</div>
+            </div>
+            <div class="field-control">
+              <code class="accel">{{ extToken || '（保存后生成）' }}</code>
+            </div>
+          </div>
+          <div class="row">
+            <button class="primary" :disabled="extSaving" @click="saveExternal">
+              {{ extSaving ? '保存中…' : '保存' }}
+            </button>
+          </div>
+          <p v-if="extMessage" class="message">{{ extMessage }}</p>
+        </section>
+      </template>
+
       <!-- 全局快捷键（应用最小化/失焦时仍可触发） -->
       <template v-else-if="active === 'shortcuts'">
         <section class="card">
@@ -861,31 +861,23 @@ onMounted(async () => {
             应用最小化、隐藏到托盘或失焦时仍可触发，切换即时生效（无需重启）。全局组合键可能与系统 / 其他应用冲突，
             默认仅启用呼出主窗；某项注册失败只影响该项，不影响另一项。
           </p>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">呼出主窗 <code class="accel">Alt+Shift+L</code></div>
-              <div class="field-desc">从最小化 / 托盘 / 失焦状态恢复并聚焦主窗口</div>
-            </div>
+          <FieldRow desc="从最小化 / 托盘 / 失焦状态恢复并聚焦主窗口">
+            <template #label>呼出主窗 <code class="accel">Alt+Shift+L</code></template>
             <label class="switch field-control">
               <input type="checkbox" v-model="scCallWindow" :disabled="scSaving" @change="saveShortcut('callWindow')" />
               <span class="switch-track"></span>
               <span class="switch-thumb"></span>
             </label>
-          </div>
+          </FieldRow>
           <p v-if="scErrors.callWindow" class="message">⚠️ {{ scErrors.callWindow }}</p>
-          <div class="field-row">
-            <div class="field-main">
-              <div class="field-label">队列下一贴 <code class="accel">Alt+Shift+N</code></div>
-              <div class="field-desc">
-                按入队顺序切到阅读队列的下一个主题（需正在阅读队列中的主题，无下一贴不动作；默认关闭）
-              </div>
-            </div>
+          <FieldRow desc="按入队顺序切到阅读队列的下一个主题（需正在阅读队列中的主题，无下一贴不动作；默认关闭）">
+            <template #label>队列下一贴 <code class="accel">Alt+Shift+N</code></template>
             <label class="switch field-control">
               <input type="checkbox" v-model="scNextTopic" :disabled="scSaving" @change="saveShortcut('nextTopic')" />
               <span class="switch-track"></span>
               <span class="switch-thumb"></span>
             </label>
-          </div>
+          </FieldRow>
           <p v-if="scErrors.nextTopic" class="message">⚠️ {{ scErrors.nextTopic }}</p>
           <p v-if="scMessage" class="message">{{ scMessage }}</p>
         </section>

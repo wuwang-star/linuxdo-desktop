@@ -41,6 +41,13 @@ export interface BridgeConfig {
  * 全局快捷键开关（注册/注销由 shortcuts.ts 负责）：
  * 呼出主窗默认开（PRD R1）；队列下一贴默认关——全局组合键易与系统/其他应用冲突（PRD R2）。
  */
+/** AI 数据接口（kb-api）：回环 HTTP，token 弱凭据（同 bridge 定位），未启用零监听 */
+export interface ExternalApiConfig {
+  enabled: boolean
+  port: number
+  token: string
+}
+
 export interface ShortcutsConfig {
   callWindow: boolean
   nextTopic: boolean
@@ -66,6 +73,9 @@ interface StoredConfig {
   bridgePairCode: string
   shortcutCallWindow: boolean
   shortcutNextTopic: boolean
+  externalApiEnabled: boolean
+  externalApiPort: number
+  externalApiToken: string
 }
 
 const cfgFile = (): string => join(app.getPath('userData'), 'translate-settings.json')
@@ -100,6 +110,22 @@ function dohFieldsOf(raw: Partial<StoredConfig>): {
     dohEnabled: raw.dohEnabled === undefined ? DOH_DEFAULT.enabled : Boolean(raw.dohEnabled),
     dohMode: raw.dohMode === 'auto' ? 'auto' : 'secure',
     dohTemplate: validDohTemplate(raw.dohTemplate) ?? DOH_DEFAULT.template
+  }
+}
+
+const EXTERNAL_API_DEFAULT: ExternalApiConfig = { enabled: false, port: 17367, token: '' }
+
+/** AI 接口三字段透传（StoredConfig 键形，防 setter 覆盖丢失） */
+function externalApiFieldsOf(raw: Partial<StoredConfig> | null): {
+  externalApiEnabled: boolean
+  externalApiPort: number
+  externalApiToken: string
+} {
+  const port = Number(raw?.externalApiPort)
+  return {
+    externalApiEnabled: Boolean(raw?.externalApiEnabled),
+    externalApiPort: Number.isInteger(port) && port > 1024 && port < 65536 ? port : EXTERNAL_API_DEFAULT.port,
+    externalApiToken: typeof raw?.externalApiToken === 'string' ? raw.externalApiToken : EXTERNAL_API_DEFAULT.token
   }
 }
 
@@ -155,6 +181,7 @@ function loadOnce(): void {
         model: raw.model ?? '',
         ...dohFieldsOf(raw),
         ...networkFieldsOf(raw),
+        ...externalApiFieldsOf(raw),
         // 旧配置文件无此字段（p2a 之前）→ 默认开启；其余值 Boolean 强转防脏数据
         notificationEnabled: raw.notificationEnabled === undefined ? true : Boolean(raw.notificationEnabled),
         bridgeEnabled: raw.bridgeEnabled === undefined ? false : Boolean(raw.bridgeEnabled),
@@ -192,6 +219,7 @@ export function setTranslateConfig(baseUrl: string, model: string, key?: string)
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
     ...networkFieldsOf(cache),
+    ...externalApiFieldsOf(cache),
     notificationEnabled: cache?.notificationEnabled ?? true,
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -251,6 +279,45 @@ export function getDohConfig(): DohConfig {
   }
 }
 
+export function getExternalApiConfig(): ExternalApiConfig {
+  loadOnce()
+  const f = externalApiFieldsOf(cache)
+  return { enabled: f.externalApiEnabled, port: f.externalApiPort, token: f.externalApiToken }
+}
+
+/**
+ * 保存 AI 接口配置。token 传空且现无 token 时自动生成（同 bridge 配对码模式）。
+ * 启停由 ipc 层保存后即时应用（externalApi.ts 消费）。
+ */
+export function setExternalApiConfig(enabled: boolean, port: number, token?: string): ExternalApiConfig {
+  loadOnce()
+  const cur = externalApiFieldsOf(cache)
+  const nextPort = Number.isInteger(port) && port > 1024 && port < 65536 ? port : cur.externalApiPort
+  const nextToken =
+    typeof token === 'string' && token.trim() ? token.trim() : cur.externalApiToken || genPairCode()
+  cache = {
+    baseUrl: cache?.baseUrl ?? '',
+    model: cache?.model ?? '',
+    dohEnabled: cache?.dohEnabled ?? DOH_DEFAULT.enabled,
+    dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
+    dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
+    ...networkFieldsOf(cache),
+    ...externalApiFieldsOf(cache),
+    externalApiEnabled: Boolean(enabled),
+    externalApiPort: nextPort,
+    externalApiToken: nextToken,
+    notificationEnabled: cache?.notificationEnabled ?? true,
+    ...bridgeFieldsOf(cache),
+    ...shortcutFieldsOf(cache)
+  }
+  try {
+    writeConfigFile(cache)
+  } catch {
+    /* 配置写失败不阻塞，内存态仍生效 */
+  }
+  return getExternalApiConfig()
+}
+
 export function getNetworkConfig(): NetworkConfig {
   loadOnce()
   return networkFieldsOf(cache)
@@ -268,6 +335,7 @@ export function setNetworkConfig(mode: ProxyMode, host: string, port: number): N
     proxyMode: mode === 'ech' || mode === 'manual' || mode === 'off' ? mode : 'system',
     proxyHost: host.trim() || NETWORK_DEFAULT.proxyHost,
     proxyPort: Number.isInteger(port) && port > 0 && port < 65536 ? port : NETWORK_DEFAULT.proxyPort,
+    ...externalApiFieldsOf(cache),
     notificationEnabled: cache?.notificationEnabled ?? true,
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -293,6 +361,7 @@ export function setDohConfig(enabled: boolean, mode: DohMode, template: string):
     dohMode: mode === 'auto' ? 'auto' : 'secure',
     dohTemplate: validDohTemplate(template.trim()) ?? DOH_DEFAULT.template,
     ...networkFieldsOf(cache),
+    ...externalApiFieldsOf(cache),
     notificationEnabled: cache?.notificationEnabled ?? true,
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -323,6 +392,7 @@ export function setNotificationConfig(enabled: boolean): NotificationConfig {
     dohMode: cache?.dohMode ?? DOH_DEFAULT.mode,
     dohTemplate: cache?.dohTemplate ?? DOH_DEFAULT.template,
     ...networkFieldsOf(cache),
+    ...externalApiFieldsOf(cache),
     notificationEnabled: Boolean(enabled),
     ...bridgeFieldsOf(cache),
     ...shortcutFieldsOf(cache)
@@ -366,6 +436,7 @@ export function setBridgeEnabled(enabled: boolean): BridgeConfig {
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
     ...networkFieldsOf(null),
+    ...externalApiFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',
@@ -393,6 +464,7 @@ export function regenBridgePair(): BridgeConfig {
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
     ...networkFieldsOf(null),
+    ...externalApiFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',
@@ -427,6 +499,7 @@ export function setShortcutEnabled(kind: 'callWindow' | 'nextTopic', enabled: bo
     dohMode: DOH_DEFAULT.mode,
     dohTemplate: DOH_DEFAULT.template,
     ...networkFieldsOf(null),
+    ...externalApiFieldsOf(null),
     notificationEnabled: true,
     bridgeEnabled: false,
     bridgePairCode: '',

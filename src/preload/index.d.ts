@@ -12,7 +12,15 @@ import type {
   UserSummaryResponse,
   UserActionsResponse
 } from '../main/api/client'
-import type { TranslateConfig, DohConfig, DohMode, NetworkConfig, ProxyMode, NotificationConfig } from '../main/api/settings'
+import type {
+  TranslateConfig,
+  DohConfig,
+  DohMode,
+  NetworkConfig,
+  ProxyMode,
+  NotificationConfig,
+  ExternalApiConfig
+} from '../main/api/settings'
 import type { AuthKind } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
@@ -63,6 +71,9 @@ export interface ApiBridge {
   getNetworkConfig(): Promise<NetworkConfig>
   setNetworkConfig(mode: ProxyMode, host: string, port: number): Promise<NetworkConfig>
   testUpstream(host: string, port: number): Promise<{ ok: boolean; ms: number; error?: string }>
+  /** AI 数据接口（kb-api）：读/存（保存即时生效；失败附 error 字段） */
+  getExternalApiConfig(): Promise<ExternalApiConfig>
+  setExternalApiConfig(enabled: boolean, port: number): Promise<ExternalApiConfig & { error?: string }>
   getNotificationConfig(): Promise<NotificationConfig>
   setNotificationConfig(enabled: boolean): Promise<NotificationConfig>
   resolveDns(): Promise<{

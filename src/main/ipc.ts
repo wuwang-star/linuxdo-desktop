@@ -31,6 +31,8 @@ import {
   setTCookieManually
 } from './api/auth'
 import {
+  getExternalApiConfig,
+  setExternalApiConfig,
   getTranslateConfig,
   setTranslateConfig,
   getDohConfig,
@@ -44,6 +46,7 @@ import {
 } from './api/settings'
 import { translatePostText } from './api/translate'
 import { applyDohRuntime, diagResolve, hasUpstreamProxy, isDohProxyActive, testUpstream, upstreamProxyLabel } from './api/dohProxy'
+import { applyExternalApiRuntime } from './api/externalApi'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
   messageBusStart,
@@ -159,6 +162,18 @@ export function registerIpc(): void {
     return cfg
   })
   ipcMain.handle('net:testUpstream', (_e, host: string, port: number) => testUpstream(String(host ?? ''), Number(port ?? 0)))
+
+  // ---------- AI 数据接口（kb-api）：保存即时启停回环监听 ----------
+  ipcMain.handle('settings:getExternal', () => getExternalApiConfig())
+  ipcMain.handle('settings:setExternal', async (_e, enabled: boolean, port: number) => {
+    const cfg = setExternalApiConfig(Boolean(enabled), Number(port ?? 0))
+    try {
+      await applyExternalApiRuntime()
+    } catch (e) {
+      return { ...cfg, error: e instanceof Error ? e.message : String(e) }
+    }
+    return cfg
+  })
 
   // ---------- 原生通知开关（内存即时生效，notify.ts 发送前读取） ----------
   ipcMain.handle('settings:getNotification', () => getNotificationConfig())

@@ -8,6 +8,7 @@ import { handleAuthCallbackUrl } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
 import { loadDohEarly } from './api/settings'
 import { applyDohRuntime, dohSelfCheck } from './api/dohProxy'
+import { applyExternalApiRuntime } from './api/externalApi'
 import { initBridge } from './api/bridge'
 import { initShortcuts } from './api/shortcuts'
 import { focusMainWindow } from './win'
@@ -71,6 +72,9 @@ app.whenReady().then(() => {
 
   // DoH 真实现：enabled 时起本地 CONNECT 代理并接管 defaultSession 代理，disabled 时零副作用
   void applyDohRuntime()
+
+  // AI 数据接口（kb-api）：按持久化开关监听 127.0.0.1（默认关闭零痕）
+  void applyExternalApiRuntime()
 
   // 伴生扩展桥接：按持久化开关决定是否监听 127.0.0.1:17366（默认关闭，零痕）
   initBridge()

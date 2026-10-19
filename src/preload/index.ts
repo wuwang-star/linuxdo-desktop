@@ -69,6 +69,9 @@ const api = {
   getNetworkConfig: () => ipcRenderer.invoke('settings:getNetwork'),
   setNetworkConfig: (mode: string, host: string, port: number) => ipcRenderer.invoke('settings:setNetwork', mode, host, port),
   testUpstream: (host: string, port: number) => ipcRenderer.invoke('net:testUpstream', host, port),
+  // AI 数据接口（kb-api）
+  getExternalApiConfig: () => ipcRenderer.invoke('settings:getExternal'),
+  setExternalApiConfig: (enabled: boolean, port: number) => ipcRenderer.invoke('settings:setExternal', enabled, port),
   // WebDAV 手动同步（配置/测试/推送/拉取）
   getWebdavConfig: () => ipcRenderer.invoke('webdav:getConfig'),
   setWebdavConfig: (server: string, username: string, remoteDir: string, password?: string) =>
