@@ -18,6 +18,9 @@
   display: inline-flex; align-items: center;
 }
 .ldd-filter:hover { background: var(--hover); color: var(--accent); }
+/* 多节头按钮：只首个吃 auto 推挤，其余紧随；禁用态按控件五态规范 */
+.ldd-filter + .ldd-filter { margin-left: 0; }
+.ldd-filter:disabled { opacity: 0.4; cursor: not-allowed; }
 .ldd-filter .ic { width: 16px; height: 16px; }
 /* 搜索态头（输入框在 rail）：查询词 + 取消 */
 .search-head {
@@ -68,11 +71,6 @@
 .topic-title:hover { color: var(--accent); }
 .topic-row.sel .topic-title { color: var(--accent); }
 .row-time { flex: none; color: var(--muted); font-size: var(--font-sm); }
-.row-snip {
-  color: var(--muted); font-size: var(--font-sm); margin-top: 1px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.row-snip b { color: color-mix(in srgb, var(--text) 60%, var(--muted)); font-weight: 400; }
 .row-blurb {
   margin: 4px 0 0; color: var(--muted); font-size: var(--font-sm); line-height: 1.5;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;

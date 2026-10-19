@@ -17,7 +17,17 @@ const queue = useQueueStore()
 const browse = useBrowseStore()
 const search = useSearchStore()
 const sentinel = ref<HTMLElement | null>(null)
+const listEl = ref<HTMLElement | null>(null)
 const showCats = ref(false)
+
+/** 一键定位：列表滚到当前选中帖（双栏联动时右栏正在看的那个） */
+function scrollToSelected(): void {
+  document.querySelector('.topic-row.sel')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+}
+/** 一键回顶 */
+function scrollToTop(): void {
+  listEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 /** 列表行点击：pane 模式拦截 RouterLink 默认导航改走 store（双栏/窄屏分流由 BrowseView 处理）；整页模式走 RouterLink 原语义 */
 function onTitleClick(e: MouseEvent, id: number, offline = false): void {
@@ -32,14 +42,6 @@ function toggleQueue(t: DiscourseTopicLite): void {
 }
 
 const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '分类'))
-
-/** 摘要行数据源约束：latest.json 无正文摘录（blurb 仅搜索端点有），禁止为摘要加请求——
-    用已有字段组合：末贴作者前缀 + 统计串（回复/赞；参与数/浏览数类型无字段，不臆造） */
-function snipStats(t: DiscourseTopicLite): string {
-  const parts = [`${Math.max(0, t.posts_count - 1)} 回复`]
-  if (t.like_count) parts.push(`${t.like_count} 赞`)
-  return parts.join(' · ')
-}
 
 /** 行内 SVG 图标（16px stroke 系，替代 emoji 的跨平台一致渲染） */
 const ICONS = {
@@ -56,7 +58,13 @@ const ICONS = {
   lock:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   filter:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/></svg>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/></svg>',
+  eye:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>',
+  locate:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>',
+  arrowUp:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>'
 }
 
 /** Top 榜周期（Discourse top.json 全六档）；下拉浮层选择，不插入 crumb 行 */
@@ -122,11 +130,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="home">
+  <div ref="listEl" class="home">
     <div class="list-toolbar">
-      <!-- 节头（拖拽区 2）：帖子 + 筛选 icon（开分类浮层） -->
+      <!-- 节头（拖拽区 2）：帖子 + 定位/回顶/筛选 icon -->
       <div v-if="!search.open" class="ldd-sec-head">
         <span>帖子</span>
+        <button
+          class="ldd-filter"
+          title="定位当前帖子"
+          aria-label="定位当前帖子"
+          :disabled="browse.selectedId === null"
+          @click="scrollToSelected"
+        >
+          <span class="ic" v-html="ICONS.locate"></span>
+        </button>
+        <button
+          class="ldd-filter"
+          title="回到顶部"
+          aria-label="回到顶部"
+          @click="scrollToTop"
+        >
+          <span class="ic" v-html="ICONS.arrowUp"></span>
+        </button>
         <button
           class="ldd-filter"
           title="筛选分类"
@@ -256,12 +281,12 @@ onMounted(() => {
             <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">{{ t.title }}</RouterLink>
             <span class="row-time">{{ rowTime(t.last_posted_at ?? t.created_at) }}</span>
           </div>
-          <div class="row-snip">
-            <template v-if="t.last_poster_username"><b>{{ t.last_poster_username }}:</b> </template>{{ snipStats(t) }}
-          </div>
           <div class="topic-meta">
             <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin"></span>置顶</span>
             <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock"></span>已关闭</span>
+            <span class="m"><span class="ic" v-html="ICONS.heart"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.eye"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.chat"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
             <span
               v-if="opOf(t)"
               class="u"
