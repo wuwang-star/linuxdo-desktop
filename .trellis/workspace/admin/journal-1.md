@@ -619,3 +619,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 23（2026-10-19 午后）：kb-api——AI 数据接口 + 本地知识库
 
 用户点名「外暴露功能让 AI 刷总榜/了解排序规则/建本地知识库/总结归纳分类」。架构定调：应用=登录态数据源（本机 AI 直连 linux.do 必 403，应用有 cookie+ECH 链路），KB=userData/kb/ Markdown 目录约定（AI 原生读写），总结归纳=AI 的活。落地 externalApi.ts：回环 HTTP（默认 17367）+ X-KB-Token（bridge 弱凭据模式），端点 health/top/topic?format=text（cooked 转纯文本）/search/me/kb GET+POST；设置页新「AI 接口」分类；docs/ai-api.md 面向 AI 直接可喂。坑：setNetworkConfig 手写字面量漏 externalApi 透传被 TS 抓（新增字段必须走 fieldsOf 模式，手写字面量必漏）；Electron setCertificateVerifyProc 前例之外新坑无。排序规则答复：top.json 周期综合得分（系数不公开），AI 数据反推即「了解规则」的正确姿势。
+
+### Session 23 续：过盾 UI 自动化（FluxDO 同款交互）
+
+用户批「过盾 UI 需要做一下」并问「靠自律」含义（答：FluxDO 无强制限速，429 退避是唯一防线，量级全凭使用者自觉；对照我们 350ms 机械节流）。落地：discourseRequest 挑战分支改为「拉起 openCookieLogin 窗口（真实 Chromium 渲染 CF 挑战）→ 用户过盾 → _t 轮询命中自动关窗 → 原请求原地重试」；gateUsed 每请求一次 + challengeGate 全局 30min 冷却防验证风暴；setChallengeHandler 由 index.ts ready 接线。语义红利：已登录态过盾后 _t 仍在，窗口自动关闭无需用户操作关闭。index.ts 并行会话又改（导入区），重读适配；一次误删 connect 导入的编辑因文件变更检查失败而幸免。typecheck+SMOKE_OK。
