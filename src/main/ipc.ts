@@ -14,6 +14,7 @@ import {
   bookmarkTopic,
   fetchPostRaw,
   updatePost,
+  sendTopicTimings,
   fetchNotifications,
   markNotificationsRead,
   getDiag,
@@ -122,6 +123,10 @@ export function registerIpc(): void {
   // ---------- 帖子编辑 ----------
   ipcMain.handle('post:getRaw', (_e, postId: number) => fetchPostRaw(postId))
   ipcMain.handle('post:update', (_e, postId: number, raw: string) => updatePost(postId, raw))
+  // 阅读回传（10-19-ux-batch）：timings 键=楼层号，值=毫秒；高频小请求，失败由 renderer 静默
+  ipcMain.handle('topic:timings', (_e, topicId: number, timings: Record<number, number>, topicTimeMs: number) =>
+    sendTopicTimings(Number(topicId ?? 0), timings ?? {}, Number(topicTimeMs ?? 0))
+  )
   ipcMain.handle('notifications:list', (_e, page: number) => fetchNotifications(page ?? 1))
   ipcMain.handle('notifications:markRead', () => markNotificationsRead())
   ipcMain.handle('translate:post', (_e, postId: number, text: string) =>

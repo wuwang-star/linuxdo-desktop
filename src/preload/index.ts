@@ -105,6 +105,9 @@ const api = {
     }
   },
   syncReply: (token: string, data: unknown) => ipcRenderer.send('syncdata:reply', token, data),
+  // 阅读回传（/topics/timings）：posts_read/time_read 统计数据源
+  sendTopicTimings: (topicId: number, timings: Record<number, number>, topicTimeMs: number) =>
+    ipcRenderer.invoke('topic:timings', topicId, timings, topicTimeMs),
   // 自绘窗口钮（单向 send，无回执）：关闭在主进程被拦截为隐藏到托盘
   winMinimize: () => ipcRenderer.send('win:minimize'),
   winToggleMaximize: () => ipcRenderer.send('win:maximize'),

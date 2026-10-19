@@ -6,6 +6,7 @@ import { useQueueStore } from '../stores/queue'
 import { relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
+import { startReadTracking } from '../utils/readTiming'
 import type { DiscoursePost } from '../../../main/api/client'
 import PostItem from '../components/PostItem.vue'
 
@@ -203,7 +204,20 @@ onMounted(() => {
   void nextTick().then(() => void consumePendingJump())
 })
 
+// ---- 阅读回传（10-19-ux-batch R2）：posts_read/time_read 数据源，离线模式不回传 ----
+let stopRead: (() => void) | null = null
+watch(topicId, () => {
+  stopRead?.()
+  stopRead = null
+  void nextTick(() => {
+    if (scroller.value && !props.offline && route.query.offline !== '1') {
+      stopRead = startReadTracking(topicId.value, scroller.value, () => !store.offline)
+    }
+  })
+})
+
 onBeforeUnmount(() => {
+  stopRead?.()
   scroller.value?.removeEventListener('scroll', onScroll)
   scroller.value?.removeEventListener('click', onCookedClick, true)
   scroller.value?.removeEventListener('mouseover', onCookedHover, true)

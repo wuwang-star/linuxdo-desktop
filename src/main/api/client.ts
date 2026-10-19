@@ -326,6 +326,8 @@ export interface UserSummary {
   topic_count?: number
   post_count?: number
   bookmark_count?: number
+  /** 累计阅读秒数（serializer 常带；等级进度「阅读时长」用） */
+  time_read?: number
 }
 
 export interface UserSummaryTopic {
@@ -444,6 +446,22 @@ export function createReply(
     raw,
     reply_to_post_number: replyToPostNumber
   })
+}
+
+/**
+ * 阅读回传（/topics/timings）：Discourse 以此统计 posts_read / time_read——不回传则
+ * 应用内读帖不计入 TL 升级进度（10-19-ux-batch）。timings 键为楼层号、值为该楼累计毫秒。
+ */
+export function sendTopicTimings(
+  topicId: number,
+  timings: Record<number, number>,
+  topicTimeMs: number
+): Promise<unknown> {
+  const form: Record<string, string | number> = { topic_id: topicId, topic_time: topicTimeMs }
+  for (const [pn, ms] of Object.entries(timings)) {
+    form[`timings[${pn}]`] = ms
+  }
+  return writeRequest('POST', '/topics/timings', form)
 }
 
 const LIKE_ACTION_TYPE = 2

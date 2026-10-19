@@ -117,6 +117,8 @@ export interface ApiBridge {
   ): () => void
   /** 应答主进程的同步数据请求（token 原样带回） */
   syncReply(token: string, data: unknown): void
+  /** 阅读回传（/topics/timings）：timings 键=楼层号值=毫秒 */
+  sendTopicTimings(topicId: number, timings: Record<number, number>, topicTimeMs: number): Promise<unknown>
   /** 自绘窗口钮（单向 send）：最小化 / 最大化切换 / 关闭（=隐藏到托盘） */
   winMinimize(): void
   winToggleMaximize(): void

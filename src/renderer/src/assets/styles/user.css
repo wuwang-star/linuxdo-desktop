@@ -108,3 +108,18 @@
 .profile-row-title.muted { color: var(--muted); font-weight: 400; }
 .profile-row-excerpt { margin-top: 4px; font-size: var(--font-sm); color: var(--muted); overflow: hidden; }
 .profile-row-excerpt p { margin: 0; }
+
+/* @scope: ux-batch — 等级进度条（TL2 参考值展示） */
+.tl-row {
+  display: flex; align-items: center; gap: 10px; padding: 5px 0;
+}
+.tl-label { width: 72px; flex: none; font-size: var(--font-sm); color: var(--muted); }
+.tl-bar {
+  flex: 1; height: 8px; border-radius: 999px; background: var(--hover); overflow: hidden;
+}
+.tl-fill {
+  height: 100%; border-radius: 999px; background: var(--accent);
+  transition: width 0.4s var(--spring);
+}
+.tl-fill.done { background: #46a758; }
+.tl-val { width: 84px; flex: none; text-align: right; font-size: var(--font-sm); color: var(--muted); font-variant-numeric: tabular-nums; }

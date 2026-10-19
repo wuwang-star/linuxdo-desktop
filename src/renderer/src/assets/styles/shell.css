@@ -184,3 +184,18 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* @scope: ux-batch — 页面切换 Q 弹化（原 page-fade 仅透明度，此处覆写为缩放+弹性） */
+.page-fade-enter-active {
+  transition: opacity var(--motion-fast) var(--ease-out), transform 0.28s var(--spring);
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.985) translateY(6px);
+}
+.page-fade-leave-active {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+.page-fade-leave-to {
+  opacity: 0;
+}

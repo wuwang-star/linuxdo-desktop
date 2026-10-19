@@ -204,3 +204,27 @@ input:disabled, select:disabled, textarea:disabled { opacity: 0.4; cursor: not-a
 .card-badge.reco { background: var(--accent); color: #fff; }
 /* 定尺寸图标钮不吃全局 button padding（24/26px 盒子会被 4px 10px 撑爆）：.row-q 在 home.css 同理 */
 .stepper button { padding: 0; }
+
+/* @scope: ux-batch — 按压/悬停微弹（Q弹触感：按下轻缩、弹性回弹） */
+.act,
+.chip,
+.win-btn,
+.ico,
+.seg-opt,
+.settings-nav button,
+button.primary {
+  transition: transform 0.16s var(--spring), background 0.15s var(--ease-out),
+    border-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
+}
+.act:active,
+.chip:active,
+.win-btn:active,
+.ico:active,
+.seg-opt:active,
+.settings-nav button:active,
+button.primary:active {
+  transform: scale(0.94);
+}
+.card {
+  transition: transform 0.2s var(--spring);
+}

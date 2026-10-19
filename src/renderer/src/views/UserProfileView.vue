@@ -84,6 +84,20 @@ const stats = computed(() => {
     { label: '书签', v: s?.bookmark_count }
   ]
 })
+
+/** TL2 参考阈值（Discourse 默认；time_read 秒 → 显示分钟） */
+const tlProgress = computed(() => {
+  const s = summary.value
+  const rows: Array<{ label: string; cur: number; target: number }> = [
+    { label: '访问天数', cur: s?.days_visited ?? 0, target: 15 },
+    { label: '阅读帖数', cur: s?.posts_read ?? 0, target: 100 },
+    { label: '进入主题', cur: s?.topics_entered ?? 0, target: 20 },
+    { label: '阅读分钟', cur: Math.round((s?.time_read ?? 0) / 60), target: 60 },
+    { label: '送出赞', cur: s?.likes_given ?? 0, target: 1 },
+    { label: '获赞', cur: s?.likes_received ?? 0, target: 1 }
+  ]
+  return rows.map((r) => ({ ...r, pct: Math.min(100, Math.round((r.cur / r.target) * 100)) }))
+})
 </script>
 
 <template>
@@ -117,6 +131,19 @@ const stats = computed(() => {
       <section class="card profile-stats">
         <div v-for="s in stats" :key="s.label" class="pstat">
           <b>{{ s.v ?? '-' }}</b><span>{{ s.label }}</span>
+        </div>
+      </section>
+
+      <!-- 等级进度（TL2 参考，10-19-ux-batch R3）：站点自定义阈值不暴露 API，标注参考值 -->
+      <section class="card">
+        <h2>等级进度 <span class="row-tag closed">参考值</span></h2>
+        <p class="tip">按 Discourse 默认 TL2 阈值估算；linux.do 实际要求以官方公告为准。在应用内读帖已回传阅读进度（posts_read 计入）。</p>
+        <div v-for="r in tlProgress" :key="r.label" class="tl-row">
+          <span class="tl-label">{{ r.label }}</span>
+          <div class="tl-bar">
+            <div class="tl-fill" :class="{ done: r.pct >= 100 }" :style="{ width: r.pct + '%' }"></div>
+          </div>
+          <span class="tl-val">{{ r.cur }}/{{ r.target }}</span>
         </div>
       </section>
 
