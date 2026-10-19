@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore, clusterThreads } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
+import { DEFAULT_FOLDER_ID, useFavoritesStore, type FavEntry } from '../stores/favorites'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
@@ -74,7 +75,15 @@ const ICONS = {
   download:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
   chevR:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+  chevD:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  folder:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+  pencil:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
+  x:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
 }
 
 const timelineTicks = computed(() => {
@@ -197,6 +206,83 @@ async function doBookmark(): Promise<void> {
   bookmarking.value = false
 }
 
+// ---- 多收藏夹（应用层本地夹，独立于上面站点 Discourse 书签，两套并行）：▾ 菜单勾选入夹 ----
+const fav = useFavoritesStore()
+const favMenuOpen = ref(false)
+/** 行内重命名中的夹 id */
+const favRenaming = ref<string | null>(null)
+const favRenameText = ref('')
+/** 二次确认删除中的夹 id */
+const favConfirmDelete = ref<string | null>(null)
+const favNewName = ref('')
+
+/** 行内输入自动聚焦（v-focus） */
+const vFocus = { mounted: (el: HTMLInputElement) => el.focus() }
+
+/** 入夹快照：标题/时间/计数取当前主题，OP 头像取一楼（R3，离线列表靠它渲染） */
+function currentFavSnap(): FavEntry {
+  const t = store.topic!
+  const first = store.orderedPosts.find((p) => p.post_number === 1) ?? store.orderedPosts[0]
+  return {
+    id: t.id,
+    title: t.title,
+    views: t.views ?? 0,
+    like_count: t.like_count ?? 0,
+    posts_count: t.posts_count ?? 0,
+    created_at: t.created_at ?? '',
+    avatar_template: first?.avatar_template ?? ''
+  }
+}
+
+function favToggle(folderId: string): void {
+  const t = store.topic
+  if (!t) return
+  const on = !fav.folderIdsOf(t.id).includes(folderId)
+  fav.setTopic(folderId, t.id, on ? currentFavSnap() : null, on)
+}
+
+function favCreate(): void {
+  const name = favNewName.value.trim()
+  if (!name) return
+  fav.createFolder(name)
+  favNewName.value = ''
+}
+
+function favStartRename(id: string): void {
+  favConfirmDelete.value = null
+  favRenaming.value = id
+  favRenameText.value = fav.folder(id)?.name ?? ''
+}
+
+function favCommitRename(): void {
+  if (favRenaming.value === null) return
+  fav.renameFolder(favRenaming.value, favRenameText.value)
+  favRenaming.value = null
+}
+
+function favCancelRename(): void {
+  favRenaming.value = null
+}
+
+function favDoRemove(id: string): void {
+  fav.removeFolder(id)
+  favConfirmDelete.value = null
+}
+
+function closeFavMenu(): void {
+  favMenuOpen.value = false
+  favRenaming.value = null
+  favConfirmDelete.value = null
+  favNewName.value = ''
+}
+
+function onFavDocClick(e: MouseEvent): void {
+  if (!favMenuOpen.value) return
+  const el = e.target as Element | null
+  if (el?.closest('.fav-wrap')) return
+  closeFavMenu()
+}
+
 onMounted(() => {
   // offline：父级 prop（BrowseView 已从 route 归一）优先，route query 兜底（?offline=1 语义保留）
   const offline = props.offline === true || route.query.offline === '1'
@@ -210,6 +296,7 @@ onMounted(() => {
   scroller.value?.addEventListener('mouseover', onCookedHover, true)
   scroller.value?.addEventListener('mouseout', onCookedHoverOut, true)
   window.addEventListener('keydown', onLightboxKey)
+  document.addEventListener('click', onFavDocClick, true)
   void nextTick().then(() => void consumePendingJump())
 })
 
@@ -232,6 +319,7 @@ onBeforeUnmount(() => {
   scroller.value?.removeEventListener('mouseover', onCookedHover, true)
   scroller.value?.removeEventListener('mouseout', onCookedHoverOut, true)
   window.removeEventListener('keydown', onLightboxKey)
+  document.removeEventListener('click', onFavDocClick, true)
   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
 })
 
@@ -252,7 +340,10 @@ function closeLightbox(): void {
 }
 
 function onLightboxKey(e: KeyboardEvent): void {
-  if (e.key === 'Escape') closeLightbox()
+  if (e.key === 'Escape') {
+    closeLightbox()
+    if (favMenuOpen.value) closeFavMenu()
+  }
 }
 
 function go(postNumber: number): void {
@@ -438,6 +529,70 @@ function readOffline(): void {
             :title="store.topic.bookmarked ? '已收藏' : '收藏'"
             @click="doBookmark"
           >{{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}</button>
+          <!-- 本地收藏夹 ▾（应用层数据，离线同样可用；站点书签上方保持现状，两套并行） -->
+          <div class="fav-wrap">
+            <button
+              class="ldd-ghost fav-toggle"
+              :class="{ on: fav.folderIdsOf(topicId).length > 0 }"
+              :title="fav.folderIdsOf(topicId).length > 0 ? '管理本地收藏夹' : '加入本地收藏夹'"
+              @click.stop="favMenuOpen ? closeFavMenu() : (favMenuOpen = true)"
+            >
+              <span class="ic" v-html="ICONS.folder"></span>收藏夹
+              <span class="ic fav-chev" :class="{ open: favMenuOpen }" v-html="ICONS.chevD"></span>
+            </button>
+            <div v-if="favMenuOpen" class="fav-menu" @click.stop>
+              <div class="fav-menu-head">勾选加入 / 移出收藏夹</div>
+              <div v-for="f in fav.folders" :key="f.id" class="fav-row">
+                <template v-if="favRenaming === f.id">
+                  <input
+                    v-focus
+                    v-model="favRenameText"
+                    class="fav-input"
+                    maxlength="30"
+                    @keydown.enter.prevent="favCommitRename"
+                    @keydown.esc.prevent="favCancelRename"
+                    @blur="favCommitRename"
+                  />
+                </template>
+                <template v-else-if="favConfirmDelete === f.id">
+                  <span class="fav-del-q">删除「{{ f.name }}」？不影响站点书签</span>
+                  <button class="fav-mini danger" @click="favDoRemove(f.id)">删除</button>
+                  <button class="fav-mini" @click="favConfirmDelete = null">取消</button>
+                </template>
+                <template v-else>
+                  <button class="fav-item" @click="favToggle(f.id)">
+                    <span
+                      class="ic"
+                      :class="{ checked: fav.folderIdsOf(topicId).includes(f.id) }"
+                      v-html="fav.folderIdsOf(topicId).includes(f.id) ? ICONS.check : ICONS.plus"
+                    ></span>
+                    <span class="fav-name">{{ f.name }}</span>
+                    <small>{{ f.topicIds.length }}</small>
+                  </button>
+                  <template v-if="f.id !== DEFAULT_FOLDER_ID">
+                    <button class="fav-mini" title="重命名" @click="favStartRename(f.id)">
+                      <span class="ic" v-html="ICONS.pencil"></span>
+                    </button>
+                    <button class="fav-mini danger" title="删除收藏夹" @click="favConfirmDelete = f.id">
+                      <span class="ic" v-html="ICONS.x"></span>
+                    </button>
+                  </template>
+                </template>
+              </div>
+              <div class="fav-new">
+                <input
+                  v-model="favNewName"
+                  class="fav-input"
+                  placeholder="新建收藏夹…"
+                  maxlength="30"
+                  @keydown.enter.prevent="favCreate"
+                />
+                <button class="fav-mini" :disabled="!favNewName.trim()" title="新建收藏夹" @click="favCreate">
+                  <span class="ic" v-html="ICONS.plus"></span>
+                </button>
+              </div>
+            </div>
+          </div>
           <template v-if="queue.count > 0">
             <button class="ldd-ghost" :disabled="!queueNav.prev" title="上一贴" @click="goNeighbor('prev')">‹</button>
             <button class="ldd-ghost" :disabled="!queueNav.next" title="下一贴" @click="goNeighbor('next')">›</button>

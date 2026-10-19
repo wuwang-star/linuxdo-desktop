@@ -374,3 +374,54 @@
 /* @scope: feishu-im-frame — 阅读页头部楼主头像（title 行左端，40px 圆） */
 .ldd-t-title-row { align-items: center; }
 .ldd-t-ava { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; }
+
+/* @scope: favorite-folders — 本地收藏夹 ▾ 菜单（TopicView 头部动作区；浮层规范 ch9：fast 入场/sh-2/z-70，fav- 前缀类名约定照 .queue-panel 皮肤钩子） */
+.fav-wrap { position: relative; }
+.fav-chev { width: 10px; height: 10px; transition: transform var(--motion-fast) var(--ease-out); }
+.fav-chev.open { transform: rotate(180deg); }
+.fav-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; width: 292px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2); padding: 6px;
+  transform-origin: 100% 0;
+  animation: im-pop-in var(--motion-fast) var(--ease-out);
+}
+.fav-menu-head { font-size: var(--font-sm); color: var(--muted); padding: 4px 8px 2px; }
+.fav-row { display: flex; align-items: center; gap: 2px; padding: 1px 2px; }
+.fav-row:hover .fav-mini { opacity: 1; }
+.fav-item {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; text-align: left;
+  border: 0; background: transparent; color: var(--text);
+  padding: 6px 8px; font-size: var(--font-base); border-radius: var(--radius-sm); cursor: pointer;
+}
+.fav-item:hover { background: var(--accent-weak); }
+.fav-item .ic { width: 14px; height: 14px; flex: none; color: var(--muted); }
+.fav-item .ic.checked { color: var(--accent); }
+.fav-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-item small { margin-left: auto; color: var(--muted); }
+.fav-mini {
+  flex: none; width: 24px; height: 24px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  border-radius: var(--radius-sm); font-size: var(--font-sm); line-height: 1;
+  opacity: 0.45;
+}
+.fav-row:hover .fav-mini:hover, .fav-new .fav-mini:hover { opacity: 1; background: var(--hover); color: var(--accent); }
+.fav-mini.danger:hover { color: var(--bad); }
+.fav-mini:disabled { opacity: 0.3; cursor: not-allowed; }
+.fav-mini .ic { width: 13px; height: 13px; }
+.fav-input {
+  flex: 1; min-width: 0; padding: 4px 8px; font-size: var(--font-base);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--panel); color: var(--text);
+}
+.fav-input:focus { border-color: var(--accent); outline: none; }
+.fav-del-q {
+  flex: 1; min-width: 0; padding: 0 6px; font-size: var(--font-sm); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fav-new {
+  display: flex; align-items: center; gap: 6px;
+  border-top: 1px solid var(--border); margin-top: 4px; padding: 6px 4px 2px;
+}
+.fav-new .fav-mini { opacity: 1; }

@@ -91,11 +91,28 @@ const api = {
       ipcRenderer.removeListener('queue:next', listener)
     }
   },
-  // 同步数据交换：主进程发起 progress/prefs 请求（token 匹配），renderer 注册响应器并经 syncReply 应答
+  // 同步数据交换：主进程发起 progress/prefs/favorites 请求（token 匹配），renderer 注册响应器并经 syncReply 应答
   onSyncRequest: (
-    cb: (channel: 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll', token: string, payload: unknown) => void
+    cb: (
+      channel:
+        | 'prefs:getAll'
+        | 'prefs:applyAll'
+        | 'progress:getAll'
+        | 'progress:applyAll'
+        | 'favorites:getAll'
+        | 'favorites:applyAll',
+      token: string,
+      payload: unknown
+    ) => void
   ) => {
-    const channels = ['prefs:getAll', 'prefs:applyAll', 'progress:getAll', 'progress:applyAll'] as const
+    const channels = [
+      'prefs:getAll',
+      'prefs:applyAll',
+      'progress:getAll',
+      'progress:applyAll',
+      'favorites:getAll',
+      'favorites:applyAll'
+    ] as const
     const listener = (
       _e: Electron.IpcRendererEvent,
       channel: (typeof channels)[number],

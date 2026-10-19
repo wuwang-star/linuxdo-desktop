@@ -95,3 +95,6 @@
 
 /* @scope: settings-ui-fix — 入队钮定尺寸盒补 padding:0 + 图标 flex 居中（全局 button 皮肤回归修复） */
 .row-q { display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+
+/* @scope: favorite-folders — 收藏夹筛选面板（工具条 chip ▾；基座浮层复用 .cat-panel，此处仅补宽度） */
+.fav-panel { min-width: 220px; }

@@ -19,6 +19,7 @@ import {
 } from '../utils/prefs'
 import { applyAllProgress, collectAllProgress } from '../utils/progress'
 import { applyThemeById, BUILTIN_THEMES, loadSelectedThemeId } from '../utils/themes'
+import { useFavoritesStore } from '../stores/favorites'
 
 // ---- 分类导航（顺序对齐参考项目：FluxDO 外观/偏好/网络/通知/日志/关于） ----
 const sections = [
@@ -320,6 +321,8 @@ async function testDns(): Promise<void> {
 }
 
 // ---- 同步：WebDAV 手动推送/拉取 ----
+// 收藏夹状态行数据源（同步交换经 onSyncRequest favorites:* 应答，见下方响应器）
+const fav = useFavoritesStore()
 const wdServer = ref('')
 const wdUsername = ref('')
 const wdPassword = ref('')
@@ -470,6 +473,15 @@ const offSyncRequest = window.api.onSyncRequest((channel, token, payload) => {
       window.api.syncReply(token, true)
       break
     }
+    case 'favorites:getAll':
+      // 收藏夹整体（folders + 快照），v2 bundle 携带
+      window.api.syncReply(token, useFavoritesStore().exportData())
+      break
+    case 'favorites:applyAll':
+      // 云端覆盖本地（store 内部归一 + 默认夹兜底 + persist）
+      useFavoritesStore().applyRemote(payload)
+      window.api.syncReply(token, true)
+      break
   }
 })
 onBeforeUnmount(() => offSyncRequest())
@@ -752,9 +764,12 @@ onMounted(async () => {
         <section class="card">
           <h2>WebDAV 同步（手动）</h2>
           <p class="tip">
-            把阅读进度、阅读偏好与非凭据设置（网络/通知/翻译端点）推送/拉取到你自备的 WebDAV
+            把阅读进度、阅读偏好、收藏夹与非凭据设置（网络/通知/翻译端点）推送/拉取到你自备的 WebDAV
             （坚果云 / InfiniCloud / 自建等）。同步数据不含任何密码或登录凭据；无自动合并，冲突时自行选择方向。
           </p>
+          <div class="sync-fav-status">
+            收藏夹：{{ fav.folders.length }} 个夹 / {{ fav.totalTopics }} 帖（随推送/拉取一并同步；拉取 v1 旧包时本地收藏夹保持不动）
+          </div>
           <input v-model="wdServer" placeholder="服务器地址，如 https://dav.jianguoyun.com/dav/" />
           <input v-model="wdUsername" placeholder="用户名" />
           <input

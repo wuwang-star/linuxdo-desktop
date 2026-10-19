@@ -118,10 +118,16 @@ export interface ApiBridge {
   setShortcutEnabled(kind: ShortcutKind, enabled: boolean): Promise<ShortcutsStatus>
   /** 主进程 Alt+Shift+N 广播 → renderer 执行队列下一贴跳转，返回解绑函数 */
   onQueueNext(cb: () => void): () => void
-  /** 同步数据交换：主进程向 renderer 请求 progress/prefs（token 匹配），返回解绑函数 */
+  /** 同步数据交换：主进程向 renderer 请求 progress/prefs/favorites（token 匹配），返回解绑函数 */
   onSyncRequest(
     cb: (
-      channel: 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll',
+      channel:
+        | 'prefs:getAll'
+        | 'prefs:applyAll'
+        | 'progress:getAll'
+        | 'progress:applyAll'
+        | 'favorites:getAll'
+        | 'favorites:applyAll',
       token: string,
       payload: unknown
     ) => void

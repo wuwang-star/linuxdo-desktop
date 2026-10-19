@@ -58,3 +58,4 @@
 - GitHub 仓库（owner/repo）→ 接通自动更新 AC5
 - DoH 真实现立项（本地 DoH 代理方案）
 | 10-19 0x:xx | 主会话（frontend-componentization P1+P2，用户拍板） | **跨 B/C/D 触达**：新建 layouts/AppShell.vue+PageShell.vue（App.vue 模板迁出）；components/FieldRow.vue+SegGroup.vue（SettingsView 替换）+QueuePanel.vue（RailNav 迁出）。纯结构重构零行为变化，类名全保活（.queue-panel 等）。任务 .trellis/tasks/10-19-frontend-componentization | 在途 |
+| 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |

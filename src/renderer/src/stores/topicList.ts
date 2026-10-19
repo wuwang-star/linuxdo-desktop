@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { DiscourseTopicLite, DiscourseUserLite, TopicListResponse, TopPeriod } from '../../../main/api/client'
 import type { OfflineIndexEntry } from '../../../main/api/offline'
+import { useFavoritesStore, type FavEntry } from './favorites'
 
 export type ListMode =
   | { type: 'latest'; order?: 'views' }
@@ -8,6 +9,7 @@ export type ListMode =
   | { type: 'top'; period: TopPeriod; viewsSort?: boolean }
   | { type: 'category'; slug: string; id: number; name: string }
   | { type: 'offline' }
+  | { type: 'favorites'; folderId: string }
 
 interface CategoryItem {
   id: number
@@ -29,7 +31,9 @@ export const useTopicListStore = defineStore('topicList', {
     loading: false,
     error: '' as string,
     /** 离线模式：index 列表（本地 IPC，不发网络请求） */
-    offlineEntries: [] as OfflineIndexEntry[]
+    offlineEntries: [] as OfflineIndexEntry[],
+    /** 收藏夹模式：快照条目（本地 favorites store，不发网络请求，离线可见） */
+    favRows: [] as FavEntry[]
   }),
   actions: {
     absorb(res: TopicListResponse): DiscourseTopicLite[] {
@@ -48,10 +52,22 @@ export const useTopicListStore = defineStore('topicList', {
       this.page = 0
       this.exhausted = false
       this.error = ''
+      this.favRows = []
       await this.loadMore()
     },
     async loadMore() {
       if (this.loading || this.exhausted) return
+      // 收藏夹模式：本地快照一次取完即 exhausted（无分页、无网络请求，离线可用）
+      if (this.mode.type === 'favorites') {
+        this.loading = true
+        try {
+          this.favRows = useFavoritesStore().entriesOf(this.mode.folderId)
+          this.exhausted = true
+        } finally {
+          this.loading = false
+        }
+        return
+      }
       // 离线模式：读本地 index，一次取完即 exhausted（无分页）
       if (this.mode.type === 'offline') {
         this.loading = true

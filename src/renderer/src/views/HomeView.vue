@@ -5,6 +5,7 @@ import { useTopicListStore } from '../stores/topicList'
 import { useQueueStore } from '../stores/queue'
 import { useBrowseStore } from '../stores/browse'
 import { useSearchStore } from '../stores/search'
+import { useFavoritesStore } from '../stores/favorites'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 import type { DiscourseTopicLite, TopPeriod } from '../../../main/api/client'
@@ -16,6 +17,7 @@ const store = useTopicListStore()
 const queue = useQueueStore()
 const browse = useBrowseStore()
 const search = useSearchStore()
+const fav = useFavoritesStore()
 const sentinel = ref<HTMLElement | null>(null)
 const listEl = ref<HTMLElement | null>(null)
 const showCats = ref(false)
@@ -83,6 +85,7 @@ const showTopPanel = ref(false)
 function toggleTopPanel(): void {
   showTopPanel.value = !showTopPanel.value
   showCats.value = false
+  showFavPanel.value = false
 }
 
 function pickPeriod(p: TopPeriod): void {
@@ -119,12 +122,38 @@ function toggleByViews(): void {
   showViewsPanel.value = !showViewsPanel.value
   showTopPanel.value = false
   showCats.value = false
+  showFavPanel.value = false
 }
 function pickViews(scope: 'all' | TopPeriod): void {
   viewsScope.value = scope
   showViewsPanel.value = false
   applyViews()
 }
+
+// ---------- 收藏夹筛选（本地快照模式，无网络请求；chip ▾ 列各夹+计数） ----------
+const showFavPanel = ref(false)
+
+function toggleFavPanel(): void {
+  showFavPanel.value = !showFavPanel.value
+  showTopPanel.value = false
+  showViewsPanel.value = false
+  showCats.value = false
+}
+
+function pickFolder(id: string): void {
+  showFavPanel.value = false
+  void store.switchMode({ type: 'favorites', folderId: id })
+}
+
+const favChipLabel = computed(() => {
+  if (store.mode.type !== 'favorites') return '收藏夹'
+  return `收藏夹 · ${fav.folder(store.mode.folderId)?.name ?? '已删除'}`
+})
+
+/** 当前筛的夹已被删（他处删除后 mode 残留）：列表给空态说明 */
+const favFolderMissing = computed(
+  () => store.mode.type === 'favorites' && !fav.folder(store.mode.folderId)
+)
 
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
@@ -188,7 +217,7 @@ onMounted(() => {
           class="ldd-filter"
           title="筛选分类"
           aria-label="筛选分类"
-          @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()"
+          @click="showCats = !showCats; showTopPanel = false; showFavPanel = false; if (showCats) void store.ensureCategories()"
         >
           <span class="ic" v-html="ICONS.filter"></span>
         </button>
@@ -254,10 +283,38 @@ onMounted(() => {
             </button>
           </div>
         </div>
+        <div class="chip-wrap">
+          <button
+            class="chip"
+            :class="{ active: store.mode.type === 'favorites' }"
+            title="本地收藏夹（离线可看）"
+            @click="toggleFavPanel"
+          >
+            {{ favChipLabel }} ▾
+          </button>
+          <div v-if="showFavPanel" class="cat-panel fav-panel">
+            <div class="panel-head">收藏夹（本地数据 · 离线可看）</div>
+            <button
+              v-for="f in fav.folders"
+              :key="f.id"
+              class="cat-item"
+              :class="{ active: store.mode.type === 'favorites' && store.mode.folderId === f.id }"
+              @click="pickFolder(f.id)"
+            >
+              {{ f.name }}
+              <small>{{ f.topicIds.length }}</small>
+              <span
+                v-if="store.mode.type === 'favorites' && store.mode.folderId === f.id"
+                class="ic"
+                v-html="ICONS.check"
+              ></span>
+            </button>
+          </div>
+        </div>
         <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' }); showTopPanel = false">
           离线
         </button>
-        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
+        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; showFavPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
       </div>
       <div v-if="showCats && !search.open" class="cat-panel">
         <div class="panel-head">选择分类</div>
@@ -323,6 +380,36 @@ onMounted(() => {
       </article>
       <div v-if="store.offlineEntries.length === 0 && !store.loading" class="sentinel">还没有离线存档，打开主题后点「离线保存」</div>
     </template>
+    <!-- 收藏夹模式：本地快照行（无网络请求，离线可看；打开主题仍走常规路由） -->
+    <template v-else-if="store.mode.type === 'favorites'">
+      <article v-for="t in store.favRows" :key="t.id" class="topic-row" :class="{ sel: browse.selectedId === t.id }">
+        <img
+          v-if="t.avatar_template"
+          class="avatar"
+          :src="avatarUrl(t.avatar_template)"
+          alt=""
+          loading="lazy"
+        />
+        <div class="topic-main">
+          <div class="topic-title-line">
+            <RouterLink :to="`/t/${t.id}`" class="topic-title" @click="onTitleClick($event, t.id)">{{ t.title }}</RouterLink>
+            <span class="row-time">{{ rowTime(t.created_at) }}</span>
+          </div>
+          <div class="topic-meta">
+            <span class="m"><span class="ic" v-html="ICONS.heart"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.eye"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.chat"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
+          </div>
+        </div>
+      </article>
+      <div v-if="store.favRows.length === 0 && !store.loading" class="sentinel">
+        {{
+          favFolderMissing
+            ? '该收藏夹已被删除，换个夹看看'
+            : '这个收藏夹还是空的 — 打开主题后点头部「收藏夹 ▾」加入'
+        }}
+      </div>
+    </template>
     <template v-else>
       <article v-for="t in store.topics" :key="t.id" class="topic-row" :class="{ sel: browse.selectedId === t.id }">
         <img
@@ -369,7 +456,7 @@ onMounted(() => {
     </template>
 
     <div ref="sentinel" class="sentinel">
-      <span v-if="store.mode.type !== 'offline' && !search.open">
+      <span v-if="store.mode.type !== 'offline' && store.mode.type !== 'favorites' && !search.open">
         <span v-if="store.loading">加载中…</span>
         <span v-else-if="store.exhausted">没有更多了</span>
       </span>

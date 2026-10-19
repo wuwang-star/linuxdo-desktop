@@ -47,3 +47,10 @@ code.accel {
 /* @scope: net-settings — 上游代理地址/端口输入宽度 */
 .proxy-host { width: 140px; }
 .proxy-port { width: 84px; }
+
+/* @scope: favorite-folders — 同步卡收藏夹状态行 */
+.sync-fav-status {
+  margin: 8px 0; padding: 6px 10px;
+  background: var(--hover); border-radius: var(--radius-sm);
+  color: color-mix(in srgb, var(--text) 60%, var(--muted)); font-size: var(--font-sm);
+}

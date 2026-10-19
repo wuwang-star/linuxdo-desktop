@@ -17,7 +17,24 @@ import { putBundle, getBundle } from './webdav'
  * 密码任何一项——settings 段只取非凭据字段，translate 不带 key。
  */
 
-/** 同步 bundle（schema v1，远端固定文件名 linuxdo-sync.json） */
+/** 收藏夹条目快照（主进程侧结构镜像，与 renderer stores/favorites.ts FavEntry 对齐；不 import renderer 模块） */
+export interface SyncFavEntry {
+  id: number
+  title: string
+  views: number
+  like_count: number
+  posts_count: number
+  created_at: string
+  avatar_template: string
+}
+
+/** 收藏夹（v2 起进 bundle；folders 整体 + 快照表，离线列表靠快照渲染） */
+export interface SyncFavorites {
+  folders: Array<{ id: string; name: string; createdAt: number; topicIds: number[] }>
+  entries: Record<string, SyncFavEntry>
+}
+
+/** 同步 bundle（schema v2，远端固定文件名 linuxdo-sync.json；v1 读取兼容见 validateBundle） */
 export interface SyncBundle {
   schemaVersion: number
   exportedAt: string
@@ -25,6 +42,8 @@ export interface SyncBundle {
   progress: Record<string, number>
   /** 阅读体感偏好（ldd-reading 原始形态，写入端经 normalizePrefs 归一） */
   readingPrefs: Record<string, unknown>
+  /** 收藏夹；null = v1 旧包无此字段（读取不炸，且不回写本地收藏夹） */
+  favorites: SyncFavorites | null
   settings: {
     doh: { enabled: boolean; mode: DohMode; template: string }
     notification: { enabled: boolean }
@@ -33,7 +52,13 @@ export interface SyncBundle {
 }
 
 /** main→renderer 请求通道（与设计稿通道名一致；应答统一走 syncdata:reply） */
-type SyncRequestChannel = 'prefs:getAll' | 'prefs:applyAll' | 'progress:getAll' | 'progress:applyAll'
+type SyncRequestChannel =
+  | 'prefs:getAll'
+  | 'prefs:applyAll'
+  | 'progress:getAll'
+  | 'progress:applyAll'
+  | 'favorites:getAll'
+  | 'favorites:applyAll'
 
 interface PendingReply {
   resolve: (v: unknown) => void
@@ -81,16 +106,18 @@ export function initSyncReply(): void {
   })
 }
 
-/** 聚合本地数据为 bundle：进度 + 偏好（经 IPC 向 renderer 取）+ settings 非凭据段 */
+/** 聚合本地数据为 bundle：进度 + 偏好 + 收藏夹（经 IPC 向 renderer 取）+ settings 非凭据段 */
 export async function collectBundle(sender: WebContents): Promise<SyncBundle> {
   const progress = await askRenderer<Record<string, number>>(sender, 'progress:getAll')
   const readingPrefs = await askRenderer<Record<string, unknown>>(sender, 'prefs:getAll')
+  const favorites = await askRenderer<unknown>(sender, 'favorites:getAll')
   const tr = getTranslateConfig()
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt: new Date().toISOString(),
     progress: progress && typeof progress === 'object' ? progress : {},
     readingPrefs: readingPrefs && typeof readingPrefs === 'object' ? readingPrefs : {},
+    favorites: collectFavorites(favorites),
     settings: {
       doh: getDohConfig(),
       notification: getNotificationConfig(),
@@ -100,12 +127,22 @@ export async function collectBundle(sender: WebContents): Promise<SyncBundle> {
   }
 }
 
-/** bundle 逐字段校验：非法 throw 明确中文文案（拉取入口统一防线） */
+/** 采集端容错：renderer 应答形状异常时给空结构（本地 store 正常时恒为完整形状，此为兜底） */
+function collectFavorites(raw: unknown): SyncFavorites {
+  const o = raw as Partial<SyncFavorites> | null
+  if (!o || typeof o !== 'object') return { folders: [], entries: {} }
+  return {
+    folders: Array.isArray(o.folders) ? o.folders : [],
+    entries: o.entries && typeof o.entries === 'object' ? o.entries : {}
+  }
+}
+
+/** bundle 逐字段校验：非法 throw 明确中文文案（拉取入口统一防线）；favorites 逐条容错（脏条目跳过不炸） */
 export function validateBundle(raw: unknown): SyncBundle {
   if (typeof raw !== 'object' || raw === null) throw new Error('同步数据不合法：不是 JSON 对象')
   const b = raw as Record<string, unknown>
-  if (b.schemaVersion !== 1) {
-    throw new Error(`同步数据版本不受支持：${String(b.schemaVersion)}（本应用支持 v1）`)
+  if (b.schemaVersion !== 1 && b.schemaVersion !== 2) {
+    throw new Error(`同步数据版本不受支持：${String(b.schemaVersion)}（本应用支持 v1 / v2）`)
   }
 
   // progress：键=纯数字 topicId，值=正整数楼层；非法条目跳过（防脏数据扩散）
@@ -151,11 +188,49 @@ export function validateBundle(raw: unknown): SyncBundle {
     throw new Error('同步数据不合法：settings.translate 字段不完整')
   }
 
+  // favorites：v1 旧包无此字段 → null（不回写本地收藏夹）；v2 逐条容错，脏夹/脏快照跳过
+  let favorites: SyncFavorites | null = null
+  if (b.schemaVersion >= 2 && typeof b.favorites === 'object' && b.favorites !== null) {
+    const fv = b.favorites as Partial<SyncFavorites>
+    const folders: SyncFavorites['folders'] = []
+    if (Array.isArray(fv.folders)) {
+      for (const item of fv.folders) {
+        const f = item as Partial<SyncFavorites['folders'][number]> | null
+        if (!f || typeof f.id !== 'string' || typeof f.name !== 'string' || !Array.isArray(f.topicIds)) continue
+        folders.push({
+          id: f.id.slice(0, 64),
+          name: typeof f.name === 'string' ? f.name.slice(0, 60) : '未命名收藏夹',
+          createdAt: typeof f.createdAt === 'number' ? f.createdAt : 0,
+          topicIds: [...new Set(f.topicIds.filter((n) => typeof n === 'number' && Number.isInteger(n) && n > 0))]
+        })
+      }
+    }
+    const entries: Record<string, SyncFavEntry> = {}
+    if (fv.entries && typeof fv.entries === 'object') {
+      for (const [k, v] of Object.entries(fv.entries as Record<string, unknown>)) {
+        if (!/^\d+$/.test(k)) continue
+        const e = v as Partial<SyncFavEntry> | null
+        if (!e || typeof e !== 'object' || typeof e.title !== 'string') continue
+        entries[k] = {
+          id: Number(k),
+          title: e.title,
+          views: typeof e.views === 'number' ? e.views : 0,
+          like_count: typeof e.like_count === 'number' ? e.like_count : 0,
+          posts_count: typeof e.posts_count === 'number' ? e.posts_count : 0,
+          created_at: typeof e.created_at === 'string' ? e.created_at : '',
+          avatar_template: typeof e.avatar_template === 'string' ? e.avatar_template : ''
+        }
+      }
+    }
+    favorites = { folders, entries }
+  }
+
   return {
-    schemaVersion: 1,
+    schemaVersion: b.schemaVersion,
     exportedAt: typeof b.exportedAt === 'string' ? b.exportedAt : '',
     progress,
     readingPrefs: b.readingPrefs as Record<string, unknown>,
+    favorites,
     settings: {
       doh: { enabled: doh.enabled, mode: doh.mode, template: doh.template },
       notification: { enabled: notif.enabled },
@@ -164,11 +239,13 @@ export function validateBundle(raw: unknown): SyncBundle {
   }
 }
 
-/** 反向写入：进度整体覆盖 + prefs 写 localStorage 并即时应用（renderer 侧）+ settings 更新（主进程侧） */
+/** 反向写入：进度整体覆盖 + prefs 写 localStorage 并即时应用（renderer 侧）+ 收藏夹回写（v1 包跳过）+ settings 更新（主进程侧） */
 export async function applyRemoteBundle(sender: WebContents, raw: unknown): Promise<SyncBundle> {
   const b = validateBundle(raw)
   await askRenderer(sender, 'progress:applyAll', b.progress)
   await askRenderer(sender, 'prefs:applyAll', b.readingPrefs)
+  // v1 旧包 favorites=null：本地收藏夹原样保留（拉旧包不丢本地数据）
+  if (b.favorites) await askRenderer(sender, 'favorites:applyAll', b.favorites)
   // settings 反向写入；setTranslateConfig 不传 key = 本机翻译密钥保持不动（凭据边界）
   setDohConfig(b.settings.doh.enabled, b.settings.doh.mode, b.settings.doh.template)
   setNotificationConfig(b.settings.notification.enabled)
