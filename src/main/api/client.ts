@@ -74,12 +74,35 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
  * - 429 指数退避（尊重 Retry-After），网络错误同样重试
  * - 每次请求记录诊断日志
  */
+// ---------- CF 盾挑战联动（10-19）：挑战发生时由主进程拉起登录窗口过盾，成功后原地重试 ----------
+
+let challengeHandler: (() => Promise<boolean>) | null = null
+let lastGateAt = 0
+const GATE_COOLDOWN_MS = 30 * 60 * 1000
+
+/** 主进程接线（index.ts ready）：传入「弹窗过盾」实现；冷却期内直接返回 false 防验证风暴 */
+export function setChallengeHandler(fn: (() => Promise<boolean>) | null): void {
+  challengeHandler = fn
+}
+
+async function challengeGate(): Promise<boolean> {
+  if (!challengeHandler) return false
+  if (Date.now() - lastGateAt < GATE_COOLDOWN_MS) return false
+  lastGateAt = Date.now()
+  try {
+    return await challengeHandler()
+  } catch {
+    return false
+  }
+}
+
 export async function discourseRequest<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   // 启动门：等首次 DoH 运行时应用完成再出门，避免首帧请求抢在代理接管前直连（启动 403）
   await dohReady
   const url = buildUrl(path, opts.query)
   const maxRetries = opts.retries ?? 3
   let attempt = 0
+  let gateUsed = false
 
   for (;;) {
     const started = Date.now()
@@ -111,8 +134,13 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
         continue
       }
       if (!res.ok) {
-        // CF 托管挑战（cf_clearance 过期/出口 IP 变化后必然出现）：给可行动的指引而非裸状态码
+        // CF 托管挑战（cf_clearance 过期/出口 IP 变化后必然出现）：拉起登录窗口过盾，成功后原地重试；
+        // 每请求只弹一次 + 全局 30min 冷却（防验证风暴），仍失败给可行动指引
         if (res.status === 403 && res.headers.get('cf-mitigated') === 'challenge') {
+          if (!gateUsed) {
+            gateUsed = true
+            if (await challengeGate()) continue
+          }
           throw new Error('Cloudflare 盾需要重新验证：到登录页点「浏览器登录」，让页面完整加载一次后回来刷新')
         }
         throw new Error(`HTTP ${res.status} ${res.statusText} <- ${url}`)
@@ -162,6 +190,7 @@ export interface DiscourseTopicLite {
   archetype?: string
   category_id?: number
   like_count?: number
+  views?: number
   last_poster_username?: string
   posters?: { user_id: number; description?: string }[]
   topic_id?: number

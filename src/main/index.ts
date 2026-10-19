@@ -4,8 +4,9 @@ import { registerIpc } from './ipc'
 import { validateTheme } from './themes'
 import { USER_AGENT, fetchLatest } from './api/client'
 import { probeP1 } from './api/probe'
-import { handleAuthCallbackUrl } from './api/auth'
+import { handleAuthCallbackUrl, openCookieLogin } from './api/auth'
 import { handleConnectCallbackUrl } from './api/connect'
+import { setChallengeHandler } from './api/client'
 import { loadDohEarly } from './api/settings'
 import { applyDohRuntime, dohSelfCheck } from './api/dohProxy'
 import { applyExternalApiRuntime } from './api/externalApi'
@@ -69,6 +70,9 @@ app.whenReady().then(() => {
   session.defaultSession.setUserAgent(USER_AGENT)
 
   registerIpc()
+
+  // CF 盾挑战联动：API 请求撞到 cf-mitigated: challenge 时自动弹登录窗口过盾，成功后原地重试
+  setChallengeHandler(() => openCookieLogin())
 
   // DoH 真实现：enabled 时起本地 CONNECT 代理并接管 defaultSession 代理，disabled 时零副作用
   void applyDohRuntime()
