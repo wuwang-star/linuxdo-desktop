@@ -611,3 +611,7 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 22 续 2：P3 打包验收 + 用户端 -100 定性
 
 用户报仍 -100 并问 Go 层是否完成——Go 层 P1/P2 早已提交；查配置实锤 `"proxyMode": "system"` 从未切换 + ech-gateway 进程从未拉起（userData 无 ech-ca 目录）=「跟随系统」+ Clash 系统代理关 → 按设计直连撞 SNI。dev 实例大概率陈旧（P2 前 UI 无 ECH 档）。已给操作序列：重启 dev → 网络 → ECH 直连 → 保存。P3：dist 首跑 electron-builder 拉 GitHub 资源 ETIMEDOUT（无代理直连），挂 HTTPS_PROXY=7897 重跑成功——`dist/LinuxDo Desktop-0.1.0-setup.exe` 产出、`win-unpacked/resources/ech-gateway.exe` 7MB 在包（AC5 ✓）。注意：electron-builder 下载类失败先试代理重跑。
+
+### Session 22 续 3：ux-batch（动效/阅读回传/等级进度）
+
+用户点名 Q弹动效缺失、配置页 UI 待 v2、子系统/升级条件/进度/「应用内阅读是否计入升级」。关键回答：posts_read 依赖 /topics/timings 回传而应用从未实现＝**读帖不计入 TL 进度**（真缺陷）→ 本批修复：readTiming util（IO 记可见楼层+5s 节流+终 flush+离线跳过）走 IPC 桥 topic:timings；等级进度卡（TL2 Discourse 默认阈值标注参考值，站点自定义阈值不暴露 API）；Q弹动效（--spring 过冲曲线+页面 scale 弹入+按压微弹）。**事故自纠**：readTiming 运行时 import client.ts 把 electron 链拖进浏览器 bundle（vite externalized 报错抓到）——renderer 对 main 模块值导入即违规（铁律此前只防「pull electron 报错」，type-only 擦除让日常无感，本次是首个值导入点）；修正=走 window.api。配置页 v2 记 PRD 下轮。子系统答案：connect.linux.do 已接 OAuth，同 zone 子域 ECH 网关天然可达（应用层无功能页面则仅「可达」）。
