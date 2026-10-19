@@ -167,8 +167,16 @@ onMounted(() => {
         <button class="act" @click="search.close()">取消</button>
       </div>
       <div v-if="!search.open" class="crumb">
-        <button class="chip" :class="{ active: store.mode.type === 'latest' }" @click="store.switchMode({ type: 'latest' })">
+        <button class="chip" :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }" @click="store.switchMode({ type: 'latest' })">
           最新
+        </button>
+        <button
+          class="chip"
+          :class="{ active: store.mode.type === 'latest' && store.mode.order === 'views' }"
+          title="按浏览量排序（latest.json order=views）"
+          @click="store.switchMode(store.mode.type === 'latest' && store.mode.order === 'views' ? { type: 'latest' } : { type: 'latest', order: 'views' })"
+        >
+          最多浏览
         </button>
         <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="store.switchMode({ type: 'hot' })">
           最热

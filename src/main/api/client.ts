@@ -278,8 +278,9 @@ export interface CurrentUserResponse {
   current_user?: DiscourseUserLite & { unread_notifications?: number; unread_high_priority_notifications?: number }
 }
 
-export function fetchLatest(page = 0): Promise<TopicListResponse> {
-  return discourseRequest<TopicListResponse>('/latest.json', { query: { page, no_definitions: true } })
+/** order：Discourse 原生排序参数（views/likes/posts）；站点不认时回落默认排序，无害 */
+export function fetchLatest(page = 0, order?: 'views' | 'likes' | 'posts'): Promise<TopicListResponse> {
+  return discourseRequest<TopicListResponse>('/latest.json', { query: { page, no_definitions: true, order } })
 }
 
 /** Top 榜周期（Discourse 核心端点全六档支持，2026-10-16 抓包核实） */

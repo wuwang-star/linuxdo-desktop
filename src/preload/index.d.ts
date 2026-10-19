@@ -38,7 +38,7 @@ export interface LoginStatus {
 }
 
 export interface ApiBridge {
-  fetchLatest(page: number): Promise<TopicListResponse>
+  fetchLatest(page: number, order?: 'views' | 'likes' | 'posts'): Promise<TopicListResponse>
   fetchHot(page: number): Promise<TopicListResponse>
   fetchTop(period: TopPeriod, page: number): Promise<TopicListResponse>
   fetchCategories(): Promise<CategoryListResponse>

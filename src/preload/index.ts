@@ -3,7 +3,7 @@ import type { TopPeriod } from '../main/api/client'
 import type { ThemePackage } from '../main/themes'
 
 const api = {
-  fetchLatest: (page: number) => ipcRenderer.invoke('discourse:latest', page),
+  fetchLatest: (page: number, order?: 'views' | 'likes' | 'posts') => ipcRenderer.invoke('discourse:latest', page, order),
   fetchHot: (page: number) => ipcRenderer.invoke('discourse:hot', page),
   fetchTop: (period: TopPeriod, page: number) => ipcRenderer.invoke('discourse:top', period, page),
   fetchCategories: () => ipcRenderer.invoke('discourse:categories'),

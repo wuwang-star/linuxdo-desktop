@@ -3,7 +3,7 @@ import type { DiscourseTopicLite, DiscourseUserLite, TopicListResponse, TopPerio
 import type { OfflineIndexEntry } from '../../../main/api/offline'
 
 export type ListMode =
-  | { type: 'latest' }
+  | { type: 'latest'; order?: 'views' }
   | { type: 'hot' }
   | { type: 'top'; period: TopPeriod }
   | { type: 'category'; slug: string; id: number; name: string }
@@ -73,7 +73,7 @@ export const useTopicListStore = defineStore('topicList', {
         let res: TopicListResponse
         switch (mode.type) {
           case 'latest':
-            res = await window.api.fetchLatest(page)
+            res = await window.api.fetchLatest(page, (mode as { order?: 'views' }).order)
             break
           case 'hot':
             res = await window.api.fetchHot(page)

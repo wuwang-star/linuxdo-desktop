@@ -83,7 +83,7 @@ function broadcast(channel: string, payload: unknown): void {
 export function registerIpc(): void {
   initAuth()
 
-  ipcMain.handle('discourse:latest', (_e, page: number) => fetchLatest(page ?? 0))
+  ipcMain.handle('discourse:latest', (_e, page: number, order?: 'views' | 'likes' | 'posts') => fetchLatest(page ?? 0, order))
   ipcMain.handle('discourse:hot', (_e, page: number) => fetchHot(page ?? 0))
   ipcMain.handle('discourse:top', (_e, period: TopPeriod, page: number) => fetchTop(period, page ?? 0))
   ipcMain.handle('discourse:categories', () => fetchCategories())
