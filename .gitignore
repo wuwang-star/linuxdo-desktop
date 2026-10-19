@@ -7,3 +7,7 @@ src/renderer/out-verify/
 .env.*
 .DS_Store
 .playwright-mcp/
+
+# ECH 网关产物（P1，10-19-ech-engine）
+ech-gateway/ech-gateway.exe
+ech-gateway/.certs/
