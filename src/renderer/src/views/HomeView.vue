@@ -94,6 +94,38 @@ const topLabel = computed(
   () => topPeriods.find((p) => p.value === activePeriod.value)?.label ?? '周榜'
 )
 
+/** 最多浏览：总=latest order=views（累计）；日~年=top 周期集合客户端按 views 降序（近似，Discourse 无周期浏览增量端点） */
+const showViewsPanel = ref(false)
+const viewsScope = ref<'all' | TopPeriod>('all')
+const byViewsActive = computed(() => {
+  const m = store.mode
+  return (m.type === 'latest' && m.order === 'views') || (m.type === 'top' && m.viewsSort === true)
+})
+const byViewsLabel = computed(() => {
+  const m = store.mode
+  if (m.type === 'top' && m.viewsSort) return `最多浏览 · ${topPeriods.find((p) => p.value === m.period)?.label ?? ''}`
+  return '最多浏览'
+})
+function applyViews(): void {
+  if (viewsScope.value === 'all') void store.switchMode({ type: 'latest', order: 'views' })
+  else void store.switchMode({ type: 'top', period: viewsScope.value, viewsSort: true })
+}
+function toggleByViews(): void {
+  if (byViewsActive.value) {
+    showViewsPanel.value = false
+    void store.switchMode({ type: 'latest' })
+    return
+  }
+  showViewsPanel.value = !showViewsPanel.value
+  showTopPanel.value = false
+  showCats.value = false
+}
+function pickViews(scope: 'all' | TopPeriod): void {
+  viewsScope.value = scope
+  showViewsPanel.value = false
+  applyViews()
+}
+
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
   return first !== undefined ? store.usersById.get(first) : undefined
@@ -170,14 +202,33 @@ onMounted(() => {
         <button class="chip" :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }" @click="store.switchMode({ type: 'latest' })">
           最新
         </button>
-        <button
-          class="chip"
-          :class="{ active: store.mode.type === 'latest' && store.mode.order === 'views' }"
-          title="按浏览量排序（latest.json order=views）"
-          @click="store.switchMode(store.mode.type === 'latest' && store.mode.order === 'views' ? { type: 'latest' } : { type: 'latest', order: 'views' })"
-        >
-          最多浏览
-        </button>
+        <div class="chip-wrap">
+          <button
+            class="chip"
+            :class="{ active: byViewsActive }"
+            title="按浏览量排序"
+            @click="toggleByViews"
+          >
+            {{ byViewsLabel }} ▾
+          </button>
+          <div v-if="showViewsPanel" class="cat-panel top-panel">
+            <div class="panel-head">浏览榜周期（日~年为该周期内发帖按累计浏览排）</div>
+            <button class="cat-item" :class="{ active: viewsScope === 'all' }" @click="pickViews('all')">
+              总榜（累计浏览）
+              <span v-if="viewsScope === 'all'" class="ic" v-html="ICONS.check"></span>
+            </button>
+            <button
+              v-for="p in topPeriods"
+              :key="p.value"
+              class="cat-item"
+              :class="{ active: viewsScope === p.value }"
+              @click="pickViews(p.value)"
+            >
+              {{ p.label }}
+              <span v-if="viewsScope === p.value" class="ic" v-html="ICONS.check"></span>
+            </button>
+          </div>
+        </div>
         <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="store.switchMode({ type: 'hot' })">
           最热
         </button>

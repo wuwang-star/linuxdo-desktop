@@ -5,7 +5,7 @@ import type { OfflineIndexEntry } from '../../../main/api/offline'
 export type ListMode =
   | { type: 'latest'; order?: 'views' }
   | { type: 'hot' }
-  | { type: 'top'; period: TopPeriod }
+  | { type: 'top'; period: TopPeriod; viewsSort?: boolean }
   | { type: 'category'; slug: string; id: number; name: string }
   | { type: 'offline' }
 
@@ -78,9 +78,18 @@ export const useTopicListStore = defineStore('topicList', {
           case 'hot':
             res = await window.api.fetchHot(page)
             break
-          case 'top':
+          case 'top': {
             res = await window.api.fetchTop(mode.period, page)
+            // viewsSort：该周期创建帖按累计浏览降序（Discourse 无周期浏览增量端点，客户端重排近似）
+            if ((mode as { viewsSort?: boolean }).viewsSort) {
+              const tl = res.topic_list
+              res = {
+                ...res,
+                topic_list: { ...tl, topics: [...tl.topics].sort((a, b) => (b.views ?? 0) - (a.views ?? 0)) }
+              }
+            }
             break
+          }
           default:
             res = await window.api.fetchCategoryTopics(mode.slug, mode.id, page)
         }
