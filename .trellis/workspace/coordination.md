@@ -61,4 +61,5 @@
 | 10-20 0x:xx | 主会话（login-cred-autofill，用户拍板仅填充不自动提交） | 分区 E 接管（LoginView.vue 登记块/auth.ts login.enc 存取+注入填充）；公用 ipc.ts+preload 两件追加 auth:saveLoginCred/loginCredStatus/clearLoginCred 三通道（只追加） | 在途 |
 | 10-20 1x:xx | 主会话（login-cred-autofill 会话顺带 UI 修复，用户截图反馈） | 分区 B topic.css：`.ldd-thread .post--depth3` 特异性提升（修头像贴轨）+ onebox/引用内图片限高；已提交 be3f585 | 已提交 |
 | 10-20 2x:xx | 主会话（queue-park，roadmap M1 拍板） | RailNav/HomeView 入口 v-if 藏（stores/queue.ts 新增 QUEUE_ENABLED=false）；管线保留 | 已提交 |
+| 10-20 3x:xx | 主会话（M1 自主验收+dist 链路验证） | CDP 自动验收：队列入藏 PASS/搜索连通 PASS(topics=50)/登录账密=已登录态不可自动验(移交)/depth3=未遇样例(移交)；npm run dist 全链 PASS(Go 网关→vite→NSIS 108MB setup) + win-unpacked 冒烟 PASS | 已提交(验证性,无代码变更) |
 | 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |
