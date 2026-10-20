@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTopicListStore } from '../stores/topicList'
-import { useQueueStore } from '../stores/queue'
+import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
 import { useBrowseStore } from '../stores/browse'
 import { useSearchStore } from '../stores/search'
 import { useFavoritesStore } from '../stores/favorites'
@@ -442,6 +442,7 @@ onMounted(() => {
               @click.stop="goUser(t)"
             >@{{ opOf(t)?.username }}</span>
             <button
+              v-if="QUEUE_ENABLED"
               class="row-q"
               :class="{ acted: queue.has(t.id) }"
               :title="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"

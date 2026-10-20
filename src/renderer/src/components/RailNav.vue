@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useQueueStore } from '../stores/queue'
+import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
 import { useSearchStore } from '../stores/search'
 import QueuePanel from './QueuePanel.vue'
 import { avatarUrl } from '../utils/format'
@@ -131,7 +131,7 @@ const ICONS = {
       <span class="ic" v-html="ICONS.home"></span><span class="lbl">最新</span>
     </RouterLink>
 
-    <div class="queue-wrap">
+    <div v-if="QUEUE_ENABLED" class="queue-wrap">
       <button class="rail-item" :class="{ active: queueOpen }" title="队列" @click="toggleQueuePanel">
         <span class="ic" v-html="ICONS.inbox"></span><span class="lbl">队列</span>
         <span v-if="queue.count > 0" class="rail-badge">{{ queue.count > 99 ? '99+' : queue.count }}</span>
