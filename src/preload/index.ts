@@ -18,6 +18,10 @@ const api = {
     ipcRenderer.invoke('auth:openUserApiKeyLogin', mode),
   cancelUserApiKey: () => ipcRenderer.invoke('auth:cancelUserApiKey'),
   setTCookie: (value: string) => ipcRenderer.invoke('auth:setTCookie', value),
+  saveLoginCred: (username: string, password: string) =>
+    ipcRenderer.invoke('auth:saveLoginCred', username, password),
+  loginCredStatus: () => ipcRenderer.invoke('auth:loginCredStatus'),
+  clearLoginCred: () => ipcRenderer.invoke('auth:clearLoginCred'),
   setApiKey: (key: string, username: string) => ipcRenderer.invoke('auth:setApiKey', key, username),
   clearApiKey: () => ipcRenderer.invoke('auth:clearApiKey'),
   diagnostics: () => ipcRenderer.invoke('diag:list'),

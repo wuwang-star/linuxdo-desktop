@@ -21,7 +21,7 @@ import type {
   NotificationConfig,
   ExternalApiConfig
 } from '../main/api/settings'
-import type { AuthKind } from '../main/api/auth'
+import type { AuthKind, LoginCredStatus } from '../main/api/auth'
 import type { ConnectStatus, ConnectCallbackMode } from '../main/api/connect'
 import type { MessageBusMessage, MessageBusStatus } from '../main/api/messagebus'
 import type { BridgeStatus, WizardResult } from '../main/api/bridge'
@@ -51,6 +51,9 @@ export interface ApiBridge {
   openUserApiKeyLogin(mode?: 'system-browser' | 'embedded'): Promise<{ ok: boolean; username?: string; error?: string }>
   cancelUserApiKey(): Promise<boolean>
   setTCookie(value: string): Promise<LoginStatus>
+  saveLoginCred(username: string, password: string): Promise<LoginCredStatus>
+  loginCredStatus(): Promise<LoginCredStatus>
+  clearLoginCred(): Promise<LoginCredStatus>
   setApiKey(key: string, username: string): Promise<LoginStatus>
   clearApiKey(): Promise<boolean>
   diagnostics(): Promise<DiagEntry[]>

@@ -28,7 +28,10 @@ import {
   cancelPendingUserApiKey,
   setApiKey,
   clearApiKey,
-  setTCookieManually
+  setTCookieManually,
+  saveLoginCred,
+  clearLoginCred,
+  getLoginCredStatus
 } from './api/auth'
 import {
   getExternalApiConfig,
@@ -106,6 +109,12 @@ export function registerIpc(): void {
     return true
   })
   ipcMain.handle('auth:setTCookie', (_e, value: string) => setTCookieManually(value ?? ''))
+  ipcMain.handle('auth:saveLoginCred', (_e, username: string, password: string) => {
+    saveLoginCred(username ?? '', password ?? '')
+    return getLoginCredStatus()
+  })
+  ipcMain.handle('auth:loginCredStatus', () => getLoginCredStatus())
+  ipcMain.handle('auth:clearLoginCred', () => clearLoginCred())
   ipcMain.handle('auth:setApiKey', (_e, key: string, username: string) => {
     setApiKey(key, username)
     return loginStatus()

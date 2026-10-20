@@ -109,6 +109,43 @@ async function copyPair(): Promise<void> {
   }
 }
 
+// ---- 记住账密（safeStorage 密文落盘；登录窗自动填充，不自动提交；登出不联动） ----
+const credSt = ref<{ remembered: boolean; username: string }>({ remembered: false, username: '' })
+const credEdit = ref(false)
+const credUser = ref('')
+const credPass = ref('')
+const credBusy = ref(false)
+
+async function loadCredStatus(): Promise<void> {
+  try {
+    credSt.value = await window.api.loginCredStatus()
+  } catch {
+    /* 主进程未就绪等，忽略 */
+  }
+}
+
+async function saveCred(): Promise<void> {
+  if (credBusy.value) return
+  credBusy.value = true
+  try {
+    credSt.value = await window.api.saveLoginCred(credUser.value, credPass.value)
+    credPass.value = ''
+    credEdit.value = false
+  } catch (e) {
+    auth.message = e instanceof Error ? e.message : String(e)
+  } finally {
+    credBusy.value = false
+  }
+}
+
+async function clearCred(): Promise<void> {
+  try {
+    credSt.value = await window.api.clearLoginCred()
+  } catch (e) {
+    auth.message = e instanceof Error ? e.message : String(e)
+  }
+}
+
 // ---- 方式一联动（R7）：系统浏览器登录，靠扩展桥接自动同步 ----
 const sysLoginReady = computed(() => Boolean(bridgeStatus.value?.enabled && bridgeStatus.value?.extConnectedAt))
 
@@ -176,6 +213,7 @@ async function pasteCookie(): Promise<void> {
 
 onMounted(async () => {
   await auth.refresh()
+  await loadCredStatus()
   const conn = await window.api.getConnectStatus()
   connClientId.value = conn.identity ? connClientId.value || '' : connClientId.value
   connMode.value = conn.callbackMode
@@ -215,6 +253,35 @@ onUnmounted(() => {
       <div class="row">
         <button class="primary" :disabled="auth.loading" @click="auth.openLogin()">打开登录窗口</button>
         <button :disabled="auth.loading || !sysLoginReady" @click="openSystemLogin">在系统浏览器登录（需扩展桥接）</button>
+      </div>
+
+      <!-- 记住账密：加密落盘，登录窗口自动填充（仅填充，由用户确认后手动提交） -->
+      <div class="field-row" style="margin-top:8px">
+        <div class="field-main">
+          <div class="field-label">记住账密</div>
+          <div class="field-desc">
+            <template v-if="credSt.remembered">
+              已记住 <strong>@{{ credSt.username }}</strong>，打开登录窗口时自动填充（需你自己点「登录」，不会自动提交）；登出不会清除，仅点「清除」删除。
+            </template>
+            <template v-else>
+              保存用户名和密码（系统加密存储，仅本机可解），登录窗口打开时自动填充。
+            </template>
+          </div>
+        </div>
+        <div class="row" style="margin:0">
+          <button @click="credEdit = !credEdit">{{ credSt.remembered ? '更新' : '记住' }}</button>
+          <button v-if="credSt.remembered" @click="clearCred">清除</button>
+        </div>
+      </div>
+      <div v-if="credEdit" class="row" style="flex-direction:column; align-items:stretch; gap:6px; margin-bottom:8px">
+        <input v-model="credUser" :placeholder="credSt.username ? `用户名（当前：@${credSt.username}）` : '用户名'" />
+        <input v-model="credPass" type="password" placeholder="密码" />
+        <div class="row">
+          <button class="primary" :disabled="credBusy || !credUser.trim() || !credPass" @click="saveCred">
+            {{ credBusy ? '保存中…' : '保存' }}
+          </button>
+          <button @click="credEdit = false; credPass = ''">取消</button>
+        </div>
       </div>
       <p v-if="!sysLoginReady" class="tip">系统浏览器登录需先在下方开启「Edge 扩展桥接」并完成扩展安装（未就绪时按钮置灰）。</p>
       <p v-else class="tip">已在系统浏览器登录过？点上方按钮打开 linux.do 登录页，登录成功会自动同步到应用。</p>

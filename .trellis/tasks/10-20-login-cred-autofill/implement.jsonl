@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/backend/ipc-bridge-guidelines.md", "reason": "IPC 通道命名/preload 暴露/index.d.ts 声明约定（本任务新增 login 凭据三通道须照此模式）"}

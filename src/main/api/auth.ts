@@ -51,6 +51,7 @@ function persistStored(auth: StoredAuth | null): void {
 
 export function initAuth(): void {
   stored = loadStored()
+  loadLoginCred()
   setAuthHeadersProvider((): Record<string, string> => {
     if (!stored) return {}
     if (stored.kind === 'user-api-key') {
@@ -325,6 +326,7 @@ export function openCookieLogin(timeoutMs = 5 * 60 * 1000): Promise<boolean> {
     win.on('closed', () => finish(false))
     setTimeout(() => finish(false), timeoutMs)
 
+    if (cred) injectCredFill(win, cred.username, cred.password)
     void win.loadURL('https://linux.do/login')
   })
 }
@@ -347,4 +349,89 @@ export async function setTCookieManually(value: string): Promise<LoginStatus> {
     await flushCookies()
   }
   return loginStatus()
+}
+
+// ---------- 登录账密记忆（safeStorage 密文落盘，供登录窗口自动填充；仅填充不自动提交） ----------
+
+export interface LoginCredStatus {
+  remembered: boolean
+  username: string
+}
+
+const credFile = (): string => join(app.getPath('userData'), 'login.enc')
+
+let cred: { username: string; password: string } | null = null
+
+function loadLoginCred(): void {
+  try {
+    if (!existsSync(credFile()) || !safeStorage.isEncryptionAvailable()) return
+    const parsed = JSON.parse(safeStorage.decryptString(readFileSync(credFile()))) as {
+      username?: string
+      password?: string
+    }
+    if (parsed.username && parsed.password) cred = { username: parsed.username, password: parsed.password }
+  } catch {
+    cred = null
+  }
+}
+
+export function saveLoginCred(username: string, password: string): LoginCredStatus {
+  const u = username.trim()
+  if (!u || !password) throw new Error('用户名和密码不能为空')
+  cred = { username: u, password }
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      writeFileSync(credFile(), safeStorage.encryptString(JSON.stringify(cred)))
+    }
+    // 加密不可用时不落盘：凭据仅留在内存，本会话仍可自动填充
+  } catch {
+    /* 落盘失败不阻塞，内存态保留 */
+  }
+  return { remembered: true, username: u }
+}
+
+export function clearLoginCred(): LoginCredStatus {
+  cred = null
+  try {
+    if (existsSync(credFile())) rmSync(credFile())
+  } catch {
+    /* 删除失败不影响内存态清除 */
+  }
+  return { remembered: false, username: '' }
+}
+
+export function getLoginCredStatus(): LoginCredStatus {
+  return { remembered: cred !== null, username: cred?.username ?? '' }
+}
+
+/**
+ * 向登录窗口注入账密填充：轮询等 Discourse 登录表单出现后写入，**不点击登录按钮**
+ * （用户确认后自己提交；规避连续失败锁定，兼容 2FA/盾）。选择器变更时静默降级为手动输入。
+ */
+function injectCredFill(win: BrowserWindow, username: string, password: string): void {
+  const user = JSON.stringify(username)
+  const pass = JSON.stringify(password)
+  void win.webContents
+    .executeJavaScript(`(() => {
+      let n = 0
+      const timer = setInterval(() => {
+        const u = document.querySelector('#login-account-name')
+        const p = document.querySelector('#login-account-password')
+        if (u && p) {
+          clearInterval(timer)
+          const set = (el, val) => {
+            const desc = Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value')
+            if (desc && desc.set) desc.set.call(el, val)
+            else el.value = val
+            el.dispatchEvent(new Event('input', { bubbles: true }))
+            el.dispatchEvent(new Event('change', { bubbles: true }))
+          }
+          if (!u.value) set(u, ${user})
+          if (!p.value) set(p, ${pass})
+          return
+        }
+        if (++n > 60) clearInterval(timer)
+      }, 500)
+    })()`)
+    .catch(() => {})
 }
