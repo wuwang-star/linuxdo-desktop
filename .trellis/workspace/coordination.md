@@ -63,4 +63,5 @@
 | 10-20 2x:xx | 主会话（queue-park，roadmap M1 拍板） | RailNav/HomeView 入口 v-if 藏（stores/queue.ts 新增 QUEUE_ENABLED=false）；管线保留 | 已提交 |
 | 10-20 3x:xx | 主会话（M1 自主验收+dist 链路验证） | CDP 自动验收：队列入藏 PASS/搜索连通 PASS(topics=50)/登录账密=已登录态不可自动验(移交)/depth3=未遇样例(移交)；npm run dist 全链 PASS(Go 网关→vite→NSIS 108MB setup) + win-unpacked 冒烟 PASS | 已提交(验证性,无代码变更) |
 | 10-20 4x:xx | 主会话（M1 验收收线） | depth3 样式真机数字级 PASS（16px/22px/距轨16px，实测帖 2923820）；账密自动填充验证被 CF 挑战页拦截（登录窗停在盾前，非填充缺陷），移交用户真手验；探测全程 _t 备份/恢复，会话无损 | 已提交(验证性) |
+| 10-20 5x:xx | 主会话（ech-degrade，发布门槛#1 后半句） | 分区 A dohProxy.ts（chainWithSelfHeal 自愈+echNote）+ ipc/preload/d.ts 追加 diag:echNote + SettingsView 上游卡显示；真机验证：降级原因可见 PASS、杀网关自愈重启日志 PASS、ech 隧道后 CF 盾层挂起=已知专项移交 | 已提交并归档 |
 | 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |
