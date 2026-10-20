@@ -326,7 +326,13 @@ export function openCookieLogin(timeoutMs = 5 * 60 * 1000): Promise<boolean> {
     win.on('closed', () => finish(false))
     setTimeout(() => finish(false), timeoutMs)
 
-    if (cred) injectCredFill(win, cred.username, cred.password)
+    if (cred) {
+      // 每次页面加载完成都重新注入：注入脚本随导航销毁（about:blank→CF 挑战→登录页两次跳转），
+      // 只注入一次永远等不到表单（真机复现：已记住但未填充）
+      const user = cred.username
+      const pass = cred.password
+      win.webContents.on('did-finish-load', () => injectCredFill(win, user, pass))
+    }
     void win.loadURL('https://linux.do/login')
   })
 }
@@ -413,24 +419,28 @@ function injectCredFill(win: BrowserWindow, username: string, password: string):
   const pass = JSON.stringify(password)
   void win.webContents
     .executeJavaScript(`(() => {
+      if (window.__lddFillTimer) return
       let n = 0
-      const timer = setInterval(() => {
+      window.__lddFillTimer = setInterval(() => {
         const u = document.querySelector('#login-account-name')
         const p = document.querySelector('#login-account-password')
         if (u && p) {
-          clearInterval(timer)
-          const set = (el, val) => {
-            const desc = Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value')
-            if (desc && desc.set) desc.set.call(el, val)
-            else el.value = val
-            el.dispatchEvent(new Event('input', { bubbles: true }))
-            el.dispatchEvent(new Event('change', { bubbles: true }))
+          // Ember 重渲染可能清空已填值：两框皆空时重填；用户手输（任一非空）不覆盖
+          if (!u.value && !p.value) window.__lddFilled = false
+          if (!window.__lddFilled) {
+            const set = (el, val) => {
+              const desc = Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value')
+              if (desc && desc.set) desc.set.call(el, val)
+              else el.value = val
+              el.dispatchEvent(new Event('input', { bubbles: true }))
+              el.dispatchEvent(new Event('change', { bubbles: true }))
+            }
+            set(u, ${user})
+            set(p, ${pass})
+            window.__lddFilled = true
           }
-          if (!u.value) set(u, ${user})
-          if (!p.value) set(p, ${pass})
-          return
         }
-        if (++n > 60) clearInterval(timer)
+        if (++n > 120) { clearInterval(window.__lddFillTimer); window.__lddFillTimer = null }
       }, 500)
     })()`)
     .catch(() => {})
