@@ -59,4 +59,5 @@
 - DoH 真实现立项（本地 DoH 代理方案）
 | 10-19 0x:xx | 主会话（frontend-componentization P1+P2，用户拍板） | **跨 B/C/D 触达**：新建 layouts/AppShell.vue+PageShell.vue（App.vue 模板迁出）；components/FieldRow.vue+SegGroup.vue（SettingsView 替换）+QueuePanel.vue（RailNav 迁出）。纯结构重构零行为变化，类名全保活（.queue-panel 等）。任务 .trellis/tasks/10-19-frontend-componentization | 在途 |
 | 10-20 0x:xx | 主会话（login-cred-autofill，用户拍板仅填充不自动提交） | 分区 E 接管（LoginView.vue 登记块/auth.ts login.enc 存取+注入填充）；公用 ipc.ts+preload 两件追加 auth:saveLoginCred/loginCredStatus/clearLoginCred 三通道（只追加） | 在途 |
+| 10-20 1x:xx | 主会话（login-cred-autofill 会话顺带 UI 修复，用户截图反馈） | 分区 B topic.css：`.ldd-thread .post--depth3` 特异性提升（修头像贴轨）+ onebox/引用内图片限高；已提交 be3f585 | 已提交 |
 | 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |
