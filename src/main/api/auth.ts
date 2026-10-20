@@ -327,10 +327,11 @@ export function openCookieLogin(timeoutMs = 5 * 60 * 1000): Promise<boolean> {
     setTimeout(() => finish(false), timeoutMs)
 
     if (cred) {
-      // 每次页面加载完成都重新注入：注入脚本随导航销毁（about:blank→CF 挑战→登录页两次跳转），
-      // 只注入一次永远等不到表单（真机复现：已记住但未填充）
+      // 每次页面加载都重新注入：注入脚本随导航销毁（about:blank→CF 挑战→登录页两次跳转），
+      // 只注入一次永远等不到表单（真机复现：已记住但未填充）。dom-ready 比 finish-load 更早补射。
       const user = cred.username
       const pass = cred.password
+      win.webContents.on('dom-ready', () => injectCredFill(win, user, pass))
       win.webContents.on('did-finish-load', () => injectCredFill(win, user, pass))
     }
     void win.loadURL('https://linux.do/login')
@@ -440,7 +441,7 @@ function injectCredFill(win: BrowserWindow, username: string, password: string):
             window.__lddFilled = true
           }
         }
-        if (++n > 120) { clearInterval(window.__lddFillTimer); window.__lddFillTimer = null }
+        if (++n > 240) { clearInterval(window.__lddFillTimer); window.__lddFillTimer = null }
       }, 500)
     })()`)
     .catch(() => {})
