@@ -65,4 +65,5 @@
 | 10-20 4x:xx | 主会话（M1 验收收线） | depth3 样式真机数字级 PASS（16px/22px/距轨16px，实测帖 2923820）；账密自动填充验证被 CF 挑战页拦截（登录窗停在盾前，非填充缺陷），移交用户真手验；探测全程 _t 备份/恢复，会话无损 | 已提交(验证性) |
 | 10-20 5x:xx | 主会话（ech-degrade，发布门槛#1 后半句） | 分区 A dohProxy.ts（chainWithSelfHeal 自愈+echNote）+ ipc/preload/d.ts 追加 diag:echNote + SettingsView 上游卡显示；真机验证：降级原因可见 PASS、杀网关自愈重启日志 PASS、ech 隧道后 CF 盾层挂起=已知专项移交 | 已提交并归档 |
 | 10-20 6x:xx | 主会话（login-cred 二轮修复，用户真机反馈未填充） | auth.ts：did-finish-load 每次加载重注入（一次性注入随导航销毁）+ 注入脚本防重入/清空重填；CDP 实测填充 PASS；任务归档 | 已提交并归档 |
+| 10-20 7x:xx | 主会话（rail-collections，用户拍板收藏夹/队列进 rail） | RailNav fav-wrap 收藏夹浮层（点夹切 mode 回首页）+ QUEUE_ENABLED=true 队列回归；HomeView 摘除收藏夹 chip/逻辑；shell.css fav 样式；另：最多浏览周期档=上游语义近似（周期内创建帖按累计浏览，面板文案已标注），CDP 验证 rail 双入口+面板+切模式全 PASS | 已提交 |
 | 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |
