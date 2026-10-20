@@ -67,4 +67,5 @@
 | 10-20 6x:xx | 主会话（login-cred 二轮修复，用户真机反馈未填充） | auth.ts：did-finish-load 每次加载重注入（一次性注入随导航销毁）+ 注入脚本防重入/清空重填；CDP 实测填充 PASS；任务归档 | 已提交并归档 |
 | 10-20 7x:xx | 主会话（rail-collections，用户拍板收藏夹/队列进 rail） | RailNav fav-wrap 收藏夹浮层（点夹切 mode 回首页）+ QUEUE_ENABLED=true 队列回归；HomeView 摘除收藏夹 chip/逻辑；shell.css fav 样式；另：最多浏览周期档=上游语义近似（周期内创建帖按累计浏览，面板文案已标注），CDP 验证 rail 双入口+面板+切模式全 PASS | 已提交 |
 | 10-20 8x:xx | 主会话（fav-rail-management，grill 三拍板 A/行内确认/无确认移出） | RailNav 面板升级管理中心（建/改/删夹行内确认+默认夹保护+删筛选夹自动回默认）；TopicView fav 菜单精简为勾选+新建；HomeView 收藏夹行内移出本夹；CDP 烟测建/改/删全 PASS | 已提交并归档 |
+| 10-20 9x:xx | 主会话（ui-audit，/goal 全量审计） | AppShell.vue Transition 加 :duration=200（根治 out-in 竞态僵死：快速导航/resize 打断 leave 致路由视图永久卡离场态，三重压力复测通过）；ui-audit.py 扫描器（3 尺寸×8 页面 DOM 溢出/裁剪+截图）；audit 基线截图 24 张入库；观察项：通知 focus 残留疑似 probe 产物、用户页等级进度全满绿语义、启动右栏重载延迟（AC3 设计） | 已提交 |
 | 10-19 1x:xx | 主会话（favorite-folders 多收藏夹+云同步，用户拍板） | **分区 A syncdata.ts（SyncBundle v2 favorites）+ 分区 C topicList/HomeView（收藏夹筛选模式）+ B TopicView（收藏钮 ▾）+ 新 stores/favorites.ts**。站点 Discourse 书签调用不动；WebDAV 通道复用。任务 .trellis/tasks/10-19-favorite-folders | 在途 |
