@@ -48,7 +48,7 @@ import {
   type ProxyMode
 } from './api/settings'
 import { translatePostText } from './api/translate'
-import { applyDohRuntime, diagResolve, hasUpstreamProxy, isDohProxyActive, testUpstream, upstreamProxyLabel } from './api/dohProxy'
+import { applyDohRuntime, diagResolve, echDegradeNote, hasUpstreamProxy, isDohProxyActive, testUpstream, upstreamProxyLabel } from './api/dohProxy'
 import { applyExternalApiRuntime } from './api/externalApi'
 import { connectLogin, getConnectConfig, saveConnectConfig, type ConnectCallbackMode } from './api/connect'
 import {
@@ -124,6 +124,7 @@ export function registerIpc(): void {
     return true
   })
   ipcMain.handle('diag:list', () => getDiag())
+  ipcMain.handle('diag:echNote', () => echDegradeNote())
 
   // ---------- P1：写操作 / 通知 / 翻译 ----------
   ipcMain.handle('topic:reply', (_e, topicId: number, raw: string, replyTo?: number) =>

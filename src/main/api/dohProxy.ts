@@ -30,6 +30,8 @@ let active = false
 let ownPort = 0
 /** 捕获到的系统代理（Clash 等，applyDohRuntime 接管前探测）；有值时 CONNECT 链式转发给它 */
 let upstream: { host: string; port: number } | null = null
+/** ech 档降级原因（null=正常）；诊断面板可见——发布门槛#1「失败有明确诊断出口」 */
+let echNote: string | null = null
 
 const DOH_TIMEOUT_MS = 5000
 const UPSTREAM_TIMEOUT_MS = 8000
@@ -224,6 +226,22 @@ function chainConnect(authority: string, up: Upstream): Promise<net.Socket> {
   })
 }
 
+/** ech 档链式失败：网关可能运行中死亡，重启一次再试（自愈）；重启失败原样抛（502 可见）。 */
+async function chainWithSelfHeal(authority: string): Promise<net.Socket> {
+  try {
+    return await chainConnect(authority, upstream!)
+  } catch (e) {
+    if (getNetworkConfig().proxyMode !== 'ech') throw e
+    console.warn(`[ech-gateway] 链路失败，尝试自愈重启：${e instanceof Error ? e.message : String(e)}`)
+    const port = await ensureGwRunning(getDohConfig().template)
+    upstream = { host: '127.0.0.1', port }
+    echNote = null
+    installCertTrust()
+    console.warn(`[ech-gateway] 自愈完成，新端口 ${port}`)
+    return chainConnect(authority, upstream)
+  }
+}
+
 /** 逐 IP 尝试上游 TCP（简化 happy-eyeballs：单个 8s 超时后换下一个）。 */
 function connectAny(ips: string[], port: number): Promise<net.Socket> {
   return new Promise((resolve, reject) => {
@@ -260,7 +278,7 @@ async function handleConnect(cfg: DohConfig, req: http.IncomingMessage, client: 
     if (!host) throw new Error(`非法 CONNECT 目标：${authority}`)
     // 有上游代理 → 链式转发（上游远程解析，SNI 阻断网络下 DoH 直连无解）；无 → DoH 解析直连
     const sock = upstream
-      ? await chainConnect(`${host}:${port}`, upstream)
+      ? await chainWithSelfHeal(`${host}:${port}`)
       : await connectAny((await resolveHost(cfg, host)).ips, port)
     client.write('HTTP/1.1 200 Connection Established\r\n\r\n')
     if (head.length) sock.write(head)
@@ -346,6 +364,11 @@ export function upstreamProxyLabel(): string {
   return upstream ? `${upstream.host}:${upstream.port}` : ''
 }
 
+/** ech 档降级原因（null=正常运行）；诊断面板展示用 */
+export function echDegradeNote(): string | null {
+  return echNote
+}
+
 /**
  * 启动门：首个 applyDohRuntime 完成前拦住主进程对外请求。
  * whenReady 里 applyDohRuntime 是 void 异步，渲染层首帧 fetch 会抢在 setProxy 接管前
@@ -372,10 +395,13 @@ export async function applyDohRuntime(): Promise<void> {
           const port = await ensureGwRunning(cfg.template)
           upstream = { host: '127.0.0.1', port }
           installCertTrust() // 网关已生成 ca.pem，接入 MITM 证书信任（幂等）
+          echNote = null
         } catch (e) {
           // 降级：网关不可用（二进制缺失/启动失败）→ manual host/port（用户既有 Clash 配置）
           upstream = { host: net.proxyHost, port: net.proxyPort }
-          console.warn(`[ech-gateway] 降级 manual: ${e instanceof Error ? e.message : String(e)}`)
+          const reason = e instanceof Error ? e.message : String(e)
+          echNote = `ECH 网关不可用（${reason}），已降级手动上游 ${upstream.host}:${upstream.port}`
+          console.warn(`[ech-gateway] 降级 manual: ${reason}`)
         }
       } else if (net.proxyMode === 'manual') {
         upstream = { host: net.proxyHost, port: net.proxyPort }

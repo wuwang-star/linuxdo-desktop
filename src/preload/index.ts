@@ -25,6 +25,7 @@ const api = {
   setApiKey: (key: string, username: string) => ipcRenderer.invoke('auth:setApiKey', key, username),
   clearApiKey: () => ipcRenderer.invoke('auth:clearApiKey'),
   diagnostics: () => ipcRenderer.invoke('diag:list'),
+  echDegradeNote: () => ipcRenderer.invoke('diag:echNote'),
   createReply: (topicId: number, raw: string, replyTo?: number) =>
     ipcRenderer.invoke('topic:reply', topicId, raw, replyTo),
   likePost: (postId: number) => ipcRenderer.invoke('post:like', postId),

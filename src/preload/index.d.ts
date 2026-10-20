@@ -57,6 +57,7 @@ export interface ApiBridge {
   setApiKey(key: string, username: string): Promise<LoginStatus>
   clearApiKey(): Promise<boolean>
   diagnostics(): Promise<DiagEntry[]>
+  echDegradeNote(): Promise<string | null>
   createReply(topicId: number, raw: string, replyTo?: number): Promise<import('../main/api/client').DiscoursePost>
   likePost(postId: number): Promise<unknown>
   unlikePost(postId: number): Promise<unknown>

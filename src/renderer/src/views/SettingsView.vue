@@ -215,6 +215,7 @@ async function saveTranslate(): Promise<void> {
 
 // ---- 上游代理（10-18 网络设置 FluxDO 化：manual 显式配置最可靠，保存即时生效） ----
 const proxyMode = ref<'ech' | 'manual' | 'system' | 'off'>('system')
+const echNote = ref<string | null>(null)
 const proxyModes: { value: 'ech' | 'manual' | 'system' | 'off'; label: string }[] = [
   { value: 'ech', label: 'ECH 直连' },
   { value: 'manual', label: '手动' },
@@ -234,6 +235,7 @@ async function saveNetwork(): Promise<void> {
   proxyMessage.value = ''
   try {
     await window.api.setNetworkConfig(proxyMode.value, proxyHost.value.trim(), Number(proxyPort.value) || 0)
+    echNote.value = await window.api.echDegradeNote()
     proxyMessage.value = '已保存并即时生效'
   } catch (e) {
     proxyMessage.value = e instanceof Error ? e.message : String(e)
@@ -509,6 +511,7 @@ onMounted(async () => {
   proxyMode.value = net.proxyMode
   proxyHost.value = net.proxyHost
   proxyPort.value = net.proxyPort
+  echNote.value = await window.api.echDegradeNote()
   const ext = await window.api.getExternalApiConfig()
   extEnabled.value = ext.enabled
   extPort.value = ext.port
@@ -678,6 +681,7 @@ onMounted(async () => {
             </button>
           </div>
           <p v-if="proxyMessage" class="message">{{ proxyMessage }}</p>
+          <p v-if="proxyMode === 'ech' && echNote" class="message">{{ echNote }}</p>
           <p v-if="proxyTestMsg" class="tip dns-result">{{ proxyTestMsg }}</p>
         </section>
 
