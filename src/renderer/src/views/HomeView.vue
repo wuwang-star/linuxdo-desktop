@@ -133,6 +133,12 @@ const favFolderMissing = computed(
   () => store.mode.type === 'favorites' && !fav.folder(store.mode.folderId)
 )
 
+/** 行内移出本夹（无确认，拍板）：条目随 store 消失；不影响站点书签 */
+function removeFromFolder(topicId: number): void {
+  if (store.mode.type !== 'favorites') return
+  fav.setTopic(store.mode.folderId, topicId, null, false)
+}
+
 function opOf(topic: DiscourseTopicLite) {
   const first = topic.posters?.[0]?.user_id
   return first !== undefined ? store.usersById.get(first) : undefined
@@ -351,6 +357,7 @@ onMounted(() => {
             <span class="m"><span class="ic" v-html="ICONS.heart"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
             <span class="m"><span class="ic" v-html="ICONS.eye"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
             <span class="m"><span class="ic" v-html="ICONS.chat"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
+            <button class="act fav-remove" title="移出本夹（不影响站点书签）" @click.stop="removeFromFolder(t.id)">移出本夹</button>
           </div>
         </div>
       </article>

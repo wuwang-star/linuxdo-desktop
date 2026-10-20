@@ -3,7 +3,7 @@ import { onMounted, onBeforeUnmount, nextTick, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTopicStore, clusterThreads } from '../stores/topic'
 import { useQueueStore } from '../stores/queue'
-import { DEFAULT_FOLDER_ID, useFavoritesStore, type FavEntry } from '../stores/favorites'
+import { useFavoritesStore, type FavEntry } from '../stores/favorites'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { parseSiteTopicLink } from '../utils/links'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
@@ -207,17 +207,10 @@ async function doBookmark(): Promise<void> {
 }
 
 // ---- 多收藏夹（应用层本地夹，独立于上面站点 Discourse 书签，两套并行）：▾ 菜单勾选入夹 ----
+// 夹管理（新建/重命名/删除）已闭环到 rail 收藏夹面板（10-20-fav-rail-management，用户拍板）
 const fav = useFavoritesStore()
 const favMenuOpen = ref(false)
-/** 行内重命名中的夹 id */
-const favRenaming = ref<string | null>(null)
-const favRenameText = ref('')
-/** 二次确认删除中的夹 id */
-const favConfirmDelete = ref<string | null>(null)
 const favNewName = ref('')
-
-/** 行内输入自动聚焦（v-focus） */
-const vFocus = { mounted: (el: HTMLInputElement) => el.focus() }
 
 /** 入夹快照：标题/时间/计数取当前主题，OP 头像取一楼（R3，离线列表靠它渲染） */
 function currentFavSnap(): FavEntry {
@@ -248,31 +241,8 @@ function favCreate(): void {
   favNewName.value = ''
 }
 
-function favStartRename(id: string): void {
-  favConfirmDelete.value = null
-  favRenaming.value = id
-  favRenameText.value = fav.folder(id)?.name ?? ''
-}
-
-function favCommitRename(): void {
-  if (favRenaming.value === null) return
-  fav.renameFolder(favRenaming.value, favRenameText.value)
-  favRenaming.value = null
-}
-
-function favCancelRename(): void {
-  favRenaming.value = null
-}
-
-function favDoRemove(id: string): void {
-  fav.removeFolder(id)
-  favConfirmDelete.value = null
-}
-
 function closeFavMenu(): void {
   favMenuOpen.value = false
-  favRenaming.value = null
-  favConfirmDelete.value = null
   favNewName.value = ''
 }
 
@@ -541,43 +511,17 @@ function readOffline(): void {
               <span class="ic fav-chev" :class="{ open: favMenuOpen }" v-html="ICONS.chevD"></span>
             </button>
             <div v-if="favMenuOpen" class="fav-menu" @click.stop>
-              <div class="fav-menu-head">勾选加入 / 移出收藏夹</div>
+              <div class="fav-menu-head">勾选加入 / 移出收藏夹（重命名与删夹在左侧栏收藏夹面板）</div>
               <div v-for="f in fav.folders" :key="f.id" class="fav-row">
-                <template v-if="favRenaming === f.id">
-                  <input
-                    v-focus
-                    v-model="favRenameText"
-                    class="fav-input"
-                    maxlength="30"
-                    @keydown.enter.prevent="favCommitRename"
-                    @keydown.esc.prevent="favCancelRename"
-                    @blur="favCommitRename"
-                  />
-                </template>
-                <template v-else-if="favConfirmDelete === f.id">
-                  <span class="fav-del-q">删除「{{ f.name }}」？不影响站点书签</span>
-                  <button class="fav-mini danger" @click="favDoRemove(f.id)">删除</button>
-                  <button class="fav-mini" @click="favConfirmDelete = null">取消</button>
-                </template>
-                <template v-else>
-                  <button class="fav-item" @click="favToggle(f.id)">
-                    <span
-                      class="ic"
-                      :class="{ checked: fav.folderIdsOf(topicId).includes(f.id) }"
-                      v-html="fav.folderIdsOf(topicId).includes(f.id) ? ICONS.check : ICONS.plus"
-                    ></span>
-                    <span class="fav-name">{{ f.name }}</span>
-                    <small>{{ f.topicIds.length }}</small>
-                  </button>
-                  <template v-if="f.id !== DEFAULT_FOLDER_ID">
-                    <button class="fav-mini" title="重命名" @click="favStartRename(f.id)">
-                      <span class="ic" v-html="ICONS.pencil"></span>
-                    </button>
-                    <button class="fav-mini danger" title="删除收藏夹" @click="favConfirmDelete = f.id">
-                      <span class="ic" v-html="ICONS.x"></span>
-                    </button>
-                  </template>
-                </template>
+                <button class="fav-item" @click="favToggle(f.id)">
+                  <span
+                    class="ic"
+                    :class="{ checked: fav.folderIdsOf(topicId).includes(f.id) }"
+                    v-html="fav.folderIdsOf(topicId).includes(f.id) ? ICONS.check : ICONS.plus"
+                  ></span>
+                  <span class="fav-name">{{ f.name }}</span>
+                  <small>{{ f.topicIds.length }}</small>
+                </button>
               </div>
               <div class="fav-new">
                 <input
