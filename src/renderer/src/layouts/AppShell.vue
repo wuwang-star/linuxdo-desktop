@@ -11,9 +11,11 @@ const api = window.api
   <div class="app-shell">
     <RailNav />
     <main class="shell-main">
-      <!-- R12：整宽页切换渐显（home↔topic 共用 BrowseView，同组件复用不触发动画） -->
+      <!-- R12：整宽页切换渐显（home↔topic 共用 BrowseView，同组件复用不触发动画）。
+           :duration 显式定时器兜底——快速导航打断 leave 时 transitionend 不触发，
+           Vue 会永久卡在离场态（路由视图僵死，真机复现）；显式时长后不可能卡 -->
       <RouterView v-slot="{ Component }">
-        <Transition name="page-fade" mode="out-in">
+        <Transition name="page-fade" mode="out-in" :duration="200">
           <component :is="Component" />
         </Transition>
       </RouterView>
