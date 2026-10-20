@@ -4,11 +4,10 @@ import { defineStore } from 'pinia'
  * 多主题阅读队列：纯本地状态（localStorage 键 ldd-queue），不发请求、不经 IPC。
  * 交互定稿（2026-10-15）：手动入队 + 按入队顺序读。
  *
- * v1.0 入藏（docs/roadmap.md M1 拍板：价值未验收，出 scope）：false=隐藏全部入口
- * （rail 按钮+面板、列表行入队钮）；内部管线（store/快捷键/QueuePanel）保留。
- * 回归 = 改回 true 一行。
+ * v1.0 入藏决策后用户 10-20 复拍板：队列回归 rail（QUEUE_ENABLED=true）；
+ * 发布分发时若需再藏，改回 false 一行（release 分发决策见 docs/roadmap.md）。
  */
-export const QUEUE_ENABLED = false
+export const QUEUE_ENABLED = true
 
 const STORAGE_KEY = 'ldd-queue'
 

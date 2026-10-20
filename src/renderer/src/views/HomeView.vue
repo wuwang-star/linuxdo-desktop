@@ -85,7 +85,6 @@ const showTopPanel = ref(false)
 function toggleTopPanel(): void {
   showTopPanel.value = !showTopPanel.value
   showCats.value = false
-  showFavPanel.value = false
 }
 
 function pickPeriod(p: TopPeriod): void {
@@ -122,33 +121,12 @@ function toggleByViews(): void {
   showViewsPanel.value = !showViewsPanel.value
   showTopPanel.value = false
   showCats.value = false
-  showFavPanel.value = false
 }
 function pickViews(scope: 'all' | TopPeriod): void {
   viewsScope.value = scope
   showViewsPanel.value = false
   applyViews()
 }
-
-// ---------- 收藏夹筛选（本地快照模式，无网络请求；chip ▾ 列各夹+计数） ----------
-const showFavPanel = ref(false)
-
-function toggleFavPanel(): void {
-  showFavPanel.value = !showFavPanel.value
-  showTopPanel.value = false
-  showViewsPanel.value = false
-  showCats.value = false
-}
-
-function pickFolder(id: string): void {
-  showFavPanel.value = false
-  void store.switchMode({ type: 'favorites', folderId: id })
-}
-
-const favChipLabel = computed(() => {
-  if (store.mode.type !== 'favorites') return '收藏夹'
-  return `收藏夹 · ${fav.folder(store.mode.folderId)?.name ?? '已删除'}`
-})
 
 /** 当前筛的夹已被删（他处删除后 mode 残留）：列表给空态说明 */
 const favFolderMissing = computed(
@@ -217,7 +195,7 @@ onMounted(() => {
           class="ldd-filter"
           title="筛选分类"
           aria-label="筛选分类"
-          @click="showCats = !showCats; showTopPanel = false; showFavPanel = false; if (showCats) void store.ensureCategories()"
+          @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()"
         >
           <span class="ic" v-html="ICONS.filter"></span>
         </button>
@@ -284,37 +262,11 @@ onMounted(() => {
           </div>
         </div>
         <div class="chip-wrap">
-          <button
-            class="chip"
-            :class="{ active: store.mode.type === 'favorites' }"
-            title="本地收藏夹（离线可看）"
-            @click="toggleFavPanel"
-          >
-            {{ favChipLabel }} ▾
-          </button>
-          <div v-if="showFavPanel" class="cat-panel fav-panel">
-            <div class="panel-head">收藏夹（本地数据 · 离线可看）</div>
-            <button
-              v-for="f in fav.folders"
-              :key="f.id"
-              class="cat-item"
-              :class="{ active: store.mode.type === 'favorites' && store.mode.folderId === f.id }"
-              @click="pickFolder(f.id)"
-            >
-              {{ f.name }}
-              <small>{{ f.topicIds.length }}</small>
-              <span
-                v-if="store.mode.type === 'favorites' && store.mode.folderId === f.id"
-                class="ic"
-                v-html="ICONS.check"
-              ></span>
-            </button>
-          </div>
-        </div>
         <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' }); showTopPanel = false">
           离线
         </button>
-        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; showFavPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
+        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
+      </div>
       </div>
       <div v-if="showCats && !search.open" class="cat-panel">
         <div class="panel-head">选择分类</div>

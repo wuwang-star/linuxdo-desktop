@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
+import { useFavoritesStore } from '../stores/favorites'
+import { useTopicListStore } from '../stores/topicList'
 import { useSearchStore } from '../stores/search'
 import QueuePanel from './QueuePanel.vue'
 import { avatarUrl } from '../utils/format'
@@ -47,10 +49,23 @@ const queueOpen = ref(false)
 function toggleQueuePanel(): void {
   queueOpen.value = !queueOpen.value
 }
+// ---- 收藏夹浮层：同一交互模式；点夹切 topicList 模式并回首页 ----
+const favOpen = ref(false)
+const favList = useFavoritesStore()
+const topicList = useTopicListStore()
+const favActive = computed(() => topicList.mode.type === 'favorites')
+function toggleFavPanel(): void {
+  favOpen.value = !favOpen.value
+}
+function pickFavFolder(id: string): void {
+  favOpen.value = false
+  void topicList.switchMode({ type: 'favorites', folderId: id })
+  if (router.currentRoute.value.name !== 'home') void router.push('/')
+}
 function onDocClick(e: MouseEvent): void {
-  if (queueOpen.value && !(e.target instanceof Element && e.target.closest('.queue-wrap'))) {
-    queueOpen.value = false
-  }
+  const t = e.target instanceof Element ? e.target : null
+  if (queueOpen.value && !(t && t.closest('.queue-wrap'))) queueOpen.value = false
+  if (favOpen.value && !(t && t.closest('.fav-wrap'))) favOpen.value = false
 }
 
 // ---- rail 搜索：Ctrl/Cmd+K 唤起并聚焦（全局唯一入口） ----
@@ -89,7 +104,11 @@ const ICONS = {
   panelClose:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>',
   panelOpen:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>',
+  star:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
 }
 </script>
 
@@ -130,6 +149,32 @@ const ICONS = {
     <RouterLink to="/" class="rail-item" :class="{ active: ['home', 'topic'].includes(String(router.currentRoute.value.name)) }" title="最新">
       <span class="ic" v-html="ICONS.home"></span><span class="lbl">最新</span>
     </RouterLink>
+
+    <!-- 收藏夹浮层：本地夹列表，点夹切列表模式并回首页（与队列同一交互模式） -->
+    <div class="fav-wrap">
+      <button class="rail-item" :class="{ active: favActive }" title="收藏夹" @click="toggleFavPanel">
+        <span class="ic" v-html="ICONS.star"></span><span class="lbl">收藏夹</span>
+      </button>
+      <div v-if="favOpen" class="queue-panel">
+        <h4>收藏夹（本地数据 · 离线可看）</h4>
+        <div v-if="favList.folders.length === 0" class="queue-empty">暂无收藏夹</div>
+        <div v-for="f in favList.folders" :key="f.id" class="queue-item">
+          <button
+            class="fav-folder"
+            :class="{ acted: favActive && topicList.mode.type === 'favorites' && topicList.mode.folderId === f.id }"
+            @click="pickFavFolder(f.id)"
+          >
+            {{ f.name }}
+            <small>{{ f.topicIds.length }}</small>
+            <span
+              v-if="favActive && topicList.mode.type === 'favorites' && topicList.mode.folderId === f.id"
+              class="ic"
+              v-html="ICONS.check"
+            ></span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="QUEUE_ENABLED" class="queue-wrap">
       <button class="rail-item" :class="{ active: queueOpen }" title="队列" @click="toggleQueuePanel">

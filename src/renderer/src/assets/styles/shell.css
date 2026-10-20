@@ -207,3 +207,16 @@
 .page-shell-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .page-shell-head h2 { margin: 0; font-size: var(--font-lg); }
 .page-shell-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ---------- 收藏夹浮层（rail）：复用队列浮层定位语义，fav-* 独立命名 ---------- */
+.fav-wrap { position: relative; }
+.fav-wrap > .rail-item { width: 100%; }
+.fav-wrap .queue-panel { width: 280px; }
+.fav-folder {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: none; border: 0; padding: 6px 8px; border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--font-sm); text-align: left; cursor: pointer;
+}
+.fav-folder:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.fav-folder.acted { color: var(--accent); }
+.fav-folder small { margin-left: auto; color: var(--muted); }
