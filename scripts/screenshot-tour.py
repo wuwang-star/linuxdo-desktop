@@ -25,7 +25,8 @@ def find_page_ws():
 
 class CDPClient:
     def __init__(self, url):
-        self.ws = websocket.create_connection(url, timeout=30)
+        # Chromium 拒带 Origin 的 CDP 握手（403），suppress_origin 免 --remote-allow-origins
+        self.ws = websocket.create_connection(url, timeout=30, suppress_origin=True)
         self.mid = 0
 
     def cmd(self, method, **params):
