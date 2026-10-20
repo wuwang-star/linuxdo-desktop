@@ -147,7 +147,13 @@
 .cooked aside.onebox .onebox-body h3 a { color: var(--text); text-decoration: none; }
 .cooked aside.onebox .onebox-body h3 a:hover { color: var(--accent); }
 .cooked aside.onebox .onebox-body p { margin: 0; font-size: 0.9em; color: var(--muted); }
-.cooked aside.onebox .onebox-body img { max-width: 100%; height: auto; }
+/* 缩略图限高：og 大图（站点社交卡）不再全宽撑爆卡片；头像/小图不受影响 */
+.cooked aside.onebox .onebox-body img {
+  max-width: 100%; max-height: 180px; width: auto; height: auto;
+  border-radius: var(--radius-sm); object-fit: cover;
+}
+/* 引用块内图片限高：引用里的 og 大图/白底占位图不再渲染成大片空白 */
+.cooked blockquote img { max-height: 180px; width: auto; }
 
 /* 折叠块（details/summary） */
 .cooked details {
@@ -300,13 +306,15 @@
   border-left: 2px solid var(--tw-line);
 }
 .ldd-thread .post { border-bottom: 0; padding: 7px 0; }
-/* 3 级子楼：在串内再缩进一级，自带引导轨；更深 reply 链平铺续接此级 */
-.post--depth3 {
+/* 3 级子楼：在串内再缩进一级，自带引导轨；更深 reply 链平铺续接此级。
+   特异性必须 .ldd-thread .post--depth3：否则被上方 .ldd-thread .post 的
+   padding:7px 0（同层更高优先级）压掉 padding-left，头像贴死引导轨（实测 1-2px） */
+.ldd-thread .post--depth3 {
   margin-left: var(--indent-step);
   padding-left: var(--rail-gap);
   border-left: 2px solid var(--tw-line);
 }
-.post--depth3 .avatar { width: 22px; height: 22px; }
+.ldd-thread .post--depth3 .avatar { width: 22px; height: 22px; }
 
 /* 子楼字号分层（ALDR ×0.96 思路）：level2 正文 font-md / level3 font-md-nested（13.5px 特例） */
 .post--compact .cooked { margin-top: 3px; }
