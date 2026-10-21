@@ -172,8 +172,8 @@ const byViewsActive = computed(() => {
 })
 const byViewsLabel = computed(() => {
   const m = store.mode
-  if (m.type === 'top' && m.viewsSort) return `最多浏览 · ${topPeriods.find((p) => p.value === m.period)?.label ?? ''}`
-  return '最多浏览'
+  if (m.type === 'top' && m.viewsSort) return `浏览 · ${topPeriods.find((p) => p.value === m.period)?.label ?? ''}`
+  return '浏览'
 })
 function applyViews(): void {
   if (viewsScope.value === 'all') void router.push('/views')
