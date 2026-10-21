@@ -30,7 +30,7 @@ nsis:
 # 更新通道（GitHub Releases）：repo 就绪后取消注释并填 owner/repo，重打安装包即可。
 # 未配置 publish + 本地无 GH_TOKEN 时 electron-builder 不上传；updater 侧检测不到
 # app-update.yml 会静默跳过（src/main/updater.ts）。
-# publish:
-#   provider: github
-#   owner: your-owner
-#   repo: your-repo
+publish:
+  provider: github
+  owner: wuwang-star
+  repo: linuxdo-desktop
