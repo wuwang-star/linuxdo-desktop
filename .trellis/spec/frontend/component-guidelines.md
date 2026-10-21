@@ -91,6 +91,12 @@ Questions to answer:
 
 **Rules**: restyling the IM frame = edit the `--im-*` group only (both themes); never alias base token names; new shell styles consume `var(--im-*)`.
 
+> **Superseded 2026-10-21 (ui-spec-calibration, 1a6f685)**: palette unified onto base tokens; `--im-*` color slots deleted. Structural/motion/spacing tokens remain (`--space-*`, `--indent-step`, `--rail-gap`, `--motion-*`, `--font-*`, `--radius-*`, `--shadow-*`). Change colors in base `tokens.css` only.
+
+## Cascade Order Gotcha (gotcha)
+
+> **Warning**: `main.ts` imports shell.css **before** all part CSS files. A shell.css rule with the same specificity as a part-file rule (e.g. `.notif-page { padding }` vs notifications.css shorthand) is silently overridden by the later file. Global shell rules that must win: prefix with `.shell-main` (raises specificity above single-class part rules) — e.g. the 112px window-button clearance. Verified via computed style, not by grep (acceptance 09cb9a2 regression).
+
 ## Theme-Workshop Skin Compatibility (gotcha)
 
 > **Warning**: `assets/themes/feishu.ts` (and future skin packs) target stable class names such as `.queue-panel`. When relocating/restyling a floated panel (e.g. queue popover moved into RailNav), keep the original class name and restyle via the part CSS file, or skin packs silently lose their hooks.
