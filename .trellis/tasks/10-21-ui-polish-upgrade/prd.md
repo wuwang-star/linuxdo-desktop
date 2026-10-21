@@ -32,6 +32,13 @@
 - [ ] AC4 空态两处有插画+主按钮；首载骨架屏出现
 - [ ] AC5 `npm run typecheck` + `npm run build` 双绿；对比 research/ui-polish-upgrade.html After 稿视觉一致（用户终审）
 
+- R7 排版方向拍板（2026-10-21 用户：「排版选择飞书类型的IM软件」，三方向 A/B/C 落选）：
+  - 全局字体栈 = `-apple-system, "Segoe UI", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", sans-serif`
+  - 排版 tokens 对齐飞书系：cooked 正文 15px/1.7、UI base 14px、meta 12px、标题 20px/650（阅读页）/15px/650（节头）；段落距 0.8em
+  - 阅读页按飞书文档式排版重构：层级只靠灰阶+字重（不引入新色相）、链接=#3370ff 无下划线 hover 下划线、引用=浅灰底+左线、代码块=灰底圆角 6、行内 code 灰底、图片圆角 6、行宽 720 保持
+  - 列表行标题 14px/550-600、meta 12px；整体密度中等（不密不疏）
+  - 三方向 A/B/C 废弃
+
 ## Out of Scope
 
 - 阅读页（TopicView）内文样式（R11 已做）
