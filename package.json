@@ -1,6 +1,6 @@
 {
   "name": "linuxdo-desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "LinuxDo 桌面客户端（Electron + Vue 3，自建 UI 走 Discourse API）",
   "main": "./out/main/index.js",
   "author": "admin",
