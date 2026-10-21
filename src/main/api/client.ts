@@ -96,6 +96,30 @@ async function challengeGate(): Promise<boolean> {
   }
 }
 
+// ---------- @scope: golden-path —— 网络错误广播钩子（使用中诊断 toast 接线，ipc.ts 注册） ----------
+// 只针对「用户可行动」的失败发广播：403（过盾失败）/ 429 / 5xx / 网络层错误；404 等业务态不发。
+
+export interface NetErrorInfo {
+  /** HTTP 状态码；网络层错误为 0 */
+  status: number
+  kind: 'http' | 'network'
+  message: string
+}
+
+let netErrorListener: ((info: NetErrorInfo) => void) | null = null
+
+export function setNetErrorListener(fn: ((info: NetErrorInfo) => void) | null): void {
+  netErrorListener = fn
+}
+
+function emitNetError(status: number, kind: NetErrorInfo['kind'], message: string): void {
+  try {
+    netErrorListener?.({ status, kind, message })
+  } catch {
+    /* 通知链路异常不影响请求主链路 */
+  }
+}
+
 export async function discourseRequest<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   // 启动门：等首次 DoH 运行时应用完成再出门，避免首帧请求抢在代理接管前直连（启动 403）
   await dohReady
@@ -141,7 +165,11 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
             gateUsed = true
             if (await challengeGate()) continue
           }
+          emitNetError(res.status, 'http', 'Cloudflare 盾需要重新验证')
           throw new Error('Cloudflare 盾需要重新验证：到登录页点「浏览器登录」，让页面完整加载一次后回来刷新')
+        }
+        if (res.status === 403 || res.status === 429 || res.status >= 500) {
+          emitNetError(res.status, 'http', `${res.status} ${res.statusText}`)
         }
         throw new Error(`HTTP ${res.status} ${res.statusText} <- ${url}`)
       }
@@ -151,6 +179,7 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
       // AbortSignal.timeout 超时：固定文案且不重试（20s×重试×退避叠加只会更久）
       if (err instanceof Error && err.name === 'TimeoutError') {
         pushDiag({ time: new Date().toISOString(), method: opts.method ?? 'GET', url, status: 0, ms, error: '请求超时' })
+        emitNetError(0, 'network', '请求超时')
         throw new Error('请求超时')
       }
       const message = err instanceof Error ? err.message : String(err)
@@ -161,6 +190,7 @@ export async function discourseRequest<T>(path: string, opts: RequestOptions = {
         attempt++
         continue
       }
+      emitNetError(0, 'network', message)
       throw err
     }
   }

@@ -29,6 +29,7 @@ import type { OfflineTopic, OfflineIndexEntry, SaveResult } from '../main/api/of
 import type { ThemePackage, ThemeMeta, ImportResult, ExportResult } from '../main/themes'
 import type { WebdavConfig, WebdavTestResult } from '../main/api/webdav'
 import type { ShortcutsStatus, ShortcutKind } from '../main/api/shortcuts'
+import type { DetectResult, DetectStepEvent } from '../main/api/netdetect'
 
 export interface LoginStatus {
   cookie: boolean
@@ -149,6 +150,13 @@ export interface ApiBridge {
   onNotificationPush(cb: (payload: MessageBusMessage) => void): () => void
   onNotificationOpen(cb: (payload: { topicId: number; postNumber: number | null }) => void): () => void
   onSaveProgress(cb: (payload: { id: number; loaded: number; total: number }) => void): () => void
+  /** @scope: golden-path —— 三步网络检测（结论 direct-ok/need-shield/fail；步骤进度经 onNetDetectStep 回传） */
+  netDetect(): Promise<DetectResult>
+  onNetDetectStep(cb: (step: DetectStepEvent) => void): () => void
+  /** Welcome 过盾出口：启用 DoH+ECH 并应用运行时（复用设置保存 + 运行时机制，返回网络配置） */
+  applyEchOnboarding(): Promise<NetworkConfig>
+  /** 使用中网络错误广播（403/429/5xx/断网等最终失败；诊断 toast 数据源） */
+  onNetError(cb: (info: { status: number; kind: 'http' | 'network'; message: string }) => void): () => void
 }
 
 declare global {

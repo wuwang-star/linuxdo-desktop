@@ -19,6 +19,7 @@ import {
 } from '../utils/prefs'
 import { applyAllProgress, collectAllProgress } from '../utils/progress'
 import { applyThemeById, BUILTIN_THEMES, loadSelectedThemeId } from '../utils/themes'
+import { openDiag } from '../utils/diagBus' // @scope: golden-path —— 网络诊断常驻入口（R6）
 import { useFavoritesStore } from '../stores/favorites'
 
 // ---- 分类导航（顺序对齐参考项目：FluxDO 外观/偏好/网络/通知/日志/关于） ----
@@ -683,6 +684,11 @@ onMounted(async () => {
           <p v-if="proxyMessage" class="message" aria-live="polite">{{ proxyMessage }}</p>
           <p v-if="proxyMode === 'ech' && echNote" class="message">{{ echNote }}</p>
           <p v-if="proxyTestMsg" class="tip dns-result">{{ proxyTestMsg }}</p>
+          <!-- @scope: golden-path —— 网络诊断常驻入口（R6：三步检测，结论+下一步建议） -->
+          <div class="row" style="margin-top: 6px">
+            <button @click="openDiag">网络诊断</button>
+            <span class="tip" style="margin: 0">三步实测 DNS / ECH / 站点连通，给出结论与下一步建议</span>
+          </div>
         </section>
 
         <section class="card">

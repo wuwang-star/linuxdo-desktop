@@ -230,3 +230,110 @@
   animation: im-pop-in var(--motion-fast) var(--ease-out);
 }
 .undo-bar .act { color: var(--accent); }
+
+/* @scope: golden-path —— 冷启动欢迎流 / 诊断面板 / 一次性 badge（10-21-golden-path）。
+   视觉真源 research/golden-path-mockup.html（逐屏值）+ tokens.css 底座；类名一律 gp- 前缀
+   （皮肤钩子约定）；reduced-motion 由本文件既有 .app-shell 全局降级覆盖。 */
+.gp-flow {
+  position: relative; height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+}
+.gp-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px; text-align: center;
+}
+.gp-logo {
+  width: 52px; height: 52px; border-radius: 14px; flex: none;
+  background: linear-gradient(135deg, var(--accent), #23a55a);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 20px; margin: 0 auto 16px;
+}
+.gp-logo.shield { background: linear-gradient(135deg, #ff7d00, var(--accent)); }
+.gp-logo.ok { background: #23a55a; }
+.gp-screen h2 { margin: 0 0 6px; font-size: var(--font-xl); font-weight: 600; }
+.gp-sub { margin: 0 0 22px; max-width: 460px; color: var(--muted); font-size: var(--font-base); }
+.gp-sub small { display: block; margin-top: 2px; font-size: var(--font-sm); color: var(--muted); opacity: 0.75; }
+.gp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--accent); color: #fff; border: 0; border-radius: var(--radius-sm);
+  padding: 9px 22px; font-size: var(--font-md); font-weight: 500; cursor: pointer;
+  transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
+}
+.gp-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.gp-btn:active { transform: none; }
+.gp-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.gp-btn.ghost { background: var(--panel); color: var(--muted); border: 1px solid var(--border); font-weight: 400; }
+.gp-btn.ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; }
+.gp-btncol { display: flex; flex-direction: column; gap: 10px; width: 250px; margin: 0 auto; }
+.gp-foot {
+  position: absolute; bottom: 16px; left: 0; right: 0; margin: 0;
+  font-size: var(--font-sm); color: var(--muted);
+}
+/* 检测三步（mockup g-steps：序号圈 → run 旋转 / ok 绿 / bad 红） */
+.gp-steps { width: 300px; margin: 0 auto 22px; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+.gp-step { display: flex; align-items: center; gap: 10px; font-size: var(--font-md-nested); color: var(--muted); }
+.gp-step .st {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--font-sm); border: 2px solid var(--border); color: var(--muted);
+}
+.gp-step.run .st { border-color: var(--accent); border-top-color: transparent; animation: gp-spin 1s linear infinite; }
+.gp-step.ok .st { background: #23a55a; border-color: #23a55a; color: #fff; }
+.gp-step.bad .st { background: var(--bad); border-color: var(--bad); color: #fff; }
+.gp-step.run, .gp-step.ok, .gp-step.bad { color: var(--text); }
+.gp-step small { display: block; font-size: var(--font-sm); color: var(--muted); }
+@keyframes gp-spin { to { transform: rotate(360deg); } }
+/* 结论卡（检测卡 / 诊断结论 / 降级指引共用） */
+.gp-diag {
+  width: 340px; margin: 0 auto 20px; text-align: left;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 14px 16px; box-shadow: var(--shadow-2);
+}
+.gp-diag.wide { width: 400px; max-width: calc(100vw - 64px); }
+.gp-diag h4 { margin: 0 0 8px; font-size: var(--font-base); font-weight: 500; color: var(--muted); }
+.gp-diag h4.mt { margin-top: 12px; }
+.gp-diag .gp-step { padding: 5px 0; }
+.gp-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.gp-link { color: var(--muted); text-decoration: underline; cursor: pointer; }
+.gp-link:hover { color: var(--accent); }
+/* 诊断面板浮层（z-80 对话框档；遮罩复用 base .overlay） */
+.gp-diag-overlay { z-index: 80; }
+.gp-panel {
+  position: relative; text-align: center;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow-3); padding: 22px 24px 16px;
+  width: 480px; max-width: calc(100vw - 48px); max-height: calc(100vh - 64px); overflow-y: auto;
+}
+.gp-close {
+  position: absolute; top: 10px; right: 10px;
+  width: 28px; height: 28px; border: 0; background: none; border-radius: var(--radius-sm);
+  color: var(--muted); font-size: 16px; cursor: pointer;
+}
+.gp-close:hover { background: var(--hover); color: var(--text); }
+.gp-panel .gp-diag { margin: 0 auto 14px; }
+.gp-verdict { margin: 0 0 14px; font-size: var(--font-base); color: var(--text); }
+.gp-verdict.direct-ok { color: #23a55a; }
+.gp-verdict.fail, .gp-verdict.need-shield { color: color-mix(in srgb, var(--bad) 78%, var(--text)); }
+/* 使用中错误 toast（z-90，底部居中药丸；im-pop-in 复用） */
+.gp-toast {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 90;
+  display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2); padding: 7px 8px 7px 18px; font-size: var(--font-sm);
+  animation: im-pop-in var(--motion-slow) var(--ease-out);
+}
+.gp-toast-act {
+  border: 0; background: var(--accent-weak); color: var(--accent);
+  border-radius: var(--radius-pill); padding: 4px 12px; font-size: var(--font-sm); cursor: pointer; flex: none;
+}
+.gp-toast-act:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+/* 第一帖成功 badge（R7 一次性；右上窗口钮下方） */
+.gp-badge {
+  position: fixed; top: 48px; right: 16px; z-index: 90;
+  background: var(--accent-weak); color: var(--accent); border: 0;
+  border-radius: var(--radius-pill); padding: 5px 14px; font-size: var(--font-sm);
+  cursor: pointer; box-shadow: var(--shadow-1);
+  animation: im-pop-in var(--motion-base) var(--ease-out);
+}
+.gp-badge:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }

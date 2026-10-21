@@ -168,6 +168,26 @@ const api = {
     return () => {
       ipcRenderer.removeListener('offline:save:progress', listener)
     }
+  },
+  // @scope: golden-path —— 冷启动黄金路径（10-21）：三步网络检测 + ECH 一键接入 + 网络错误广播
+  netDetect: () => ipcRenderer.invoke('net:detect'),
+  onNetDetectStep: (cb: (step: { step: number; state: string }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, step: { step: number; state: string }): void => cb(step)
+    ipcRenderer.on('net:detect:step', listener)
+    return () => {
+      ipcRenderer.removeListener('net:detect:step', listener)
+    }
+  },
+  applyEchOnboarding: () => ipcRenderer.invoke('net:applyEch'),
+  onNetError: (cb: (info: { status: number; kind: 'http' | 'network'; message: string }) => void) => {
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      info: { status: number; kind: 'http' | 'network'; message: string }
+    ): void => cb(info)
+    ipcRenderer.on('net:error', listener)
+    return () => {
+      ipcRenderer.removeListener('net:error', listener)
+    }
   }
 }
 

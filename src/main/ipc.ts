@@ -75,6 +75,9 @@ import {
   testWebdavConn
 } from './api/webdav'
 import { pushBundle, pullBundle, initSyncReply } from './api/syncdata'
+// @scope: golden-path —— 冷启动网络检测编排 + 网络错误广播钩子（10-21-golden-path）
+import { runDetect } from './api/netdetect'
+import { setNetErrorListener } from './api/client'
 
 /** 推送广播给所有窗口的 renderer */
 function broadcast(channel: string, payload: unknown): void {
@@ -172,6 +175,29 @@ export function registerIpc(): void {
     return cfg
   })
   ipcMain.handle('net:testUpstream', (_e, host: string, port: number) => testUpstream(String(host ?? ''), Number(port ?? 0)))
+
+  // ---------- @scope: golden-path 冷启动黄金路径（10-21）：三步检测 + ECH 一键接入 + 错误广播 ----------
+  // 三步检测编排（复用 dohProxy.diagResolve / echGateway 幂等拉起，只读不改内部）；
+  // 步骤进度经同一 webContents 事件通道逐步回传（渲染层三步点亮，AC3）
+  ipcMain.handle('net:detect', (e) =>
+    runDetect((step) => {
+      if (!e.sender.isDestroyed()) e.sender.send('net:detect:step', step)
+    })
+  )
+  // Welcome 过盾出口：启用 DoH+ECH 并应用运行时——只调用既有配置/运行时机制，不动过盾内部（R4）
+  ipcMain.handle('net:applyEch', async () => {
+    const doh = getDohConfig()
+    setDohConfig(true, 'auto', doh.template)
+    const cfg = setNetworkConfig('ech', '', 0)
+    try {
+      await applyDohRuntime()
+    } catch {
+      /* 启动失败不回滚配置：屏上有「仍然失败→降级指引」出口 */
+    }
+    return cfg
+  })
+  // 使用中网络错误（discourseRequest 最终失败：403/429/5xx/断网）→ 渲染层 toast（R6 诊断入口）
+  setNetErrorListener((info) => broadcast('net:error', info))
 
   // ---------- AI 数据接口（kb-api）：保存即时启停回环监听 ----------
   ipcMain.handle('settings:getExternal', () => getExternalApiConfig())

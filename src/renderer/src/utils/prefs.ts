@@ -33,6 +33,10 @@ export interface ReadingPrefs {
   railCollapsed: boolean
   /** 中栏列表宽度（px，240–520 拖拽可调） */
   listWidth?: number
+  /** @scope: golden-path —— 冷启动 onboarding 已完成（老用户/已完成者跳过欢迎流；缺省 false 向后兼容） */
+  onboardingDone: boolean
+  /** 第一帖「一切就绪」badge 已展示（一次性，PRD R7） */
+  readyBadgeShown: boolean
 }
 
 export const DEFAULT_PREFS: ReadingPrefs = {
@@ -44,7 +48,9 @@ export const DEFAULT_PREFS: ReadingPrefs = {
   viewMode: 'stream',
   listStyle: 'float',
   railCollapsed: false,
-  listWidth: 312
+  listWidth: 312,
+  onboardingDone: false,
+  readyBadgeShown: false
 }
 
 const STORAGE_KEY = 'ldd-reading'
@@ -94,8 +100,23 @@ export function normalizePrefs(raw: unknown): ReadingPrefs {
     : d.listStyle
   const railCollapsed = r.railCollapsed === true
   const listWidth = typeof r.listWidth === 'number' && r.listWidth >= 240 && r.listWidth <= 520 ? Math.round(r.listWidth) : 312
+  // 布尔归一：undefined（旧存储无字段）→ false；其余强转防脏数据
+  const onboardingDone = r.onboardingDone === true
+  const readyBadgeShown = r.readyBadgeShown === true
 
-  return { fontSize, lineHeight, fontFamily, width, theme, viewMode, listStyle, railCollapsed, listWidth }
+  return {
+    fontSize,
+    lineHeight,
+    fontFamily,
+    width,
+    theme,
+    viewMode,
+    listStyle,
+    railCollapsed,
+    listWidth,
+    onboardingDone,
+    readyBadgeShown
+  }
 }
 
 export function loadPrefs(): ReadingPrefs {
@@ -111,6 +132,26 @@ export function savePrefs(p: ReadingPrefs): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
   } catch {
     /* 存储不可用时静默：本次会话内 CSS 变量仍生效 */
+  }
+}
+
+// ---------- @scope: golden-path —— 冷启动 onboarding 一次性标记（PRD R1/R7） ----------
+
+/** 标记 onboarding 完成（幂等）：欢迎流完成或守卫识别老用户时调用 */
+export function markOnboardingDone(): void {
+  const p = loadPrefs()
+  if (!p.onboardingDone) {
+    p.onboardingDone = true
+    savePrefs(p)
+  }
+}
+
+/** 标记就绪 badge 已展示（幂等）：展示过/被点击/到时后调用 */
+export function markReadyBadgeShown(): void {
+  const p = loadPrefs()
+  if (!p.readyBadgeShown) {
+    p.readyBadgeShown = true
+    savePrefs(p)
   }
 }
 

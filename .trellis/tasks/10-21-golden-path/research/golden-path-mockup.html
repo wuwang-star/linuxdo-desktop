@@ -1,0 +1,259 @@
+<style>
+#ldd-golden{
+  --g-bg:#f2f3f5; --g-panel:#fff; --g-line:#e7e8ea; --g-tx:#1f2329; --g-tx2:#8f959e;
+  --g-acc:#3370ff; --g-accsoft:rgba(51,112,255,.10); --g-red:#f54a45; --g-hov:rgba(31,35,41,.05);
+  --g-ok:#23a55a;
+  font:14px/1.6 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--g-tx);
+}
+#ldd-golden *{box-sizing:border-box;margin:0;padding:0}
+#ldd-golden button{font:inherit;cursor:pointer}
+
+/* 流程图 */
+.g-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;font-size:12px}
+.g-node{background:#fff;border:1px solid var(--g-line);border-radius:8px;padding:4px 10px;color:var(--g-tx2);cursor:pointer;transition:all 120ms cubic-bezier(.22,1,.36,1)}
+.g-node:hover{border-color:var(--g-acc);color:var(--g-acc)}
+.g-node.cur{background:var(--g-accsoft);border-color:transparent;color:var(--g-acc);font-weight:500}
+.g-node.bad{color:var(--g-red)}
+.g-arrow{color:var(--g-tx2)}
+
+/* 应用窗口 */
+.g-win{position:relative;height:520px;background:var(--g-bg);border:1px solid #d9dbde;border-radius:12px;overflow:hidden}
+.g-winbtns{position:absolute;top:10px;right:12px;z-index:6;display:flex;gap:2px}
+.g-winbtns i{width:28px;height:28px;border-radius:6px;background:rgba(31,35,41,.06);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;color:#646a73}
+
+.g-screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
+.g-screen.on{display:flex}
+
+.g-logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--g-acc),#23a55a);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:20px;margin:0 auto 16px}
+#ldd-golden h2{font-size:19px;font-weight:600;margin-bottom:6px}
+.g-sub{color:var(--g-tx2);font-size:13px;margin-bottom:22px}
+.g-sub small{display:block;font-size:12px;margin-top:2px;color:var(--g-tx2);opacity:.75}
+
+.g-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--g-acc);color:#fff;border:0;border-radius:6px;padding:9px 22px;font-size:14px;font-weight:500;transition:transform 180ms cubic-bezier(.22,1,.36,1),box-shadow 180ms cubic-bezier(.22,1,.36,1)}
+.g-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(51,112,255,.3)}
+.g-btn.ghost{background:#fff;color:var(--g-tx2);border:1px solid var(--g-line);font-weight:400}
+.g-btn.ghost:hover{border-color:var(--g-acc);color:var(--g-acc);box-shadow:none}
+.g-btn.danger{background:var(--g-red)}
+.g-btncol{display:flex;flex-direction:column;gap:10px;width:250px;margin:0 auto}
+.g-foot{position:absolute;bottom:16px;left:0;right:0;font-size:11.5px;color:var(--g-tx2)}
+
+/* 检测步骤 */
+.g-steps{width:300px;margin:0 auto 22px;text-align:left;display:flex;flex-direction:column;gap:12px}
+.g-step{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--g-tx2)}
+.g-step .st{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--g-line);color:var(--g-tx2)}
+.g-step.run .st{border-color:var(--g-acc);border-top-color:transparent;animation:gspin 1s linear infinite}
+.g-step.ok .st{background:var(--g-ok);border-color:var(--g-ok);color:#fff}
+.g-step.bad .st{background:var(--g-red);border-color:var(--g-red);color:#fff}
+.g-step.run,.g-step.ok,.g-step.bad{color:var(--g-tx)}
+.g-step small{display:block;font-size:11.5px;color:var(--g-tx2)}
+@keyframes gspin{to{transform:rotate(360deg)}}
+
+/* 诊断面板 */
+.g-diag{width:340px;margin:0 auto 20px;text-align:left;background:#fff;border:1px solid var(--g-line);border-radius:10px;padding:14px 16px;box-shadow:0 6px 20px rgba(31,35,41,.12)}
+.g-diag h4{font-size:13px;font-weight:500;margin-bottom:8px;color:var(--g-tx2)}
+.g-diag .g-step{padding:5px 0}
+.g-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* 主框架缩影 */
+.g-mini{display:flex;height:100%;text-align:left}
+.g-rail{width:56px;background:#f5f6f7;border-right:1px solid var(--g-line);padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:14px;font-size:10px;color:var(--g-tx2)}
+.g-rail .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--g-acc),#23a55a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:6px}
+.g-rail .it{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.g-rail .it.on{background:var(--g-accsoft);color:var(--g-acc)}
+.g-list{width:250px;background:#fff;border-right:1px solid var(--g-line);padding:10px;overflow:hidden}
+.g-list .lt{font-weight:500;font-size:13px;margin:4px 6px 10px}
+.g-li{padding:9px 10px;border-radius:8px;font-size:12px}
+.g-li.on{background:var(--g-accsoft)}
+.g-li b{display:block;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--g-tx)}
+.g-li span{color:var(--g-tx2);font-size:11px}
+.g-read{flex:1;padding:20px 24px;position:relative}
+.g-read .badge{position:absolute;top:14px;right:14px;background:var(--g-accsoft);color:var(--g-acc);border-radius:999px;padding:4px 14px;font-size:12px}
+.g-read h3{font-size:16px;font-weight:600;margin-bottom:8px;padding-right:130px}
+.g-read p{font-size:13.5px;color:#4e5460;margin-bottom:8px}
+.g-read .fav{display:flex;gap:10px;align-items:center;margin-bottom:14px;font-size:12px;color:var(--g-tx2)}
+.g-read .fav i{width:30px;height:30px;border-radius:50%;background:var(--g-accsoft);color:var(--g-acc);font-style:normal;display:flex;align-items:center;justify-content:center;font-size:11px}
+
+.g-toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--g-line);border-radius:999px;box-shadow:0 6px 20px rgba(31,35,41,.12);padding:7px 18px;font-size:12.5px;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){#ldd-golden *{animation:none!important;transition:none!important}}
+</style>
+
+<div id="ldd-golden">
+  <div class="g-flow" id="g-flow">
+    <span class="g-node cur" data-s="welcome">首启</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="detect">网络检测</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="shield">ECH 过盾</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="connected">连接成功</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="login">登录</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="ready">第一帖</span>
+    <span class="g-arrow" style="width:20px"></span>
+    <span class="g-node bad" data-s="fallback">降级指引</span><span class="g-arrow">→</span>
+    <span class="g-node" data-s="diag">使用中诊断</span>
+  </div>
+
+  <div class="g-win">
+    <div class="g-winbtns"><i>—</i><i>□</i><i>×</i></div>
+
+    <!-- 1 首启 -->
+    <div class="g-screen on" data-s="welcome">
+      <div class="g-logo">L</div>
+      <h2>linux.do 桌面端</h2>
+      <p class="g-sub">下载即用，免配置<small>内置 ECH 直连引擎，无需自备代理 · 首次启动将自动检测网络</small></p>
+      <div class="g-btncol">
+        <button class="g-btn" data-go="detect">开始检测网络</button>
+        <button class="g-btn ghost" data-go="login">跳过，直接登录</button>
+      </div>
+      <p class="g-foot">检测全程约 10 秒 · 不上传任何数据</p>
+    </div>
+
+    <!-- 2 网络检测 -->
+    <div class="g-screen" data-s="detect">
+      <h2>正在检测网络环境</h2>
+      <p class="g-sub">为选择最优连接方式</p>
+      <div class="g-steps" id="g-steps">
+        <div class="g-step" data-i="0"><span class="st">1</span><div>DNS 解析<small>绕过污染，安全的通道查询</small></div></div>
+        <div class="g-step" data-i="1"><span class="st">2</span><div>ECH 直连测试<small>加密服务器名称，绕过 SNI 阻断</small></div></div>
+        <div class="g-step" data-i="2"><span class="st">3</span><div>站点连通<small>linux.do 可达性验证</small></div></div>
+      </div>
+      <p class="g-foot" id="g-detect-tip">检测中…</p>
+    </div>
+
+    <!-- 3 ECH 过盾 -->
+    <div class="g-screen" data-s="shield">
+      <div class="g-logo" style="background:linear-gradient(135deg,#ff7d00,var(--g-acc))">🛡</div>
+      <h2>检测到防火墙拦截</h2>
+      <p class="g-sub">正在通过 ECH 加密直连绕过（全自动，无需操作）</p>
+      <div class="g-steps">
+        <div class="g-step ok"><span class="st">✓</span><div>拦截原因已确认<small>SNI 阻断 · 运营商线路特征</small></div></div>
+        <div class="g-step run"><span class="st">…</span><div>ECH 隧道建立中<small>通常 3–8 秒</small></div></div>
+      </div>
+      <div class="g-actions">
+        <button class="g-btn ghost" data-go="fallback">仍然失败？查看降级指引</button>
+      </div>
+    </div>
+
+    <!-- 4 连接成功 -->
+    <div class="g-screen" data-s="connected">
+      <div class="g-logo" style="background:var(--g-ok)">✓</div>
+      <h2>连接成功</h2>
+      <p class="g-sub">ECH 直连已就绪 · 以后每次启动自动连接，无需任何操作</p>
+      <div class="g-btncol"><button class="g-btn" data-go="login">下一步：登录 linux.do</button></div>
+    </div>
+
+    <!-- 5 登录 -->
+    <div class="g-screen" data-s="login">
+      <h2>登录 linux.do</h2>
+      <p class="g-sub">三种方式任选，推荐浏览器窗口登录</p>
+      <div class="g-btncol">
+        <button class="g-btn" data-go="ready">浏览器窗口登录（推荐）</button>
+        <button class="g-btn ghost">Connect 授权</button>
+        <button class="g-btn ghost">账号密码 / API Key</button>
+      </div>
+      <p class="g-foot">登录后自动同步已读进度与收藏夹（可在设置配置 WebDAV）</p>
+    </div>
+
+    <!-- 6 第一帖（主框架缩影 + 成功时刻） -->
+    <div class="g-screen" data-s="ready" style="padding:0;justify-content:stretch">
+      <div class="g-mini" style="flex:1">
+        <div class="g-rail">
+          <div class="av">R</div>
+          <div class="it on">🏠</div><div class="it">📥</div><div class="it">🔔</div>
+          <div style="flex:1"></div><div class="it">⚙</div>
+        </div>
+        <div class="g-list">
+          <div class="lt">帖子</div>
+          <div class="g-li on"><b>欢迎来到 linux.do</b><span>新人报道 · 刚刚</span></div>
+          <div class="g-li"><b>Clash Verge 更新后 TUN 模式频繁掉线</b><span>jbro · 3 小时前</span></div>
+          <div class="g-li"><b>自托管 RSS 方案：FreshRSS 一键部署</b><span>miu · 昨天</span></div>
+        </div>
+        <div class="g-read">
+          <span class="badge">🎉 一切就绪</span>
+          <h3>欢迎来到 linux.do</h3>
+          <div class="fav"><i>L</i><span>@linuxdo · 楼主 · #1</span></div>
+          <p>这是你在桌面端打开的第一帖。左侧是帖子列表，右侧阅读；点楼层左下「回复」参与讨论。</p>
+          <p style="font-size:12px;color:var(--g-tx2)">收藏夹、离线缓存、主题皮肤都在左下角设置里。</p>
+          <div class="g-actions" style="justify-content:flex-start;margin-top:14px">
+            <button class="g-btn ghost" data-go="welcome">↺ 重看流程</button>
+            <button class="g-btn ghost" data-go="diag">模拟：阅读中出现 403</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 降级指引 -->
+    <div class="g-screen" data-s="fallback">
+      <h2>自动连接未能成功</h2>
+      <p class="g-sub">你的网络对 linux.do 存在深度阻断。两条出路，任选其一：</p>
+      <div class="g-diag" style="width:400px">
+        <h4>出路 A · 使用已有代理（推荐，1 分钟）</h4>
+        <div class="g-step ok"><span class="st">1</span><div>打开 Clash / v2rayN 等代理工具<small>确认「系统代理」已开启</small></div></div>
+        <div class="g-step ok"><span class="st">2</span><div>回到这里点「重新检测」<small>应用会自动发现系统代理并链式接入</small></div></div>
+        <h4 style="margin-top:12px">出路 B · 无代理环境</h4>
+        <div class="g-step bad"><span class="st">✗</span><div>当前线路无法直连 linux.do<small>可稍后重试，或到社区反馈你的运营商</small></div></div>
+      </div>
+      <div class="g-actions">
+        <button class="g-btn" data-go="detect">重新检测</button>
+        <button class="g-btn ghost" data-go="login">先跳过，离线逛</button>
+      </div>
+    </div>
+
+    <!-- 8 使用中诊断 -->
+    <div class="g-screen" data-s="diag">
+      <h2>连接出现问题</h2>
+      <p class="g-sub">刚才的请求被重置（403）。已自动完成诊断：</p>
+      <div class="g-diag">
+        <h4>诊断结论</h4>
+        <div class="g-step ok"><span class="st">✓</span><div>本地网络正常</div></div>
+        <div class="g-step ok"><span class="st">✓</span><div>ECH 隧道正常</div></div>
+        <div class="g-step bad"><span class="st">✗</span><div>站点侧拦截（防火墙等级临时升高）<small>建议：稍等 1 分钟重试，或开启系统代理</small></div></div>
+      </div>
+      <div class="g-actions">
+        <button class="g-btn" data-go="ready">重试</button>
+        <button class="g-btn ghost" data-go="fallback">查看降级指引</button>
+      </div>
+      <p class="g-foot">诊断入口常驻：设置 → 网络诊断（任何时候可手动触发）</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.getElementById('ldd-golden')
+  var flow = document.getElementById('g-flow')
+  var timers = []
+  function clearTimers(){ timers.forEach(clearTimeout); timers = [] }
+  function go(name){
+    clearTimers()
+    root.querySelectorAll('.g-screen').forEach(function(s){ s.classList.toggle('on', s.getAttribute('data-s') === name) })
+    flow.querySelectorAll('.g-node').forEach(function(n){ n.classList.toggle('cur', n.getAttribute('data-s') === name) })
+    if (name === 'detect') runDetect()
+    if (name === 'shield') {
+      timers.push(setTimeout(function(){ go('connected') }, 2600))
+    }
+  }
+  function runDetect(){
+    var steps = root.querySelectorAll('#g-steps .g-step')
+    var tip = document.getElementById('g-detect-tip')
+    steps.forEach(function(s){ s.classList.remove('ok','bad','run'); s.querySelector('.st').textContent = String(Number(s.getAttribute('data-i')) + 1) })
+    var seq = [
+      [0,'run',''], [700,0,'ok'], [700,1,'run'], [1600,1,'ok'], [1600,2,'run'], [2300,2,'ok']
+    ]
+    seq.forEach(function(item){
+      timers.push(setTimeout(function(){
+        var i = item[1], mode = item[2]
+        steps[i].classList.remove('run','ok','bad')
+        steps[i].classList.add(mode)
+        steps[i].querySelector('.st').textContent = mode === 'ok' ? '✓' : '…'
+        if (i === 2 && mode === 'ok') { tip.textContent = '检测完成：本线路存在 SNI 阻断，将自动启用 ECH 直连'; timers.push(setTimeout(function(){ go('shield') }, 900)) }
+        else tip.textContent = '检测中…'
+      }, item[0]))
+    })
+  }
+  root.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click', function(){ go(b.getAttribute('data-go')) })
+  })
+  flow.querySelectorAll('.g-node').forEach(function(n){
+    n.addEventListener('click', function(){ go(n.getAttribute('data-s')) })
+  })
+})()
+</script>
