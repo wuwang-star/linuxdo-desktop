@@ -123,3 +123,16 @@ img { max-width: 100%; }
 
 /* @scope: ux-batch — Q弹动效令牌（过冲弹性曲线） */
 --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+/* @scope: ui-polish-upgrade R7 —— 排版 tokens 飞书系对齐（用户拍板 2026-10-21，三方向 A/B/C 废弃）。
+   后段 :root 覆盖底座字阶：UI base 13→14px、正文 15.5→15px（行高 1.7 由 topic.css .cooked 消费）；
+   --font-title 20px 搭 650 字重（阅读页大标题专用）；--font-md-nested 13.5→13px（树形三级随 R7 降半档）。
+   字体栈真源在 utils/prefs.ts FONT_FAMILIES.system（applyPrefs 内联写入 documentElement，
+   stylesheet 声明仅首帧兜底，两处需同步改）；字体 token 亮暗同值，无暗色分支。 */
+:root {
+  --reading-font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif;
+  --font-body: 15px;
+  --font-base: 14px;
+  --font-md-nested: 13px;
+  --font-title: 20px;
+}

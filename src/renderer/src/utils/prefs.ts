@@ -55,9 +55,9 @@ export const DEFAULT_PREFS: ReadingPrefs = {
 
 const STORAGE_KEY = 'ldd-reading'
 
-/** 字体族预设 → CSS font-family 栈 */
+/** 字体族预设 → CSS font-family 栈（system=R7 飞书系拍板栈：HarmonyOS Sans SC / MiSans 纳入） */
 const FONT_FAMILIES: Record<FontFamilyPref, string> = {
-  system: "ui-sans-serif, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif",
+  system: "-apple-system, 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif",
   serif: "Georgia, 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', serif",
   sans: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
   mono: "Consolas, 'Courier New', monospace"

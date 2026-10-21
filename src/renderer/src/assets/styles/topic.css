@@ -433,3 +433,43 @@
   border-top: 1px solid var(--border); margin-top: 4px; padding: 6px 4px 2px;
 }
 .fav-new .fav-mini { opacity: 1; }
+
+/* @scope: ui-polish-upgrade R7 —— 阅读页飞书文档式排版重构（只动排版属性 font/line-height/spacing/color/圆角，
+   不动结构与交互；层级只靠灰阶+字重，不引入新色相；暗色全走 tokens 映射） */
+
+/* 帖子大标题 20px/650（--font-title）+ meta 行 12px muted */
+.ldd-t-title { font-size: var(--font-title); font-weight: 650; }
+.ldd-t-meta { font-size: var(--font-sm); }
+
+/* cooked 正文 15px/1.7、段落距 0.8em */
+.cooked { font-size: var(--font-body); line-height: 1.7; }
+.cooked p { margin: 0 0 0.8em; }
+.cooked ul, .cooked ol { margin: 0 0 0.8em; }
+
+/* 标题层级 17/16/15/14 ·600（飞书文档式：无下划线装饰） */
+.cooked h1, .cooked h2, .cooked h3, .cooked h4, .cooked h5, .cooked h6 { font-weight: 600; }
+.cooked h1 { font-size: 17px; padding-bottom: 0; border-bottom: 0; }
+.cooked h2 { font-size: 16px; }
+.cooked h3 { font-size: 15px; }
+.cooked h4, .cooked h5, .cooked h6 { font-size: 14px; }
+
+/* 链接：accent 无下划线，hover 下划线（mention 药丸保持无下划线） */
+.cooked a { text-decoration: none; }
+.cooked a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.cooked a.mention, .cooked a.mention:hover { text-decoration: none; }
+
+/* 引用 callout（既有结构保留只调色值）：左线 accent → 灰阶（飞书中性），浅灰底/圆角右照旧 */
+.cooked blockquote { border-left-color: color-mix(in srgb, var(--muted) 40%, transparent); }
+.cooked > blockquote { border-left-color: color-mix(in srgb, var(--muted) 40%, transparent); }
+
+/* 行内 code：灰底无边框圆角 4；代码块：灰底 + 1px 线 + 圆角 6 + 13px */
+.cooked code { background: var(--hover); border: 0; border-radius: var(--radius-xs); }
+.cooked pre { background: var(--hover); border-radius: var(--radius-sm); font-size: 13px; }
+.cooked pre code { background: transparent; }
+
+/* 表格：细线极简（线降一档透明度，去斑马纹，层级靠表头字重） */
+.cooked th, .cooked td { border-color: color-mix(in srgb, var(--border) 60%, transparent); }
+.cooked tbody tr:nth-child(even) { background: transparent; }
+
+/* 楼层：飞书消息式轻分隔（1px 近发丝线；白底通铺照旧；末楼无线规则不受影响） */
+.post { border-bottom-color: color-mix(in srgb, var(--muted) 14%, transparent); }
