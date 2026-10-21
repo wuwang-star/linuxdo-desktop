@@ -106,8 +106,10 @@
 
 /* ---------- 自绘窗口钮：悬浮窗口右上（原顶栏尾段迁出） ---------- */
 /* 整宽页右上安全区：通知「全部已读」/设置控件/用户卡右上角不得钻到窗口钮底下
-   （win-btns 右缘 12px 起占 88px 宽，预留 112px；login 居中布局除外，极窄窗仅卡角擦边属外观） */
-.notif-page, .profile-page, .settings-page { padding-right: 112px; }
+   （win-btns 右缘 12px 起占 88px 宽，预留 112px；login 居中布局除外，极窄窗仅卡角擦边属外观）
+   .shell-main 前缀抬特异性：部位 css 引入序在本文件后，同特异性会被其 padding shorthand
+   覆盖回 16px（验收实测回归教训，2026-10-21） */
+.shell-main .notif-page, .shell-main .profile-page, .shell-main .settings-page { padding-right: 112px; }
 .win-btns {
   position: absolute; top: 10px; right: 12px; z-index: 60;
   display: flex; align-items: center; gap: 2px;
@@ -203,7 +205,7 @@
 /* @scope: PageShell — 整宽页通用页壳（layouts/PageShell.vue）：标题行 + 右上动作 + 滚动容器。
    安全区 112px 同上方 .notif-page 等约定；接入页经透传 class 挂页面专属钩子时（如 .notif-page），
    notifications.css 的同值规则后加载仍按原级联生效，视觉与迁移前逐像素一致。 */
-.page-shell { height: 100%; overflow-y: auto; padding: 14px 16px; padding-right: 112px; }
+.shell-main .page-shell { height: 100%; overflow-y: auto; padding: 14px 16px; padding-right: 112px; }
 .page-shell-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .page-shell-head h2 { margin: 0; font-size: var(--font-lg); }
 .page-shell-actions { display: flex; align-items: center; gap: 8px; }
