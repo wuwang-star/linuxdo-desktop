@@ -53,7 +53,9 @@ function toggleQueuePanel(): void {
 const favOpen = ref(false)
 const favList = useFavoritesStore()
 const topicList = useTopicListStore()
-const favActive = computed(() => topicList.mode.type === 'favorites')
+const route = useRouter().currentRoute
+const favActive = computed(() => route.value.name === 'favorites')
+const favFolderActive = computed(() => (favActive.value ? String(route.value.params.folderId ?? DEFAULT_FOLDER_ID) : ''))
 const favRenaming = ref<string | null>(null)
 const favRenameText = ref('')
 const favConfirmDelete = ref<string | null>(null)
@@ -220,13 +222,13 @@ const ICONS = {
           <template v-else>
             <button
               class="fav-folder"
-              :class="{ acted: favActive && topicList.mode.type === 'favorites' && topicList.mode.folderId === f.id }"
+              :class="{ acted: favFolderActive === f.id }"
               @click="pickFavFolder(f.id)"
             >
               {{ f.name }}
               <small>{{ f.topicIds.length }}</small>
               <span
-                v-if="favActive && topicList.mode.type === 'favorites' && topicList.mode.folderId === f.id"
+                v-if="favFolderActive === f.id"
                 class="ic" aria-hidden="true"
                 v-html="ICONS.check"></span>
             </button>
