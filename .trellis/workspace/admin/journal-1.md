@@ -623,3 +623,25 @@ P2b 立项为父任务挂三子（offline-topic/webdav-sync/global-shortcuts）�
 ### Session 23 续：过盾 UI 自动化（FluxDO 同款交互）
 
 用户批「过盾 UI 需要做一下」并问「靠自律」含义（答：FluxDO 无强制限速，429 退避是唯一防线，量级全凭使用者自觉；对照我们 350ms 机械节流）。落地：discourseRequest 挑战分支改为「拉起 openCookieLogin 窗口（真实 Chromium 渲染 CF 挑战）→ 用户过盾 → _t 轮询命中自动关窗 → 原请求原地重试」；gateUsed 每请求一次 + challengeGate 全局 30min 冷却防验证风暴；setChallengeHandler 由 index.ts ready 接线。语义红利：已登录态过盾后 _t 仍在，窗口自动关闭无需用户操作关闭。index.ts 并行会话又改（导入区），重读适配；一次误删 connect 导入的编辑因文件变更检查失败而幸免。typecheck+SMOKE_OK。
+
+
+## Session 20: 飞书IM框架+UI规范校准+组件化+收藏夹+黄金路径五任务归档
+<!-- trellis-session: v=2 fp=254d4db1a8388115 -->
+
+**Date**: 2026-10-21
+**Task**: 飞书IM框架+UI规范校准+组件化+收藏夹+黄金路径五任务归档
+**Branch**: `master`
+
+### Summary
+
+五任务归档（A 方案）：golden-path/组件化P1P2/收藏夹云同步/UI规范校准/飞书外框架。自动化验收 R1 入档（.trellis/acceptance/），逮到并修安全区层叠回归。下一步：设计质感升级（用户评『设计太low』）+M1 剩余真机验收
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9c126cf` | feat: 冷启动黄金路径——首启8屏流程+三步网络检测编排+ECH过盾进度+降级指引+诊断面板+第一帖badge（用户拍板原型） |
+
+### Status
+
+[OK] **Completed**

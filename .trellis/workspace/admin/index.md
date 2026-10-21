@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
-- **Last Active**: 2026-10-15
+- **Total Sessions**: 20
+- **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~215 | Active |
+| `journal-1.md` | ~647 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 20 | 2026-10-21 | 飞书IM框架+UI规范校准+组件化+收藏夹+黄金路径五任务归档 | `9c126cf` | `master` |
 | 7 | 2026-10-15 | Connect 身份登录接入（OAuth2+PKCE） | `99dec0e` | `master` |
 | 6 | 2026-10-15 | 登录通道实测定稿 + Connect 调研 | `db54743` | `master` |
 | 5 | 2026-10-15 | 授权页支持系统浏览器复用登录态 | `99dec0e` | `master` |
