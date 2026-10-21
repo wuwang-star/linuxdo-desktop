@@ -274,8 +274,8 @@ onUnmounted(() => {
         </div>
       </div>
       <div v-if="credEdit" class="row" style="flex-direction:column; align-items:stretch; gap:6px; margin-bottom:8px">
-        <input v-model="credUser" :placeholder="credSt.username ? `用户名（当前：@${credSt.username}）` : '用户名'" />
-        <input v-model="credPass" type="password" placeholder="密码" />
+        <input v-model="credUser" autocomplete="off" :placeholder="credSt.username ? `用户名（当前：@${credSt.username}）` : '用户名'" />
+        <input v-model="credPass" type="password" autocomplete="new-password" placeholder="密码" />
         <div class="row">
           <button class="primary" :disabled="credBusy || !credUser.trim() || !credPass" @click="saveCred">
             {{ credBusy ? '保存中…' : '保存' }}

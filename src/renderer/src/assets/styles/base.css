@@ -200,6 +200,10 @@ textarea:focus-visible {
   box-shadow: 0 0 0 2px var(--accent-weak);
 }
 input:disabled, select:disabled, textarea:disabled { opacity: 0.4; cursor: not-allowed; }
+/* 键盘可达性（web-guidelines）：所有可交互元素有可见焦点环；:focus-visible 不打扰鼠标用户 */
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible, .rail-item:focus-visible, .chip:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
 .card h2 { margin: 0 0 10px; font-size: var(--font-body); }
 .card-badge.reco { background: var(--accent); color: #fff; }
 /* 定尺寸图标钮不吃全局 button padding（24/26px 盒子会被 4px 10px 撑爆）：.row-q 在 home.css 同理 */

@@ -104,6 +104,11 @@ function onDocClick(e: MouseEvent): void {
 // ---- rail 搜索：Ctrl/Cmd+K 唤起并聚焦（全局唯一入口） ----
 const searchInputEl = ref<HTMLInputElement | null>(null)
 function onGlobalKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    favOpen.value = false
+    queueOpen.value = false
+    return
+  }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault()
     if (!search.open) void search.openSearch()

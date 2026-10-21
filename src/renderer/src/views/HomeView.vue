@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTopicListStore } from '../stores/topicList'
 import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
@@ -161,6 +161,15 @@ async function removeOffline(id: number): Promise<void> {
 // ---------- 搜索态：输入框/状态在 stores/search（rail 输入），此处只渲染结果（逻辑原样迁移，不重写） ----------
 
 onMounted(() => {
+  // Esc 收起工具条浮层（web-guidelines：浮层可 Esc 退出）
+  const onEsc = (e: KeyboardEvent): void => {
+    if (e.key !== 'Escape') return
+    showTopPanel.value = false
+    showViewsPanel.value = false
+    showCats.value = false
+  }
+  document.addEventListener('keydown', onEsc)
+  onBeforeUnmount(() => document.removeEventListener('keydown', onEsc))
   if (store.topics.length === 0) void store.switchMode({ type: 'latest' })
   const io = new IntersectionObserver(
     (entries) => {
