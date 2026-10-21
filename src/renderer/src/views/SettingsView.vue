@@ -680,7 +680,7 @@ onMounted(async () => {
               {{ proxyTesting ? '测试中…' : '测试上游连通' }}
             </button>
           </div>
-          <p v-if="proxyMessage" class="message">{{ proxyMessage }}</p>
+          <p v-if="proxyMessage" class="message" aria-live="polite">{{ proxyMessage }}</p>
           <p v-if="proxyMode === 'ech' && echNote" class="message">{{ echNote }}</p>
           <p v-if="proxyTestMsg" class="tip dns-result">{{ proxyTestMsg }}</p>
         </section>

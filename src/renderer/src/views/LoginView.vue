@@ -243,7 +243,7 @@ onUnmounted(() => {
           API Key：{{ auth.status?.apiKey ? `✅（${auth.status.apiKeyKind === 'user-api-key' ? '用户授权' : '手动填入'}）` : '—' }}
         </li>
       </ul>
-      <p v-if="auth.message" class="message">{{ auth.message }}</p>
+      <p v-if="auth.message" class="message" aria-live="polite">{{ auth.message }}</p>
     </section>
 
     <!-- ② 方式一：浏览器窗口登录（推荐，放大置顶；Edge 扩展桥接并入此卡） -->

@@ -171,13 +171,13 @@ const ICONS = {
         <template v-else>{{ ghostLetter }}</template>
       </button>
       <button class="rail-plus" title="发新主题（占位）" aria-label="发新主题（占位）">
-        <span class="ic" v-html="ICONS.plus"></span>
+        <span class="ic" v-html="ICONS.plus" aria-hidden="true"></span>
       </button>
     </div>
 
     <!-- 拖拽区 1 续：搜索框（承接搜索 MVP，状态在 stores/search） -->
     <div class="rail-search">
-      <span class="ic" v-html="ICONS.search"></span>
+      <span class="ic" v-html="ICONS.search" aria-hidden="true"></span>
       <input
         ref="searchInputEl"
         v-model="search.query"
@@ -189,13 +189,13 @@ const ICONS = {
     </div>
 
     <RouterLink to="/" class="rail-item" :class="{ active: ['home', 'topic'].includes(String(router.currentRoute.value.name)) }" title="最新">
-      <span class="ic" v-html="ICONS.home"></span><span class="lbl">最新</span>
+      <span class="ic" v-html="ICONS.home" aria-hidden="true"></span><span class="lbl">最新</span>
     </RouterLink>
 
     <!-- 收藏夹浮层：本地夹列表，点夹切列表模式并回首页（与队列同一交互模式） -->
     <div class="fav-wrap">
       <button class="rail-item" :class="{ active: favActive }" title="收藏夹" @click="toggleFavPanel">
-        <span class="ic" v-html="ICONS.star"></span><span class="lbl">收藏夹</span>
+        <span class="ic" v-html="ICONS.star" aria-hidden="true"></span><span class="lbl">收藏夹</span>
       </button>
       <div v-if="favOpen" class="queue-panel">
         <h4>收藏夹（本地数据 · 离线可看）</h4>
@@ -227,16 +227,15 @@ const ICONS = {
               <small>{{ f.topicIds.length }}</small>
               <span
                 v-if="favActive && topicList.mode.type === 'favorites' && topicList.mode.folderId === f.id"
-                class="ic"
-                v-html="ICONS.check"
-              ></span>
+                class="ic" aria-hidden="true"
+                v-html="ICONS.check"></span>
             </button>
             <template v-if="f.id !== DEFAULT_FOLDER_ID">
               <button class="fav-mini" title="重命名" @click="favStartRename(f.id)">
-                <span class="ic" v-html="ICONS.pencil"></span>
+                <span class="ic" v-html="ICONS.pencil" aria-hidden="true"></span>
               </button>
               <button class="fav-mini danger" title="删除收藏夹" @click="favConfirmDelete = f.id">
-                <span class="ic" v-html="ICONS.x"></span>
+                <span class="ic" v-html="ICONS.x" aria-hidden="true"></span>
               </button>
             </template>
           </template>
@@ -250,7 +249,7 @@ const ICONS = {
             @keydown.enter.prevent="favCreate"
           />
           <button class="fav-mini" :disabled="!favNewName.trim()" title="新建收藏夹" @click="favCreate">
-            <span class="ic" v-html="ICONS.plus"></span>
+            <span class="ic" v-html="ICONS.plus" aria-hidden="true"></span>
           </button>
         </div>
       </div>
@@ -258,7 +257,7 @@ const ICONS = {
 
     <div v-if="QUEUE_ENABLED" class="queue-wrap">
       <button class="rail-item" :class="{ active: queueOpen }" title="队列" @click="toggleQueuePanel">
-        <span class="ic" v-html="ICONS.inbox"></span><span class="lbl">队列</span>
+        <span class="ic" v-html="ICONS.inbox" aria-hidden="true"></span><span class="lbl">队列</span>
         <span v-if="queue.count > 0" class="rail-badge">{{ queue.count > 99 ? '99+' : queue.count }}</span>
       </button>
       <!-- 队列浮层整体迁至 components/QueuePanel.vue（store 自取），此处只留挂载点 -->
@@ -266,18 +265,18 @@ const ICONS = {
     </div>
 
     <RouterLink to="/notifications" class="rail-item" :class="{ active: router.currentRoute.value.name === 'notifications' }" title="通知">
-      <span class="ic" v-html="ICONS.bell"></span><span class="lbl">通知</span>
+      <span class="ic" v-html="ICONS.bell" aria-hidden="true"></span><span class="lbl">通知</span>
       <span v-if="unread > 0" class="rail-badge">{{ unread > 99 ? '99+' : unread }}</span>
     </RouterLink>
 
     <div class="rail-spacer"></div>
 
     <RouterLink to="/settings" class="rail-item" :class="{ active: router.currentRoute.value.name === 'settings' }" title="设置">
-      <span class="ic" v-html="ICONS.settings"></span><span class="lbl">设置</span>
+      <span class="ic" v-html="ICONS.settings" aria-hidden="true"></span><span class="lbl">设置</span>
     </RouterLink>
 
     <button class="rail-item rail-collapse" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="toggleCollapse">
-      <span class="ic" v-html="collapsed ? ICONS.panelOpen : ICONS.panelClose"></span>
+      <span class="ic" v-html="collapsed ? ICONS.panelOpen : ICONS.panelClose" aria-hidden="true"></span>
       <span class="lbl">{{ collapsed ? '展开导航' : '收起导航' }}</span>
     </button>
   </aside>

@@ -459,20 +459,20 @@ function readOffline(): void {
       <div class="ldd-t-meta">
         <span v-if="store.opUsername" class="ldd-chip">@{{ store.opUsername }}</span>
         <span class="ldd-chip">{{ total }} 楼</span>
-        <span v-if="store.topic.views" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.eye"></span> {{ store.topic.views }}</span>
-        <span v-if="store.topic.like_count" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.heart"></span> {{ store.topic.like_count }}</span>
+        <span v-if="store.topic.views" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.eye" aria-hidden="true"></span> {{ store.topic.views }}</span>
+        <span v-if="store.topic.like_count" class="ldd-chip tabular-nums"><span class="ic" v-html="ICONS.heart" aria-hidden="true"></span> {{ store.topic.like_count }}</span>
         <span v-if="createdLabel" class="ldd-chip">创建于 {{ createdLabel }}</span>
       </div>
       <div class="ldd-t-bar">
         <button class="ldd-ctab" :class="{ active: !store.onlyOp }" @click="store.onlyOp = false">
-          <span class="ic" v-html="ICONS.chat"></span>正文
+          <span class="ic" v-html="ICONS.chat" aria-hidden="true"></span>正文
         </button>
         <button class="ldd-ctab" :class="{ active: store.onlyOp }" @click="store.onlyOp = true">
-          <span class="ic" v-html="ICONS.user"></span>只看楼主
+          <span class="ic" v-html="ICONS.user" aria-hidden="true"></span>只看楼主
         </button>
         <div class="ldd-t-actions">
           <button class="ldd-btn" @click="openComposer(null)">
-            <span class="ic" v-html="ICONS.chat"></span>回复
+            <span class="ic" v-html="ICONS.chat" aria-hidden="true"></span>回复
           </button>
           <button
             class="ldd-ghost"
@@ -480,7 +480,7 @@ function readOffline(): void {
             :title="queue.has(topicId) ? '从阅读队列移除' : '加入阅读队列'"
             @click="toggleQueue"
           >
-            <span class="ic" v-html="queue.has(topicId) ? ICONS.check : ICONS.plus"></span>{{ queue.has(topicId) ? '已入队' : '入队' }}
+            <span class="ic" v-html="queue.has(topicId) ? ICONS.check : ICONS.plus" aria-hidden="true"></span>{{ queue.has(topicId) ? '已入队' : '入队' }}
           </button>
           <button
             v-if="!store.offline"
@@ -489,7 +489,7 @@ function readOffline(): void {
             :title="saveLabel"
             @click="doSaveOffline"
           >
-            <span class="ic" v-html="ICONS.download"></span>{{ saving ? saveLabel : '离线' }}
+            <span class="ic" v-html="ICONS.download" aria-hidden="true"></span>{{ saving ? saveLabel : '离线' }}
           </button>
           <button
             v-if="!store.offline"
@@ -507,8 +507,8 @@ function readOffline(): void {
               :title="fav.folderIdsOf(topicId).length > 0 ? '管理本地收藏夹' : '加入本地收藏夹'"
               @click.stop="favMenuOpen ? closeFavMenu() : (favMenuOpen = true)"
             >
-              <span class="ic" v-html="ICONS.folder"></span>收藏夹
-              <span class="ic fav-chev" :class="{ open: favMenuOpen }" v-html="ICONS.chevD"></span>
+              <span class="ic" v-html="ICONS.folder" aria-hidden="true"></span>收藏夹
+              <span class="ic fav-chev" :class="{ open: favMenuOpen }" v-html="ICONS.chevD" aria-hidden="true"></span>
             </button>
             <div v-if="favMenuOpen" class="fav-menu" @click.stop>
               <div class="fav-menu-head">勾选加入 / 移出收藏夹（重命名与删夹在左侧栏收藏夹面板）</div>
@@ -518,7 +518,7 @@ function readOffline(): void {
                     class="ic"
                     :class="{ checked: fav.folderIdsOf(topicId).includes(f.id) }"
                     v-html="fav.folderIdsOf(topicId).includes(f.id) ? ICONS.check : ICONS.plus"
-                  ></span>
+                   aria-hidden="true"></span>
                   <span class="fav-name">{{ f.name }}</span>
                   <small>{{ f.topicIds.length }}</small>
                 </button>
@@ -532,7 +532,7 @@ function readOffline(): void {
                   @keydown.enter.prevent="favCreate"
                 />
                 <button class="fav-mini" :disabled="!favNewName.trim()" title="新建收藏夹" @click="favCreate">
-                  <span class="ic" v-html="ICONS.plus"></span>
+                  <span class="ic" v-html="ICONS.plus" aria-hidden="true"></span>
                 </button>
               </div>
             </div>
@@ -583,7 +583,7 @@ function readOffline(): void {
               :aria-expanded="!folded.has(item.post.post_number)"
               @click="toggleThread(item.post.post_number)"
             >
-              <span class="ic fold-chev" :class="{ open: !folded.has(item.post.post_number) }" v-html="ICONS.chevR"></span>
+              <span class="ic fold-chev" :class="{ open: !folded.has(item.post.post_number) }" v-html="ICONS.chevR" aria-hidden="true"></span>
               {{ folded.has(item.post.post_number) ? `${item.thread.length} 条回复` : `收起 ${item.thread.length} 条回复` }}
             </button>
             <div v-show="!folded.has(item.post.post_number)" class="ldd-thread">

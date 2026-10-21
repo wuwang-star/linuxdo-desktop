@@ -196,7 +196,7 @@ onMounted(() => {
           :disabled="browse.selectedId === null"
           @click="scrollToSelected"
         >
-          <span class="ic" v-html="ICONS.locate"></span>
+          <span class="ic" v-html="ICONS.locate" aria-hidden="true"></span>
         </button>
         <button
           class="ldd-filter"
@@ -204,7 +204,7 @@ onMounted(() => {
           aria-label="回到顶部"
           @click="scrollToTop"
         >
-          <span class="ic" v-html="ICONS.arrowUp"></span>
+          <span class="ic" v-html="ICONS.arrowUp" aria-hidden="true"></span>
         </button>
         <button
           class="ldd-filter"
@@ -212,7 +212,7 @@ onMounted(() => {
           aria-label="筛选分类"
           @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()"
         >
-          <span class="ic" v-html="ICONS.filter"></span>
+          <span class="ic" v-html="ICONS.filter" aria-hidden="true"></span>
         </button>
       </div>
       <!-- 搜索态头：查询词 + 取消（输入框在 rail，此处给退出入口） -->
@@ -237,7 +237,7 @@ onMounted(() => {
             <div class="panel-head">浏览榜周期（日~年为该周期内发帖按累计浏览排）</div>
             <button class="cat-item" :class="{ active: viewsScope === 'all' }" @click="pickViews('all')">
               总榜（累计浏览）
-              <span v-if="viewsScope === 'all'" class="ic" v-html="ICONS.check"></span>
+              <span v-if="viewsScope === 'all'" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
             </button>
             <button
               v-for="p in topPeriods"
@@ -247,7 +247,7 @@ onMounted(() => {
               @click="pickViews(p.value)"
             >
               {{ p.label }}
-              <span v-if="viewsScope === p.value" class="ic" v-html="ICONS.check"></span>
+              <span v-if="viewsScope === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
             </button>
           </div>
         </div>
@@ -272,7 +272,7 @@ onMounted(() => {
               @click="pickPeriod(p.value)"
             >
               {{ p.label }}
-              <span v-if="activePeriod === p.value" class="ic" v-html="ICONS.check"></span>
+              <span v-if="activePeriod === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
             </button>
           </div>
         </div>
@@ -295,7 +295,7 @@ onMounted(() => {
           <span class="cat-dot" :style="{ background: `#${c.color}` }"></span>
           {{ c.name }}
           <small>{{ c.topic_count }}</small>
-          <span v-if="store.mode.type === 'category' && store.mode.id === c.id" class="ic" v-html="ICONS.check"></span>
+          <span v-if="store.mode.type === 'category' && store.mode.id === c.id" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
         </button>
       </div>
     </div>
@@ -318,8 +318,8 @@ onMounted(() => {
           <div class="topic-meta">
             <span v-if="r.categoryName" class="row-tag catname">{{ r.categoryName }}</span>
             <span v-if="r.username" class="u">@{{ r.username }}</span>
-            <span class="m"><span class="ic" v-html="ICONS.chat"></span>{{ Math.max(0, r.postsCount - 1) }}</span>
-            <span v-if="r.likeCount" class="m"><span class="ic" v-html="ICONS.heart"></span>{{ r.likeCount }}</span>
+            <span class="m"><span class="ic" v-html="ICONS.chat" aria-hidden="true"></span>{{ Math.max(0, r.postsCount - 1) }}</span>
+            <span v-if="r.likeCount" class="m"><span class="ic" v-html="ICONS.heart" aria-hidden="true"></span>{{ r.likeCount }}</span>
           </div>
         </div>
       </article>
@@ -363,9 +363,9 @@ onMounted(() => {
             <span class="row-time">{{ rowTime(t.created_at) }}</span>
           </div>
           <div class="topic-meta">
-            <span class="m"><span class="ic" v-html="ICONS.heart"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
-            <span class="m"><span class="ic" v-html="ICONS.eye"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
-            <span class="m"><span class="ic" v-html="ICONS.chat"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.heart" aria-hidden="true"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.eye" aria-hidden="true"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.chat" aria-hidden="true"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
             <button class="act fav-remove" title="移出本夹（不影响站点书签）" @click.stop="removeFromFolder(t.id)">移出本夹</button>
           </div>
         </div>
@@ -396,11 +396,11 @@ onMounted(() => {
             <span class="row-time">{{ rowTime(t.last_posted_at ?? t.created_at) }}</span>
           </div>
           <div class="topic-meta">
-            <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin"></span>置顶</span>
-            <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock"></span>已关闭</span>
-            <span class="m"><span class="ic" v-html="ICONS.heart"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
-            <span class="m"><span class="ic" v-html="ICONS.eye"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
-            <span class="m"><span class="ic" v-html="ICONS.chat"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
+            <span v-if="t.pinned" class="row-tag pin"><span class="ic" v-html="ICONS.pin" aria-hidden="true"></span>置顶</span>
+            <span v-if="t.closed" class="row-tag closed"><span class="ic" v-html="ICONS.lock" aria-hidden="true"></span>已关闭</span>
+            <span class="m"><span class="ic" v-html="ICONS.heart" aria-hidden="true"></span><span v-if="t.like_count" class="tabular">{{ t.like_count }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.eye" aria-hidden="true"></span><span v-if="t.views" class="tabular">{{ t.views }}</span></span>
+            <span class="m"><span class="ic" v-html="ICONS.chat" aria-hidden="true"></span><span class="tabular">{{ Math.max(0, t.posts_count - 1) }}</span></span>
             <span
               v-if="opOf(t)"
               class="u"
@@ -417,7 +417,7 @@ onMounted(() => {
               :aria-label="queue.has(t.id) ? '从阅读队列移除' : '加入阅读队列'"
               @click.stop="toggleQueue(t)"
             >
-              <span class="ic" v-html="queue.has(t.id) ? ICONS.check : ICONS.plus"></span>
+              <span class="ic" v-html="queue.has(t.id) ? ICONS.check : ICONS.plus" aria-hidden="true"></span>
             </button>
           </div>
         </div>

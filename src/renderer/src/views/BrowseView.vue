@@ -102,7 +102,7 @@ const showReader = computed(() => dual.value || route.name === 'topic')
       />
       <!-- R8：内容区即阅读位；未选主题时空态占位页（样式在 shell.css） -->
       <div v-else class="ldd-empty">
-        <span class="ic" v-html="ICONS.laugh"></span>
+        <span class="ic" v-html="ICONS.laugh" aria-hidden="true"></span>
         <b>你的每一个好想法，都让人惊喜</b>
         <span>从左侧列表选择主题开始阅读</span>
       </div>
