@@ -293,15 +293,66 @@ onBeforeUnmount(() => {
   if (progressTimer !== undefined) window.clearTimeout(progressTimer)
 })
 
-// ---- 图片灯箱（批 2 R3）：.cooked img 事件委托，树形/离线同覆盖；点图切原始尺寸，Esc/遮罩/按钮回退 ----
+// ---- 图片灯箱（批 2 R3）：.cooked img 事件委托，树形/离线同覆盖；Esc/遮罩/按钮回退 ----
+// 10-21-lightbox-zoom-pan：无级缩放（滚轮锚定光标）+ 拖拽平移 + 双击复位，替代二档切换
 const lightbox = ref<string | null>(null)
-const lbZoom = ref(false)
+const lbScale = ref(1)
+const lbX = ref(0)
+const lbY = ref(0)
+let lbDrag: { px: number; py: number; bx: number; by: number } | null = null
+const LB_SCALE_MIN = 0.2
+const LB_SCALE_MAX = 12
+
+function lbReset(): void {
+  lbScale.value = 1
+  lbX.value = 0
+  lbY.value = 0
+  lbDrag = null
+}
+
+function lbWheel(e: WheelEvent): void {
+  const next = Math.min(LB_SCALE_MAX, Math.max(LB_SCALE_MIN, lbScale.value * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
+  if (next === lbScale.value) return
+  // 锚定光标：光标所指内容点在缩放前后保持屏幕坐标
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const cx = e.clientX - r.left - r.width / 2
+  const cy = e.clientY - r.top - r.height / 2
+  const k = next / lbScale.value
+  lbX.value = cx - k * (cx - lbX.value)
+  lbY.value = cy - k * (cy - lbY.value)
+  lbScale.value = next
+}
+
+function lbDown(e: PointerEvent): void {
+  lbDrag = { px: e.clientX, py: e.clientY, bx: lbX.value, by: lbY.value }
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+}
+
+function lbMove(e: PointerEvent): void {
+  if (!lbDrag) return
+  lbX.value = lbDrag.bx + (e.clientX - lbDrag.px)
+  lbY.value = lbDrag.by + (e.clientY - lbDrag.py)
+}
+
+function lbUp(): void {
+  lbDrag = null
+}
+
+/** 双击：适屏 ↔ 1.6x（画布中心） */
+function lbDblClick(): void {
+  if (lbScale.value > 1.01) lbReset()
+  else {
+    lbScale.value = 1.6
+    lbX.value = 0
+    lbY.value = 0
+  }
+}
 
 function onScrollerClick(e: MouseEvent): void {
   const t = e.target
   if (t instanceof HTMLImageElement && t.closest('.cooked') && t.src) {
     lightbox.value = t.getAttribute('src')
-    lbZoom.value = false
+    lbReset()
   }
 }
 
@@ -356,7 +407,7 @@ function onCookedClick(e: MouseEvent): void {
   if (el instanceof HTMLImageElement && el.closest('.cooked') && el.getAttribute('src')) {
     e.preventDefault()
     lightbox.value = el.getAttribute('src')
-    lbZoom.value = false
+    lbReset()
     return
   }
   const a = el?.closest?.('a[href]')
@@ -652,17 +703,24 @@ function readOffline(): void {
     <!-- 离线快照模式下不渲染回复入口（无网络写操作） -->
     <button v-else-if="!store.offline" class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
 
-    <!-- 图片灯箱：点图切原始尺寸（可滚动），Esc/遮罩/关闭钮回退 -->
+    <!-- 图片灯箱：滚轮无级缩放（锚定光标）+ 拖拽平移 + 双击复位；Esc/遮罩/关闭钮回退 -->
     <div v-if="lightbox" class="lightbox-ov" @click="closeLightbox">
       <img
         :src="lightbox"
-        :class="{ zoom: lbZoom }"
+        class="lb-img"
+        :class="{ grab: lbScale > 1, grabbing: lbDrag }"
+        :style="{ transform: `translate(${lbX}px, ${lbY}px) scale(${lbScale})` }"
         alt=""
-        :title="lbZoom ? '点击回到适屏' : '点击看原始尺寸'"
-        @click.stop="lbZoom = !lbZoom"
+        @wheel.prevent="lbWheel"
+        @pointerdown.prevent="lbDown"
+        @pointermove="lbMove"
+        @pointerup="lbUp"
+        @pointercancel="lbUp"
+        @dblclick="lbDblClick"
+        @click.stop
       />
       <button class="lb-close" aria-label="关闭灯箱" @click="closeLightbox">×</button>
-      <span class="lb-tip">{{ lbZoom ? '点击图片回到适屏 · Esc 关闭' : '点击图片看原始尺寸 · Esc 关闭' }}</span>
+      <span class="lb-tip">滚轮缩放 · 拖拽移动 · 双击复位 · Esc 关闭</span>
     </div>
   </div>
 </template>

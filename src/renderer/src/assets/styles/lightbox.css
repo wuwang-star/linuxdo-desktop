@@ -9,9 +9,12 @@
 }
 .lightbox-ov img {
   max-width: 92vw; max-height: 92vh; object-fit: contain;
-  border-radius: var(--radius-sm); transition: transform 0.15s ease;
+  border-radius: var(--radius-sm); cursor: zoom-in;
+  /* 无 transform 过渡：拖拽/滚轮缩放必须逐帧跟手 */
+  will-change: transform;
 }
-.lightbox-ov img.zoom { transform: scale(1.6); cursor: zoom-in; }
+.lightbox-ov img.grab { cursor: grab; }
+.lightbox-ov img.grabbing { cursor: grabbing; }
 .lb-close {
   position: absolute; top: 18px; right: 24px;
   border: 0; background: rgba(255, 255, 255, 0.12); color: #fff;

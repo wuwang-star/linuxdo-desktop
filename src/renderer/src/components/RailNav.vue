@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
 import { DEFAULT_FOLDER_ID, useFavoritesStore } from '../stores/favorites'
-import { useTopicListStore } from '../stores/topicList'
 import { useSearchStore } from '../stores/search'
 import QueuePanel from './QueuePanel.vue'
 import { avatarUrl } from '../utils/format'
@@ -52,7 +51,6 @@ function toggleQueuePanel(): void {
 // ---- 收藏夹浮层：完整管理中心（建/改/删夹，10-20-fav-rail-management 方案 A）；点夹名切筛选并回首页 ----
 const favOpen = ref(false)
 const favList = useFavoritesStore()
-const topicList = useTopicListStore()
 const route = useRouter().currentRoute
 const favActive = computed(() => route.value.name === 'favorites')
 const favFolderActive = computed(() => (favActive.value ? String(route.value.params.folderId ?? DEFAULT_FOLDER_ID) : ''))
@@ -67,8 +65,8 @@ function toggleFavPanel(): void {
 }
 function pickFavFolder(id: string): void {
   favOpen.value = false
-  void topicList.switchMode({ type: 'favorites', folderId: id })
-  if (router.currentRoute.value.name !== 'home') void router.push('/')
+  // 路由化架构：只推路由，mode 由 BrowseView 的 route watch 派生（命令式 switchMode 会被 watch 的 latest 派生覆盖——真机复现「切收藏夹回不去」）
+  void router.push(`/favorites/${id}`)
 }
 function favStartRename(id: string): void {
   favConfirmDelete.value = null
@@ -87,8 +85,9 @@ function favDoRemove(id: string): void {
   favList.removeFolder(id)
   favConfirmDelete.value = null
   // 删的是当前筛选夹：回默认夹，避免列表残留已删除夹的空态
-  if (topicList.mode.type === 'favorites' && topicList.mode.folderId === id) {
-    void topicList.switchMode({ type: 'favorites', folderId: DEFAULT_FOLDER_ID })
+  // 删的是当前筛选夹：路由推回默认夹（mode 由 watch 派生）
+  if (route.value.name === 'favorites' && String(route.value.params.folderId ?? DEFAULT_FOLDER_ID) === id) {
+    void router.push(`/favorites/${DEFAULT_FOLDER_ID}`)
   }
 }
 function favCreate(): void {
