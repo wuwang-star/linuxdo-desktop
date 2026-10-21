@@ -128,11 +128,11 @@ watch(
            R11 动作行降噪：无内容的次级动作（回复/无译文）默认低透明度，楼层 hover/focus-within 显现 -->
       <footer v-if="!offline" class="post-actions">
         <button class="act" :class="{ acted: like.acted, quiet: !like.acted && like.count === 0 }" @click="emit('like', post.id)">
-          {{ like.acted ? '❤' : '🤍' }} {{ like.count || '' }}
+          {{ like.acted ? '已赞' : '点赞' }} {{ like.count || '' }}
         </button>
-        <button class="act quiet" @click="emit('reply', post.post_number)">💬 回复</button>
+        <button class="act quiet" @click="emit('reply', post.post_number)">回复</button>
         <!-- 编辑入口以 API 返回的 can_edit 为准（有内容项，常显） -->
-        <button v-if="post.can_edit" class="act" @click="emit('edit', post)">✏ 编辑</button>
+        <button v-if="post.can_edit" class="act" @click="emit('edit', post)">编辑</button>
         <button class="act" :class="{ quiet: !translation }" :disabled="trLoading" @click="translate">
           {{ trLoading ? '翻译中…' : translation ? (trVisible ? '隐藏译文' : '显示译文') : '译' }}
         </button>

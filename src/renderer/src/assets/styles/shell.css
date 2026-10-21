@@ -339,3 +339,64 @@
   animation: im-pop-in var(--motion-base) var(--ease-out);
 }
 .gp-badge:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* @scope: ui-polish-upgrade —— R1 rail 品牌锚点（brand mark/身份环/分组标签/激活左条）+ R4 底部微渐变。
+   视觉真源 research/ui-polish-upgrade.html After 侧（a-rail/a-brand/avrow/grp/it 逐值），颜色映射 tokens 保暗色；
+   只追加不改既有规则，皮肤钩子（.queue-panel/.fav-*）与既有 .rail-* 布局不受影响。 */
+.rail {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel) 55%, var(--rail-bg)) 0%,
+    var(--rail-bg) 82%,
+    color-mix(in srgb, var(--accent) 4%, var(--rail-bg)) 100%
+  );
+}
+/* 品牌 mark：渐变 L 方块（复用 .rail-top 拖拽区语义，＋占位钮悬浮右侧） */
+.up-brand-row { justify-content: center; margin-bottom: 12px; min-height: 34px; }
+.up-brand-row .rail-plus { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.up-brand {
+  width: 34px; height: 34px; border-radius: var(--radius-lg); flex: none;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #fff));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; user-select: none;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.rail.collapsed .up-brand-row { margin-left: 0; margin-right: 0; }
+/* 身份环：头像 + 名字/等级两行；白环 + accent 软环；未登录灰态 */
+.up-avrow {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  margin: 0 0 8px; padding: 0 4px 12px;
+  border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
+  background: none; text-align: left; cursor: pointer;
+}
+.up-avrow:hover { background: none; border-color: var(--border); color: var(--text); }
+.up-ava {
+  width: 34px; height: 34px; border-radius: 50%; flex: none; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #fff));
+  color: #fff; font-weight: 600; font-size: var(--font-base);
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--accent-weak);
+}
+.up-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.up-avrow.ghost .up-ava {
+  background: var(--hover); color: var(--muted);
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--border);
+}
+.up-avid { min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.up-avname { font-size: var(--font-sm); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-avid small { font-size: 10.5px; color: var(--muted); }
+.up-avrow.ghost .up-avname, .up-avrow.ghost .up-avid small { color: var(--muted); }
+.rail.collapsed .up-avrow { justify-content: center; padding: 0 0 12px; }
+.rail.collapsed .up-avid { display: none; }
+/* 导航分组标签：「社区」「我的」 */
+.up-grp { font-size: 10px; color: var(--muted); padding: 10px 10px 3px; letter-spacing: 0.06em; }
+.rail.collapsed .up-grp { display: none; }
+/* 激活态：左缘 3px 蓝条（rail 内边距 8px，-8px 贴轨缘）+ 图标 17px 同 mockup */
+.rail-item.active { font-weight: 500; }
+.rail-item.active::before {
+  content: ''; position: absolute; left: -8px; top: 20%; bottom: 20%;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+}
+.rail-item .ic { width: 17px; height: 17px; }
+/* 阅读区空态（BrowseView .ldd-empty）：插画已在 base .up-art，标题对齐 mockup 600 字重 */
+.ldd-empty b { font-weight: 600; }

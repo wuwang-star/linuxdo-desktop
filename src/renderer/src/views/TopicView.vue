@@ -549,7 +549,7 @@ function readOffline(): void {
             :disabled="bookmarking || store.topic.bookmarked"
             :title="store.topic.bookmarked ? '已收藏' : '收藏'"
             @click="doBookmark"
-          >{{ store.topic.bookmarked ? '★ 已收藏' : '☆ 收藏' }}</button>
+          >{{ store.topic.bookmarked ? '已收藏' : '收藏' }}</button>
           <!-- 本地收藏夹 ▾（应用层数据，离线同样可用；站点书签上方保持现状，两套并行） -->
           <div class="fav-wrap">
             <button
@@ -701,7 +701,7 @@ function readOffline(): void {
       </div>
     </div>
     <!-- 离线快照模式下不渲染回复入口（无网络写操作） -->
-    <button v-else-if="!store.offline" class="composer-open act" @click="openComposer(null)">💬 回复主题</button>
+    <button v-else-if="!store.offline" class="composer-open act" @click="openComposer(null)">回复主题</button>
 
     <!-- 图片灯箱：滚轮无级缩放（锚定光标）+ 拖拽平移 + 双击复位；Esc/遮罩/关闭钮回退 -->
     <div v-if="lightbox" class="lightbox-ov" @click="closeLightbox">

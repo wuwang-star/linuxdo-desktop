@@ -1,0 +1,211 @@
+<style>
+#ldd-upg{
+  --u-bg:#eef0f3; --u-panel:#fff; --u-line:#e6e8ec; --u-tx:#17191d; --u-tx2:#6b7280; --u-tx3:#9aa1ab;
+  --u-acc:#3370ff; --u-acc2:#5b8bff; --u-accsoft:rgba(51,112,255,.09); --u-red:#f54a45; --u-redsoft:rgba(245,74,69,.08);
+  --u-ok:#23a55a; --u-rail:#f6f7f9;
+  font:14px/1.6 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--u-tx); padding:22px 26px 40px; background:#e4e6ea; border-radius:12px;
+}
+#ldd-upg *{box-sizing:border-box;margin:0;padding:0}
+#ldd-upg button{font:inherit;cursor:pointer;border:0;background:none}
+#ldd-upg h1{font-size:19px;font-weight:650;margin-bottom:4px}
+#ldd-upg h2{font-size:14px;font-weight:600;margin:24px 0 10px;color:var(--u-tx)}
+.up-sub{color:var(--u-tx2);font-size:12.5px;margin-bottom:16px}
+.up-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.up-cols{grid-template-columns:1fr}}
+.up-tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;margin-bottom:8px;padding:3px 10px;border-radius:999px}
+.up-tag.before{background:rgba(245,74,69,.1);color:var(--u-red)}
+.up-tag.after{background:var(--u-accsoft);color:var(--u-acc)}
+.win{border-radius:12px;overflow:hidden;border:1px solid #d5d8dd;display:flex;height:470px;background:var(--u-bg);position:relative;font-size:13px}
+
+/* ===== 共用骨架 ===== */
+.rail{width:170px;background:var(--u-rail);border-right:1px solid var(--u-line);display:flex;flex-direction:column;padding:12px 8px 10px;flex:none}
+.list{width:296px;background:var(--u-panel);border-right:1px solid var(--u-line);display:flex;flex-direction:column;flex:none}
+.main{flex:1;position:relative;display:flex;flex-direction:column;min-width:0}
+.winb{position:absolute;top:9px;right:10px;display:flex;gap:2px;z-index:5}
+.winb i{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;color:var(--u-tx2)}
+
+/* ===== BEFORE（现状复刻） ===== */
+.b-rail .av{width:30px;height:30px;border-radius:50%;background:#e3e5e9;color:var(--u-tx2);display:flex;align-items:center;justify-content:center;font-size:13px;margin:0 4px 10px}
+.b-rail .it{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;color:var(--u-tx2);font-size:12.5px}
+.b-rail .it.on{background:rgba(51,112,255,.07);color:var(--u-acc)}
+.b-rail .sp{flex:1}
+.b-toolbar{padding:12px 12px 8px}
+.b-chips{display:flex;gap:5px;flex-wrap:wrap}
+.b-chip{border:1px solid var(--u-line);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--u-tx2);background:#fff}
+.b-chip.on{background:var(--u-acc);border-color:var(--u-acc);color:#fff;font-weight:500}
+.b-err{margin:8px 12px;background:rgba(245,74,69,.07);border:1px solid rgba(245,74,69,.25);color:var(--u-red);border-radius:4px;padding:6px 8px;font-size:10.5px;line-height:1.4;word-break:break-all}
+.b-load{text-align:center;color:var(--u-tx3);font-size:12px;padding:14px}
+.b-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--u-tx3);font-size:12.5px}
+.b-empty b{color:var(--u-tx2);font-weight:400;font-size:13px}
+
+/* ===== AFTER（升级稿） ===== */
+.a-rail{background:linear-gradient(180deg,#f8f9fb 0%,#f1f3f6 100%)}
+.a-brand{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--u-acc),#7aa5ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin:0 auto 4px;box-shadow:0 3px 8px rgba(51,112,255,.35)}
+.a-rail .grp{font-size:10px;color:var(--u-tx3);padding:10px 10px 3px;letter-spacing:.06em}
+.a-rail .it{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--u-tx2);font-size:13px;position:relative;margin:1px 0}
+.a-rail .it svg{width:17px;height:17px;flex:none}
+.a-rail .it.on{background:var(--u-accsoft);color:var(--u-acc);font-weight:500}
+.a-rail .it.on::before{content:'';position:absolute;left:-8px;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--u-acc)}
+.a-rail .it .n{margin-left:auto;font-size:10.5px;background:var(--u-red);color:#fff;border-radius:999px;padding:0 5px;line-height:15px}
+.a-rail .avrow{display:flex;align-items:center;gap:8px;padding:0 4px 12px;border-bottom:1px solid var(--u-line);margin-bottom:8px}
+.a-rail .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--u-acc),#7aa5ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--u-accsoft)}
+.a-rail .avname{font-size:12px;font-weight:600;line-height:1.3}
+.a-rail .avname small{display:block;font-weight:400;color:var(--u-tx3);font-size:10.5px}
+.a-head{padding:14px 14px 10px;border-bottom:1px solid var(--u-line)}
+.a-head .t{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.a-head .t b{font-size:15px;font-weight:650}
+.a-head .t .cnt{font-size:11px;color:var(--u-tx3);background:var(--u-hov,#f0f1f4);border-radius:999px;padding:0 7px;line-height:17px}
+.a-head .t .sp{flex:1}
+.a-head .ico{width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--u-tx2)}
+.a-head .ico:hover{background:var(--u-hov,#f0f1f4);color:var(--u-acc)}
+.a-seg{display:flex;background:#f0f1f4;border-radius:8px;padding:2px;gap:2px}
+.a-seg span{flex:1;text-align:center;padding:4px 0;border-radius:6px;font-size:12px;color:var(--u-tx2)}
+.a-seg .on{background:#fff;color:var(--u-tx);font-weight:500;box-shadow:0 1px 3px rgba(31,35,41,.1)}
+.a-rows{padding:6px 8px;overflow:hidden}
+.a-row{display:flex;gap:10px;padding:10px;border-radius:10px;align-items:flex-start}
+.a-row:hover{background:#f6f7f9}
+.a-row.on{background:var(--u-accsoft);box-shadow:inset 3px 0 0 var(--u-acc)}
+.a-row .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;box-shadow:0 0 0 1px rgba(31,35,41,.04)}
+.a-row .mid{flex:1;min-width:0}
+.a-row .tt{font-size:13.5px;font-weight:550;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.a-row.on .tt{color:var(--u-acc)}
+.a-row .mt{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:11.5px;color:var(--u-tx3)}
+.a-row .mt svg{width:12.5px;height:12.5px}
+.a-row .mt .au{color:var(--u-tx2)}
+.a-row .tm{margin-left:auto}
+.a-main-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.a-art{position:relative;width:130px;height:96px;margin-bottom:14px}
+.a-art .c1,.a-art .c2,.a-art .c3{position:absolute;border-radius:10px}
+.a-art .c1{width:92px;height:62px;left:19px;top:20px;background:var(--u-panel);border:1px solid var(--u-line);box-shadow:0 8px 22px rgba(31,35,41,.09)}
+.a-art .c2{width:58px;height:40px;left:0;top:0;background:linear-gradient(135deg,#eef3ff,#e3ecff);border:1px solid #d8e4ff;transform:rotate(-7deg)}
+.a-art .c3{width:44px;height:30px;right:0;bottom:0;background:linear-gradient(135deg,#fff,#f2f6ff);border:1px solid var(--u-line);transform:rotate(6deg)}
+.a-art .dot{position:absolute;right:26px;top:30px;width:14px;height:14px;border-radius:50%;background:var(--u-acc);box-shadow:0 0 0 4px var(--u-accsoft)}
+.a-empty b{font-size:14.5px;font-weight:600;color:var(--u-tx)}
+.a-empty p{font-size:12.5px;color:var(--u-tx3);margin-bottom:14px}
+.a-empty .go{background:var(--u-acc);color:#fff;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:500;box-shadow:0 3px 10px rgba(51,112,255,.3)}
+.a-toast{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--u-line);border-radius:999px;box-shadow:0 8px 24px rgba(31,35,41,.14);padding:7px 16px;font-size:12px;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.a-toast .dot2{width:7px;height:7px;border-radius:50%;background:var(--u-orange,#ff9d4d)}
+.a-toast b{font-weight:500}
+.a-toast a{color:var(--u-acc);text-decoration:none}
+
+/* 细节条 */
+.up-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+.up-cell{background:#fff;border:1px solid #d5d8dd;border-radius:10px;padding:14px}
+.up-cell h3{font-size:12px;font-weight:600;color:var(--u-tx2);margin-bottom:10px}
+.err-card{background:var(--u-redsoft);border:1px solid rgba(245,74,69,.22);border-radius:10px;padding:12px 14px}
+.err-card b{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--u-red)}
+.err-card p{font-size:12px;color:var(--u-tx2);margin:6px 0 10px}
+.err-card .go{background:var(--u-red);color:#fff;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:500}
+.up-num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--u-accsoft);color:var(--u-acc);align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-right:7px;flex:none}
+.up-li{display:flex;align-items:flex-start;font-size:13px;margin-bottom:9px}
+</style>
+
+<div id="ldd-upg">
+  <h1>质感升级稿 —— 「设计太 low」六根因 × 逐一对治</h1>
+  <p class="up-sub">左 = 现状复刻（验收截图同款），右 = 升级后。同数据同布局，只动视觉语言。拍板后为实现基准。</p>
+
+  <h2>主页对照（列表 + 内容区）</h2>
+  <div class="up-cols">
+    <div>
+      <span class="up-tag before">● BEFORE 现状</span>
+      <div class="win">
+        <div class="winb"><i>—</i><i>□</i><i>×</i></div>
+        <div class="rail b-rail">
+          <div class="av">?</div>
+          <div class="it on">◉ 最新</div><div class="it">▢ 收藏夹</div><div class="it">▣ 队列</div><div class="it">◈ 通知</div>
+          <div class="sp"></div>
+          <div class="it">⚙ 设置</div><div class="it">⇤ 收起导航</div>
+        </div>
+        <div class="list">
+          <div class="b-toolbar">
+            <div class="b-chips"><span class="b-chip on">最新</span><span class="b-chip">最多浏览</span><span class="b-chip">最热</span><span class="b-chip">Top</span><span class="b-chip">离线</span><span class="b-chip">分类</span></div>
+          </div>
+          <div class="b-err">Error invoking remote method 'discourse:latest': Error: net::ERR_TUNNEL_CONNECTION_FAILED</div>
+          <div class="b-load">加载中...</div>
+          <div class="b-empty" style="margin-top:60px"><b>你的每一个好想法，都让人惊喜</b><span>从左侧列表选择主题开始阅读</span></div>
+        </div>
+        <div class="main">
+          <div class="b-empty"><b>你的每一个好想法，都让人惊喜</b><span>从左侧列表选择主题开始阅读</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="up-tag after">● AFTER 升级</span>
+      <div class="win">
+        <div class="winb"><i>—</i><i>□</i><i>×</i></div>
+        <div class="rail a-rail">
+          <div class="brand" style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--u-acc),#7aa5ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin:0 auto 4px;box-shadow:0 3px 8px rgba(51,112,255,.35)">L</div>
+          <div class="avrow">
+            <div class="av">R</div>
+            <div class="avname">Rem<small>TL3 · 已登录</small></div>
+          </div>
+          <div class="grp">社区</div>
+          <div class="it on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>最新</div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>收藏夹</div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>队列<span class="n">3</span></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>通知<span class="n">2</span></div>
+          <div class="sp" style="flex:1"></div>
+          <div class="grp">我的</div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>设置</div>
+        </div>
+        <div class="list">
+          <div class="a-head">
+            <div class="t"><b>帖子</b><span class="cnt">128</span><span class="sp"></span><span class="ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span><span class="ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 15-6-6-6 6"/></svg></span><span class="ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/></svg></span></div>
+            <div class="a-seg"><span class="on">最新</span><span>最多浏览</span><span>最热</span><span>Top</span><span>离线</span></div>
+          </div>
+          <div class="a-rows">
+            <div class="a-row on">
+              <div class="av" style="background:#34c724">V</div>
+              <div class="mid">
+                <div class="tt">Clash Verge 更新后 TUN 模式频繁掉线，排查思路分享</div>
+                <div class="mt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>12<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>1.2k<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>6<span class="au">@Rem</span><span class="tm">03:18</span></div>
+              </div>
+            </div>
+            <div class="a-row">
+              <div class="av" style="background:#722ed1">m</div>
+              <div class="mid">
+                <div class="tt">自托管 RSS 方案：FreshRSS + Docker Compose 一键部署</div>
+                <div class="mt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>8<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>890<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>4<span class="au">@miu</span><span class="tm">昨天</span></div>
+              </div>
+            </div>
+            <div class="a-row">
+              <div class="av" style="background:#f53f3f">b</div>
+              <div class="mid">
+                <div class="tt">GLM-5.3 Flash 写代码体感如何？和 4.7 比提升大吗</div>
+                <div class="mt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>46<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>2.3k<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>11<span class="au">@bit</span><span class="tm">昨天</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="a-main-empty">
+            <div class="a-empty">
+              <div class="a-art"><div class="c2"></div><div class="c1"></div><div class="c3"></div><div class="dot"></div></div>
+              <b>你的每一个好想法，都让人惊喜</b>
+              <p>从左侧选择主题，或先去热榜逛逛</p>
+              <button class="go">去热榜逛逛</button>
+            </div>
+          </div>
+          <div class="a-toast"><span class="dot2"></span><b>网络恢复中</b>连接被重置，已切换备用线路 <a>查看诊断</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>升级点逐条（对号入座六根因）</h2>
+  <div class="up-strip">
+    <div class="up-cell"><h3>① 品牌锚点</h3>
+      <div class="up-li"><span class="up-num">1</span>rail 顶品牌 mark（渐变 L 方块）+ 头像含身份环与 TL 等级</div>
+      <div class="up-li"><span class="up-num">2</span>导航分组标签「社区 / 我的」；激活态=左蓝条+软底+图标同色</div>
+    </div>
+    <div class="up-cell"><h3>② 层次张力</h3>
+      <div class="up-li"><span class="up-num">3</span>节头「帖子」15px/650+计数胶囊；工具条改分段实心（segmented），选中=白底浮起</div>
+      <div class="up-li"><span class="up-num">4</span>列表标题 13.5px/550 两行、统计行图标 12.5px 三档灰阶、时间右对齐</div>
+    </div>
+    <div class="up-cell"><h3>③ 状态设计</h3>
+      <div class="up-li"><span class="up-num">5</span>裸英文报错 → 红软底「结论+动作」卡；网络问题=底部轻 toast 带诊断链接（不再打断列表）</div>
+      <div class="up-li"><span class="up-num">6</span>空态=几何插画+主按钮「去热榜逛逛」；加载=骨架屏（本稿略）</div>
+    </div>
+  </div>
+</div>

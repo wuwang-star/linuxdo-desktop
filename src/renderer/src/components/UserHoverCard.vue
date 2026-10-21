@@ -86,8 +86,8 @@ watch(
         <div v-if="hoverData.user.bio_excerpt" class="uhc-bio-text">{{ hoverData.user.bio_excerpt }}</div>
         <div v-else-if="hoverData.user.bio_cooked" class="cooked uhc-bio" v-html="hoverData.user.bio_cooked"></div>
         <div v-if="hoverData.user.location || hoverData.user.website" class="uhc-meta">
-          <span v-if="hoverData.user.location" class="uhc-meta-item">📍 {{ hoverData.user.location }}</span>
-          <span v-if="hoverData.user.website" class="uhc-meta-item">🔗 {{ hoverData.user.website }}</span>
+          <span v-if="hoverData.user.location" class="uhc-meta-item">{{ hoverData.user.location }}</span>
+          <span v-if="hoverData.user.website" class="uhc-meta-item">{{ hoverData.user.website }}</span>
         </div>
         <div class="uhc-times">
           <span v-if="hoverData.user.last_posted_at"><i>最近发帖</i>{{ relTime(hoverData.user.last_posted_at) }}</span>

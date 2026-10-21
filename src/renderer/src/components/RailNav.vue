@@ -19,6 +19,8 @@ const router = useRouter()
 const who = computed(() => auth.status?.user?.username ?? null)
 const avatar = computed(() => avatarUrl(auth.status?.user?.avatar_template ?? '', 64))
 const ghostLetter = computed(() => (who.value ? who.value.charAt(0).toUpperCase() : '?'))
+// trust_level：Discourse current_user 序列化字段，renderer 只读展示（R1 身份环副行）
+const trustLevel = computed(() => (auth.status?.user as { trust_level?: number } | null)?.trust_level)
 // 未读徽标（与 App.vue 通知 watcher 同源字段；auth store 属分区 E 不动，此处轻量重复）
 const unread = computed(() => {
   const u = auth.status?.user
@@ -157,24 +159,33 @@ const ICONS = {
 
 <template>
   <aside class="rail" :class="{ collapsed }">
-    <!-- 拖拽区 1：头像 + 新建占位（R6；「＋」仅占位 R10） -->
-    <div class="rail-top">
-      <button
-        class="rail-avatar"
-        :class="{ ghost: !who }"
-        :title="who ? `@${who} · 用户卡片` : '未登录，去登录'"
-        :aria-label="who ? '打开用户主页' : '去登录'"
-        @mouseenter="who && hoverUser(who, $event)"
-        @mouseleave="cancelUser"
-        @click="onAvatar"
-      >
-        <img v-if="avatar" :src="avatar" alt="" />
-        <template v-else>{{ ghostLetter }}</template>
-      </button>
+    <!-- 品牌锚点（R1 质感升级）：渐变 L mark；.rail-top 保留拖拽区语义，＋占位钮悬浮右缘 -->
+    <div class="rail-top up-brand-row">
+      <div class="up-brand" aria-hidden="true">L</div>
       <button class="rail-plus" title="发新主题（占位）" aria-label="发新主题（占位）">
         <span class="ic" v-html="ICONS.plus" aria-hidden="true"></span>
       </button>
     </div>
+
+    <!-- 身份环（R1）：头像 + 名字/等级两行；未登录=灰态「未登录/点击登录」；hover 悬浮卡/点击主页或登录 -->
+    <button
+      class="up-avrow"
+      :class="{ ghost: !who }"
+      :title="who ? `@${who} · 用户卡片` : '未登录，去登录'"
+      :aria-label="who ? '打开用户主页' : '去登录'"
+      @mouseenter="who && hoverUser(who, $event)"
+      @mouseleave="cancelUser"
+      @click="onAvatar"
+    >
+      <span class="up-ava">
+        <img v-if="avatar" :src="avatar" alt="" />
+        <template v-else>{{ ghostLetter }}</template>
+      </span>
+      <span class="up-avid">
+        <span class="up-avname">{{ who || '未登录' }}</span>
+        <small>{{ who ? `TL${trustLevel ?? '—'} · 已登录` : '点击登录' }}</small>
+      </span>
+    </button>
 
     <!-- 拖拽区 1 续：搜索框（承接搜索 MVP，状态在 stores/search） -->
     <div class="rail-search">
@@ -188,6 +199,9 @@ const ICONS = {
         @keydown.esc="search.close()"
       />
     </div>
+
+    <!-- 分组标签（R1）：社区 -->
+    <div class="up-grp">社区</div>
 
     <RouterLink to="/" class="rail-item" :class="{ active: ['home', 'topic'].includes(String(router.currentRoute.value.name)) }" title="最新">
       <span class="ic" v-html="ICONS.home" aria-hidden="true"></span><span class="lbl">最新</span>
@@ -271,6 +285,9 @@ const ICONS = {
     </RouterLink>
 
     <div class="rail-spacer"></div>
+
+    <!-- 分组标签（R1）：我的 -->
+    <div class="up-grp">我的</div>
 
     <RouterLink to="/settings" class="rail-item" :class="{ active: router.currentRoute.value.name === 'settings' }" title="设置">
       <span class="ic" v-html="ICONS.settings" aria-hidden="true"></span><span class="lbl">设置</span>

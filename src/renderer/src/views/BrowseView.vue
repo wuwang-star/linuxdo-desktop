@@ -16,12 +16,6 @@ const route = useRoute()
 const router = useRouter()
 const browse = useBrowseStore()
 
-/** 空态占位 icon（行内 SVG，沿用项目 ICONS 模式；lucide laugh） */
-const ICONS = {
-  laugh:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13a4.5 4.5 0 0 0 8 0"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>'
-}
-
 // ---- 双栏判定：≥1200px（matchMedia listener 实时同步，跨阈值即时切换；拉宽恢复双栏且右栏保持当前主题 AC3） ----
 // ---- 中栏宽度拖拽（R: 列表宽可调）：prefs 持久化，240–520 夹取，拖拽实时跟手 ----
 const listW = ref(loadPrefs().listWidth ?? 312)
@@ -153,9 +147,9 @@ const showReader = computed(() => dual.value || route.name === 'topic')
         :offline="browse.offlineFlag"
         :key="`${browse.selectedId}-${browse.offlineFlag}`"
       />
-      <!-- R8：内容区即阅读位；未选主题时空态占位页（样式在 shell.css） -->
+      <!-- R3（ui-polish-upgrade）：未选主题空态=几何插画（base .up-art）+ 原文案保留 -->
       <div v-else class="ldd-empty">
-        <span class="ic" v-html="ICONS.laugh" aria-hidden="true"></span>
+        <div class="up-art" aria-hidden="true"><span class="c2"></span><span class="c1"></span><span class="c3"></span><span class="dot"></span></div>
         <b>你的每一个好想法，都让人惊喜</b>
         <span>从左侧列表选择主题开始阅读</span>
       </div>

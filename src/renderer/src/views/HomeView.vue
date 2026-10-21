@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTopicListStore } from '../stores/topicList'
 import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
@@ -8,6 +8,7 @@ import { useSearchStore } from '../stores/search'
 import { useFavoritesStore, type FavEntry } from '../stores/favorites'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
+import { openDiag } from '../utils/diagBus'
 import type { DiscourseTopicLite, TopPeriod } from '../../../main/api/client'
 
 // pane=true：作为双栏左栏嵌入（点击行走 browse.select，URL 由 BrowseView 统一同步）；缺省为整页模式
@@ -45,6 +46,70 @@ function toggleQueue(t: DiscourseTopicLite): void {
 
 const modeName = computed(() => (store.mode.type === 'category' ? store.mode.name : '分类'))
 
+// ---------- R3 状态设计（ui-polish-upgrade）：计数 / 错误「结论+动作」卡 / 首载骨架 / 列表空态 ----------
+/** 节头计数胶囊：当前模式行数（网络模式=topics；离线/收藏夹=各自本地行） */
+const listCount = computed(() => {
+  if (store.mode.type === 'offline') return store.offlineEntries.length
+  if (store.mode.type === 'favorites') return store.favRows.length
+  return store.topics.length
+})
+
+/** 英文原文只进 console 诊断日志，不进 UI（R8 零裸状态码） */
+watch(
+  () => store.error,
+  (e) => {
+    if (e) console.warn('[topicList] 原始错误（诊断日志，不进 UI）：', e)
+  }
+)
+const errTitle = computed(() => {
+  const e = store.error
+  if (!e) return ''
+  if (/403/.test(e)) return '访问被站点拦截'
+  if (/429/.test(e)) return '操作太快被限流'
+  if (/ERR_|net::|ECONN|tunnel|timeout|timed out|reset/i.test(e)) return '连接被重置'
+  return '无法连接 linux.do'
+})
+const errDesc = computed(() => {
+  const e = store.error
+  if (!e) return ''
+  if (/403/.test(e)) return '站点安全验证临时收紧，稍等一两分钟通常自动恢复。'
+  if (/429/.test(e)) return '稍等半分钟再继续即可。'
+  return '网络或代理波动导致请求中断，可重试或查看诊断定位原因。'
+})
+/** 重试：重跑当前 mode 的 load（既有 store.loadMore，零逻辑新增） */
+function retryList(): void {
+  void store.loadMore()
+}
+
+/** 首载骨架屏：loading 且列表为空持续 ≥300ms 才显示（快响应不闪屏） */
+const showSkel = ref(false)
+let skelTimer: number | undefined
+watch(
+  () => store.loading,
+  (loading) => {
+    if (loading && store.topics.length === 0) {
+      if (skelTimer === undefined) skelTimer = window.setTimeout(() => (showSkel.value = true), 300)
+    } else {
+      if (skelTimer !== undefined) window.clearTimeout(skelTimer)
+      skelTimer = undefined
+      showSkel.value = false
+    }
+  }
+)
+onUnmounted(() => {
+  if (skelTimer !== undefined) window.clearTimeout(skelTimer)
+})
+
+/** 列表空态：网络模式加载完结束（exhausted）且无数据无错误 */
+const listEmpty = computed(
+  () =>
+    !search.open &&
+    ['latest', 'hot', 'top', 'category'].includes(store.mode.type) &&
+    store.exhausted &&
+    !store.error &&
+    store.topics.length === 0
+)
+
 /** 行内 SVG 图标（16px stroke 系，替代 emoji 的跨平台一致渲染） */
 const ICONS = {
   chat:
@@ -66,7 +131,9 @@ const ICONS = {
   locate:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>',
   arrowUp:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>',
+  alert:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
 }
 
 /** Top 榜周期（Discourse top.json 全六档）；下拉浮层选择，不插入 crumb 行 */
@@ -200,11 +267,13 @@ onMounted(() => {
 <template>
   <div ref="listEl" class="home">
     <div class="list-toolbar">
-      <!-- 节头（拖拽区 2）：帖子 + 定位/回顶/筛选 icon -->
+      <!-- 节头（拖拽区 2，R2）：帖子 15px/650 + 计数胶囊 + 定位/回顶/筛选图标组右置 -->
       <div v-if="!search.open" class="ldd-sec-head">
-        <span>帖子</span>
+        <b class="up-sec-title">帖子</b>
+        <span class="up-cnt">{{ listCount }}</span>
+        <span class="up-sec-sp"></span>
         <button
-          class="ldd-filter"
+          class="up-ico"
           title="定位当前帖子"
           aria-label="定位当前帖子"
           :disabled="browse.selectedId === null"
@@ -213,7 +282,7 @@ onMounted(() => {
           <span class="ic" v-html="ICONS.locate" aria-hidden="true"></span>
         </button>
         <button
-          class="ldd-filter"
+          class="up-ico"
           title="回到顶部"
           aria-label="回到顶部"
           @click="scrollToTop"
@@ -221,7 +290,7 @@ onMounted(() => {
           <span class="ic" v-html="ICONS.arrowUp" aria-hidden="true"></span>
         </button>
         <button
-          class="ldd-filter"
+          class="up-ico"
           title="筛选分类"
           aria-label="筛选分类"
           @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()"
@@ -234,68 +303,89 @@ onMounted(() => {
         <span class="search-head-q">搜索「{{ search.query.trim() }}」的结果</span>
         <button class="act" @click="search.close()">取消</button>
       </div>
-      <div v-if="!search.open" class="crumb">
-        <button class="chip" :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }" @click="router.push('/')">
-          最新
-        </button>
+      <!-- 工具条（R2）：segmented 实心分段，选中白底浮起；Top/最多浏览下拉行为不变；分类 ghost 收尾 -->
+      <div v-if="!search.open" class="up-seg-row">
+        <div class="up-seg">
+          <button
+            class="up-seg-btn"
+            :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }"
+            @click="router.push('/')"
+          >
+            最新
+          </button>
+          <div class="chip-wrap">
+            <button
+              class="up-seg-btn"
+              :class="{ active: byViewsActive }"
+              title="按浏览量排序"
+              @click="toggleByViews"
+            >
+              {{ byViewsLabel }} ▾
+            </button>
+            <div v-if="showViewsPanel" class="cat-panel top-panel">
+              <div class="panel-head">浏览榜周期（日~年为该周期内发帖按累计浏览排）</div>
+              <button class="cat-item" :class="{ active: viewsScope === 'all' }" @click="pickViews('all')">
+                总榜（累计浏览）
+                <span v-if="viewsScope === 'all'" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
+              </button>
+              <button
+                v-for="p in topPeriods"
+                :key="p.value"
+                class="cat-item"
+                :class="{ active: viewsScope === p.value }"
+                @click="pickViews(p.value)"
+              >
+                {{ p.label }}
+                <span v-if="viewsScope === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+          <button
+            class="up-seg-btn"
+            :class="{ active: store.mode.type === 'hot' }"
+            @click="router.push('/hot')"
+          >
+            最热
+          </button>
+          <div class="chip-wrap">
+            <button
+              class="up-seg-btn"
+              :class="{ active: store.mode.type === 'top' }"
+              @click="toggleTopPanel"
+            >
+              {{ store.mode.type === 'top' ? `Top · ${topLabel}` : 'Top' }} ▾
+            </button>
+            <div v-if="showTopPanel" class="cat-panel top-panel">
+              <div class="panel-head">Top 榜周期</div>
+              <button
+                v-for="p in topPeriods"
+                :key="p.value"
+                class="cat-item"
+                :class="{ active: activePeriod === p.value }"
+                @click="pickPeriod(p.value)"
+              >
+                {{ p.label }}
+                <span v-if="activePeriod === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+          <button
+            class="up-seg-btn"
+            :class="{ active: store.mode.type === 'offline' }"
+            @click="router.push('/offline')"
+          >
+            离线
+          </button>
+        </div>
         <div class="chip-wrap">
           <button
-            class="chip"
-            :class="{ active: byViewsActive }"
-            title="按浏览量排序"
-            @click="toggleByViews"
+            class="up-seg-ghost"
+            title="筛选分类"
+            @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()"
           >
-            {{ byViewsLabel }} ▾
+            {{ modeName }} ▾
           </button>
-          <div v-if="showViewsPanel" class="cat-panel top-panel">
-            <div class="panel-head">浏览榜周期（日~年为该周期内发帖按累计浏览排）</div>
-            <button class="cat-item" :class="{ active: viewsScope === 'all' }" @click="pickViews('all')">
-              总榜（累计浏览）
-              <span v-if="viewsScope === 'all'" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
-            </button>
-            <button
-              v-for="p in topPeriods"
-              :key="p.value"
-              class="cat-item"
-              :class="{ active: viewsScope === p.value }"
-              @click="pickViews(p.value)"
-            >
-              {{ p.label }}
-              <span v-if="viewsScope === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
-            </button>
-          </div>
         </div>
-        <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="router.push('/hot')">
-          最热
-        </button>
-        <div class="chip-wrap">
-          <button
-            class="chip"
-            :class="{ active: store.mode.type === 'top' }"
-            @click="toggleTopPanel"
-          >
-            {{ store.mode.type === 'top' ? `Top · ${topLabel}` : 'Top' }} ▾
-          </button>
-          <div v-if="showTopPanel" class="cat-panel top-panel">
-            <div class="panel-head">Top 榜周期</div>
-            <button
-              v-for="p in topPeriods"
-              :key="p.value"
-              class="cat-item"
-              :class="{ active: activePeriod === p.value }"
-              @click="pickPeriod(p.value)"
-            >
-              {{ p.label }}
-              <span v-if="activePeriod === p.value" class="ic" v-html="ICONS.check" aria-hidden="true"></span>
-            </button>
-          </div>
-        </div>
-        <div class="chip-wrap">
-        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="router.push('/offline')">
-          离线
-        </button>
-        <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
-      </div>
       </div>
       <div v-if="showCats && !search.open" class="cat-panel">
         <div class="panel-head">选择分类</div>
@@ -314,7 +404,26 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="store.error && !search.open" class="error">{{ store.error }}</div>
+    <!-- R3 错误「结论+动作」卡：英文原文只进 console，UI 只给人话结论；重试重跑当前 mode load -->
+    <div v-if="store.error && !search.open" class="up-err-card">
+      <b><span class="ic" v-html="ICONS.alert" aria-hidden="true"></span>{{ errTitle }}</b>
+      <p>{{ errDesc }}原始错误已记录到诊断日志。</p>
+      <div class="up-err-actions">
+        <button class="up-err-retry" @click="retryList">重试</button>
+        <button class="up-err-diag" @click="openDiag()">查看诊断</button>
+      </div>
+    </div>
+
+    <!-- R3 首载骨架屏：3 行 shimmer（≥300ms 才出现，快响应不闪屏） -->
+    <div v-if="showSkel && !search.open" aria-hidden="true">
+      <div v-for="i in 3" :key="i" class="up-skel-row">
+        <span class="skel up-skel-av"></span>
+        <div class="up-skel-mid">
+          <span class="skel up-skel-line w85"></span>
+          <span class="skel up-skel-line w60"></span>
+        </div>
+      </div>
+    </div>
 
     <!-- 搜索态：结果列表替换 feed（输入在 rail，逻辑在 stores/search） -->
     <template v-if="search.open">
@@ -353,7 +462,7 @@ onMounted(() => {
         <div class="topic-main">
           <RouterLink :to="`/t/${t.id}?offline=1`" class="topic-title" @click="onTitleClick($event, t.id, true)">{{ t.title }}</RouterLink>
           <div class="topic-meta">
-            <span>📄 {{ t.posts_count }} 楼</span>
+            <span class="m"><span class="ic" v-html="ICONS.chat" aria-hidden="true"></span>{{ t.posts_count }} 楼</span>
             <span>保存于 {{ relTime(t.savedAt) }}</span>
             <button class="act" @click="removeOffline(t.id)">删除</button>
           </div>
@@ -442,10 +551,18 @@ onMounted(() => {
       </article>
     </template>
 
+    <!-- R3 列表空态：几何插画 + 主按钮（路由化架构：只 push 路由，mode 由 BrowseView watch 派生） -->
+    <div v-if="listEmpty" class="up-list-empty">
+      <div class="up-art" aria-hidden="true"><span class="c2"></span><span class="c1"></span><span class="c3"></span><span class="dot"></span></div>
+      <b>这里还没有帖子</b>
+      <p>先去热榜看看大家在聊什么</p>
+      <button class="up-go" @click="router.push('/hot')">去热榜逛逛</button>
+    </div>
+
     <div ref="sentinel" class="sentinel">
       <span v-if="store.mode.type !== 'offline' && store.mode.type !== 'favorites' && !search.open">
-        <span v-if="store.loading">加载中…</span>
-        <span v-else-if="store.exhausted">没有更多了</span>
+        <span v-if="store.loading && !showSkel">加载中…</span>
+        <span v-else-if="store.exhausted && !listEmpty">没有更多了</span>
       </span>
     </div>
   </div>

@@ -234,3 +234,53 @@ button.primary:active {
 .card {
   transition: transform 0.2s var(--spring);
 }
+
+/* @scope: ui-polish-upgrade —— R3 状态公共类：错误「结论+动作」卡 / 几何空态插画。
+   home 列表（home.css）与阅读区（shell.css .ldd-empty）两处共用，故落 base；
+   视觉真源 research/ui-polish-upgrade.html After 侧（err-card / a-art 逐值），颜色映射 tokens 保暗色。 */
+.up-err-card {
+  margin: 8px 12px; padding: 12px 14px;
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bad) 22%, transparent);
+  border-radius: var(--radius-lg);
+}
+.up-err-card b { display: flex; align-items: center; gap: 7px; font-size: var(--font-base); color: var(--bad); }
+.up-err-card b .ic { width: 14px; height: 14px; flex: none; }
+.up-err-card p { margin: 6px 0 10px; font-size: var(--font-sm); color: color-mix(in srgb, var(--text) 55%, var(--muted)); }
+.up-err-actions { display: flex; align-items: center; gap: 10px; }
+.up-err-retry {
+  border: 0; background: var(--bad); color: #fff;
+  border-radius: var(--radius-sm); padding: 5px 14px;
+  font-size: var(--font-sm); font-weight: 500; cursor: pointer;
+}
+.up-err-retry:hover { filter: brightness(1.08); }
+.up-err-diag {
+  border: 0; background: none; padding: 0; color: color-mix(in srgb, var(--bad) 75%, var(--text));
+  font-size: var(--font-sm); cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.up-err-diag:hover { color: var(--bad); }
+
+/* 几何空态插画（卡片组合）：纯 CSS，亮暗两态走 tokens */
+.up-art { position: relative; width: 130px; height: 96px; flex: none; }
+.up-art span { position: absolute; display: block; border-radius: 10px; }
+.up-art .c1 {
+  width: 92px; height: 62px; left: 19px; top: 20px;
+  background: var(--panel); border: 1px solid var(--border);
+  box-shadow: 0 8px 22px rgba(31, 35, 41, 0.09);
+}
+.up-art .c2 {
+  width: 58px; height: 40px; left: 0; top: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, var(--panel)), color-mix(in srgb, var(--accent) 16%, var(--panel)));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  transform: rotate(-7deg);
+}
+.up-art .c3 {
+  width: 44px; height: 30px; right: 0; bottom: 0;
+  background: linear-gradient(135deg, var(--panel), color-mix(in srgb, var(--accent) 5%, var(--panel)));
+  border: 1px solid var(--border);
+  transform: rotate(6deg);
+}
+.up-art .dot {
+  right: 26px; top: 30px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 4px var(--accent-weak);
+}

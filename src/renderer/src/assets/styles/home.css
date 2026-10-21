@@ -98,3 +98,85 @@
 
 /* @scope: favorite-folders — 收藏夹筛选面板（工具条 chip ▾；基座浮层复用 .cat-panel，此处仅补宽度） */
 .fav-panel { min-width: 220px; }
+
+/* @scope: ui-polish-upgrade —— R2 层次张力（节头/segmented/行质感）+ R3 状态（骨架/错误卡落 base/空态插画）。
+   视觉真源 research/ui-polish-upgrade.html After 侧逐值；只追加不改既有规则，.cat-panel/.row-q 等皮肤钩子保活。 */
+
+/* ---------- R2 节头：帖子 15px/650 + 计数胶囊 + 图标组右置 ---------- */
+.up-sec-title { font-size: 15px; font-weight: 650; color: var(--text); }
+.up-cnt {
+  font-size: 11px; color: var(--muted); background: var(--hover);
+  border-radius: var(--radius-pill); padding: 0 7px; line-height: 17px;
+}
+.up-sec-sp { flex: 1; }
+.up-ico {
+  width: 26px; height: 26px; border: 0; background: none; padding: 0;
+  border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center;
+  color: color-mix(in srgb, var(--text) 62%, var(--muted)); cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+.up-ico:hover { background: var(--hover); color: var(--accent); }
+.up-ico:disabled { opacity: 0.4; cursor: not-allowed; background: none; color: var(--muted); }
+.up-ico .ic { width: 15px; height: 15px; }
+
+/* ---------- R2 工具条：segmented 实心分段（容器浅灰胶囊 padding 2px、选中白底浮起） ---------- */
+.up-seg-row { display: flex; align-items: center; gap: 6px; }
+.up-seg {
+  flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 2px;
+  background: var(--hover); border-radius: var(--radius-md); padding: 2px;
+}
+.up-seg .chip-wrap { flex: 1 1 auto; min-width: 0; display: flex; }
+.up-seg-btn {
+  flex: 1 1 auto; width: 100%; min-width: 0;
+  border: 0; background: none; padding: 4px 6px;
+  border-radius: var(--radius-sm); font-size: var(--font-sm); color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+.up-seg-btn:hover { color: var(--text); }
+.up-seg-btn.active {
+  background: var(--panel); color: var(--text); font-weight: 500;
+  box-shadow: 0 1px 3px rgba(31, 35, 41, 0.1);
+}
+.up-seg-row .chip-wrap { position: relative; }
+.up-seg-ghost {
+  flex: none; border: 0; background: none; padding: 4px 8px;
+  border-radius: var(--radius-sm); font-size: var(--font-sm); color: var(--muted);
+  white-space: nowrap; cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+.up-seg-ghost:hover { color: var(--accent); background: var(--hover); }
+
+/* ---------- R2 列表行质感：标题 13.5px/550、统计 11.5px、选中蓝软底+左 3px 蓝条、hover 渐显 ---------- */
+.topic-row { transition: background-color var(--motion-fast) var(--ease-out); }
+.topic-row.sel { background: var(--accent-weak); box-shadow: inset 3px 0 0 var(--accent); }
+.topic-title { font-size: var(--font-md-nested); font-weight: 550; }
+.topic-meta { font-size: 11.5px; }
+.topic-meta .u { color: color-mix(in srgb, var(--text) 55%, var(--muted)); }
+.avatar { width: 34px; height: 34px; box-shadow: 0 0 0 1px rgba(31, 35, 41, 0.04); }
+
+/* ---------- R3 首载骨架屏 3 行（底座 .skel shimmer） ---------- */
+.up-skel-row { display: flex; gap: 10px; padding: 10px; border-radius: var(--radius-md); align-items: flex-start; }
+.up-skel-av { width: 34px; height: 34px; border-radius: 50%; flex: none; }
+.up-skel-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; padding-top: 2px; }
+.up-skel-line { height: 12px; border-radius: var(--radius-xs); }
+.up-skel-line.w85 { width: 85%; }
+.up-skel-line.w60 { width: 60%; }
+
+/* ---------- R3 列表空态：几何插画（base .up-art）+ 一句文案 + 主按钮 ---------- */
+.up-list-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 44px 16px 32px; text-align: center;
+}
+.up-list-empty b { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.up-list-empty p { margin: 4px 0 14px; font-size: 12.5px; color: var(--muted); }
+.up-go {
+  border: 0; background: var(--accent); color: #fff;
+  border-radius: var(--radius-md); padding: 7px 18px;
+  font-size: var(--font-base); font-weight: 500; cursor: pointer;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: transform var(--motion-base) var(--spring), filter var(--motion-fast) var(--ease-out);
+}
+.up-go:hover { filter: brightness(1.08); }
+.up-go:active { transform: scale(0.96); }
