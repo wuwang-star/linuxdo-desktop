@@ -220,3 +220,13 @@
 .fav-folder:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .fav-folder.acted { color: var(--accent); }
 .fav-folder small { margin-left: auto; color: var(--muted); }
+
+/* ---------- 移出本夹撤销条（web-guidelines destructive 退路） ---------- */
+.undo-bar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; z-index: 90;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2); padding: 8px 16px; font-size: var(--font-sm); color: var(--text);
+  animation: im-pop-in var(--motion-fast) var(--ease-out);
+}
+.undo-bar .act { color: var(--accent); }

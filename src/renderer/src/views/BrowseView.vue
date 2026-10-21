@@ -4,7 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import HomeView from './HomeView.vue'
 import TopicView from './TopicView.vue'
 import { useBrowseStore } from '../stores/browse'
+import { useTopicListStore, type ListMode } from '../stores/topicList'
+import { DEFAULT_FOLDER_ID, useFavoritesStore } from '../stores/favorites'
+import type { TopPeriod } from '../../../main/api/client'
 import { loadPrefs, savePrefs } from '../utils/prefs'
+
+const store = useTopicListStore()
+const favs = useFavoritesStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -74,8 +80,55 @@ watch(
   }
 )
 
-// 单双栏可见性：双栏两栏常驻；窄屏按 route 模拟 router-view（/ 列表、/t/:id 阅读）
-const showList = computed(() => dual.value || route.name === 'home')
+// ---- 列表模式路由化（10-21-route-driven-list）：route→store 单向驱动，URL 即状态 ----
+// UI（工具条 chip / rail 收藏夹）只 push 路由；store.mode 由本 watch 派生，禁止反向写路由
+const LIST_ROUTE_NAMES = new Set(['home', 'views', 'top', 'hot', 'category', 'offline', 'favorites'])
+function modeFromRoute(): ListMode | null {
+  switch (route.name) {
+    case 'home':
+      return { type: 'latest' }
+    case 'views':
+      return { type: 'latest', order: 'views' }
+    case 'hot':
+      return { type: 'hot' }
+    case 'top': {
+      const period = String(route.params.period) as TopPeriod
+      return route.params.sort === 'views'
+        ? { type: 'top', period, viewsSort: true }
+        : { type: 'top', period }
+    }
+    case 'category': {
+      const id = Number(route.params.id)
+      const cat = store.categories.find((x) => x.id === id)
+      return { type: 'category', slug: String(route.params.slug), id, name: cat?.name ?? String(route.params.slug) }
+    }
+    case 'offline':
+      return { type: 'offline' }
+    case 'favorites': {
+      const fid = String(route.params.folderId ?? DEFAULT_FOLDER_ID)
+      return { type: 'favorites', folderId: favs.folder(fid) ? fid : DEFAULT_FOLDER_ID }
+    }
+    default:
+      return null
+  }
+}
+function sameMode(a: ListMode, b: ListMode): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+watch(
+  () => route.fullPath,
+  () => {
+    if (!LIST_ROUTE_NAMES.has(String(route.name))) return
+    const m = modeFromRoute()
+    if (!m || sameMode(store.mode, m)) return
+    if (m.type === 'category') void store.ensureCategories()
+    void store.switchMode(m)
+  },
+  { immediate: true }
+)
+
+// 单双栏可见性：双栏两栏常驻；窄屏按 route 模拟 router-view（列表模式路由 → 列表、/t/:id → 阅读）
+const showList = computed(() => dual.value || LIST_ROUTE_NAMES.has(String(route.name)))
 const showReader = computed(() => dual.value || route.name === 'topic')
 </script>
 

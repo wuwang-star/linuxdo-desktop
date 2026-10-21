@@ -5,7 +5,7 @@ import { useTopicListStore } from '../stores/topicList'
 import { QUEUE_ENABLED, useQueueStore } from '../stores/queue'
 import { useBrowseStore } from '../stores/browse'
 import { useSearchStore } from '../stores/search'
-import { useFavoritesStore } from '../stores/favorites'
+import { useFavoritesStore, type FavEntry } from '../stores/favorites'
 import { avatarUrl, relTime, rowTime } from '../utils/format'
 import { cancelUser, hideNow, hoverUser } from '../utils/userCard'
 import type { DiscourseTopicLite, TopPeriod } from '../../../main/api/client'
@@ -89,7 +89,7 @@ function toggleTopPanel(): void {
 
 function pickPeriod(p: TopPeriod): void {
   showTopPanel.value = false
-  void store.switchMode({ type: 'top', period: p })
+  void router.push(`/top/${p}`)
 }
 
 const topLabel = computed(
@@ -109,13 +109,13 @@ const byViewsLabel = computed(() => {
   return '最多浏览'
 })
 function applyViews(): void {
-  if (viewsScope.value === 'all') void store.switchMode({ type: 'latest', order: 'views' })
-  else void store.switchMode({ type: 'top', period: viewsScope.value, viewsSort: true })
+  if (viewsScope.value === 'all') void router.push('/views')
+  else void router.push(`/top/${viewsScope.value}/views`)
 }
 function toggleByViews(): void {
   if (byViewsActive.value) {
     showViewsPanel.value = false
-    void store.switchMode({ type: 'latest' })
+    void router.push('/')
     return
   }
   showViewsPanel.value = !showViewsPanel.value
@@ -133,10 +133,24 @@ const favFolderMissing = computed(
   () => store.mode.type === 'favorites' && !fav.folder(store.mode.folderId)
 )
 
-/** 行内移出本夹（无确认，拍板）：条目随 store 消失；不影响站点书签 */
+/** 行内移出本夹（无确认 + 5s 撤销条，web-guidelines destructive 退路）：不影响站点书签 */
+const undoSnap = ref<{ folderId: string; entry: FavEntry } | null>(null)
+let undoTimer: ReturnType<typeof setTimeout> | undefined
 function removeFromFolder(topicId: number): void {
   if (store.mode.type !== 'favorites') return
-  fav.setTopic(store.mode.folderId, topicId, null, false)
+  const folderId = store.mode.folderId
+  const entry = fav.snapshots[String(topicId)]
+  fav.setTopic(folderId, topicId, null, false)
+  undoSnap.value = entry ? { folderId, entry } : { folderId, entry: { id: topicId, title: '', views: 0, like_count: 0, posts_count: 0, created_at: '', avatar_template: '' } }
+  clearTimeout(undoTimer)
+  undoTimer = setTimeout(() => (undoSnap.value = null), 5000)
+}
+function undoRemove(): void {
+  if (!undoSnap.value) return
+  const { folderId, entry } = undoSnap.value
+  fav.setTopic(folderId, entry.id, entry, true)
+  undoSnap.value = null
+  clearTimeout(undoTimer)
 }
 
 function opOf(topic: DiscourseTopicLite) {
@@ -221,7 +235,7 @@ onMounted(() => {
         <button class="act" @click="search.close()">取消</button>
       </div>
       <div v-if="!search.open" class="crumb">
-        <button class="chip" :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }" @click="store.switchMode({ type: 'latest' })">
+        <button class="chip" :class="{ active: store.mode.type === 'latest' && store.mode.order !== 'views' }" @click="router.push('/')">
           最新
         </button>
         <div class="chip-wrap">
@@ -251,7 +265,7 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="store.switchMode({ type: 'hot' })">
+        <button class="chip" :class="{ active: store.mode.type === 'hot' }" @click="router.push('/hot')">
           最热
         </button>
         <div class="chip-wrap">
@@ -277,7 +291,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="chip-wrap">
-        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="store.switchMode({ type: 'offline' }); showTopPanel = false">
+        <button class="chip" :class="{ active: store.mode.type === 'offline' }" @click="router.push('/offline')">
           离线
         </button>
         <button class="chip tool" @click="showCats = !showCats; showTopPanel = false; if (showCats) void store.ensureCategories()">{{ modeName }} ▾</button>
@@ -290,7 +304,7 @@ onMounted(() => {
           :key="c.id"
           class="cat-item"
           :class="{ active: store.mode.type === 'category' && store.mode.id === c.id }"
-          @click="store.switchMode({ type: 'category', slug: c.slug, id: c.id, name: c.name }); showCats = false"
+          @click="router.push(`/category/${c.slug}/${c.id}`); showCats = false"
         >
           <span class="cat-dot" :style="{ background: `#${c.color}` }"></span>
           {{ c.name }}
@@ -370,6 +384,10 @@ onMounted(() => {
           </div>
         </div>
       </article>
+      <div v-if="undoSnap" class="undo-bar">
+        <span>已从收藏夹移出</span>
+        <button class="act" @click="undoRemove">撤销</button>
+      </div>
       <div v-if="store.favRows.length === 0 && !store.loading" class="sentinel">
         {{
           favFolderMissing
